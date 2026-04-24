@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Search, Play, Loader2, Star } from "lucide-react";
-import { tmdbTrending, tmdbSearch, tmdbPopular, embedUrl, type MediaItem, type EmbedProvider } from "@/lib/api";
+import { tmdbTrending, tmdbSearch, tmdbPopular, embedUrl, EMBED_PROVIDERS, type MediaItem, type EmbedProvider } from "@/lib/api";
 import { IframePlayer } from "./IframePlayer";
 
 export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
@@ -9,7 +9,7 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
   const [q, setQ] = useState("");
   const [section, setSection] = useState<"trending" | "popular">("trending");
   const [playing, setPlaying] = useState<MediaItem | null>(null);
-  const [provider, setProvider] = useState<EmbedProvider>("vidsrc");
+  const [provider, setProvider] = useState<EmbedProvider>("vidsrccc");
 
   useEffect(() => {
     setLoading(true);
@@ -105,11 +105,7 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
           src={embedUrl(provider, playing.type, playing.id)}
           title={playing.title}
           onClose={() => setPlaying(null)}
-          providers={[
-            { id: "vidsrc", label: "Server 1" },
-            { id: "2embed", label: "Server 2" },
-            { id: "vidlink", label: "Server 3" },
-          ]}
+          providers={EMBED_PROVIDERS}
           activeProvider={provider}
           onProviderChange={(p) => setProvider(p as EmbedProvider)}
         />
