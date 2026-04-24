@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Search, Radio, Globe } from "lucide-react";
-import { iptvChannels, countryName, countryFlag, type Channel } from "@/lib/api";
+import { iptvChannels, countryName, countryFlag, CURATED_TV_CHANNELS, type Channel } from "@/lib/api";
 import { HlsPlayer } from "./HlsPlayer";
 
 export function TVTab() {
-  const [channels, setChannels] = useState<Channel[]>([]);
+  const [channels, setChannels] = useState<Channel[]>(CURATED_TV_CHANNELS);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
-  const [country, setCountry] = useState<string>("US");
+  const [country, setCountry] = useState<string>(CURATED_TV_CHANNELS[0]?.country ?? "IN");
   const [cat, setCat] = useState<string>("all");
   const [playing, setPlaying] = useState<Channel | null>(null);
 
@@ -17,6 +17,12 @@ export function TVTab() {
       .catch(() => setChannels([]))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!channels.some((c) => c.country === country) && channels[0]?.country) {
+      setCountry(channels[0].country);
+    }
+  }, [channels, country]);
 
   const countries = useMemo(() => {
     const counts = new Map<string, number>();
@@ -124,7 +130,7 @@ export function TVTab() {
             </p>
           </button>
         ))}
-        {filtered.length === 0 && <p className="col-span-full text-center text-muted-foreground py-20">No channels in this country.</p>}
+        {filtered.length === 0 && <p className="col-span-full text-center text-muted-foreground py-20">No playable channels found for this country yet.</p>}
       </div>
 
       {playing && (
