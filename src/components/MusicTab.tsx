@@ -17,7 +17,7 @@ export function MusicTab() {
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState("");
   const [mode, setMode] = useState<Mode>("audio");
-  const [playing, setPlaying] = useState<{ id: string; title: string; audioOnly: boolean } | null>(null);
+  const [playing, setPlaying] = useState<{ id: string; title: string; audioOnly: boolean; isLive: boolean } | null>(null);
   const [creatorId, setCreatorId] = useState<string | null>(null);
 
   async function run(query: string, m: Mode, channelId?: string | null) {
@@ -28,7 +28,9 @@ export function MusicTab() {
       } else if (m === "video") {
         setItems(await ytSearch(`${query} official music video`, { videoCategoryId: "10", max: 24 }));
       } else if (m === "live") {
-        setItems(await ytSearch(query, { eventType: "live", max: 24 }));
+        // Use a popular live-streaming query when the user hasn't typed anything
+        const liveQuery = query?.trim() ? query : "live now";
+        setItems(await ytSearch(liveQuery, { eventType: "live", max: 24 }));
       } else if (m === "creators") {
         if (channelId) {
           setItems(await ytSearch("", { channelId, max: 24 }));
@@ -52,7 +54,7 @@ export function MusicTab() {
     const defaults: Record<Mode, string> = {
       audio: "top hits 2025",
       video: "top music videos 2025",
-      live: "live music",
+      live: "live now",
       creators: "",
     };
     run(defaults[mode], mode);
@@ -130,7 +132,14 @@ export function MusicTab() {
                 className="group flex gap-3 p-3 rounded-xl glass-card hover:border-primary hover:shadow-[var(--shadow-glow)] transition"
               >
                 <button
-                  onClick={() => setPlaying({ id: it.videoId, title: it.title, audioOnly: mode === "audio" })}
+                  onClick={() =>
+                    setPlaying({
+                      id: it.videoId,
+                      title: it.title,
+                      audioOnly: mode === "audio",
+                      isLive: mode === "live" || it.liveBroadcastContent === "live",
+                    })
+                  }
                   className="relative w-32 aspect-video rounded-lg overflow-hidden flex-shrink-0 bg-muted"
                 >
                   {it.thumbnail && <img src={it.thumbnail} alt="" loading="lazy" className="w-full h-full object-cover" />}
@@ -145,7 +154,14 @@ export function MusicTab() {
                 </button>
                 <div className="min-w-0 flex-1 py-1 flex flex-col">
                   <button
-                    onClick={() => setPlaying({ id: it.videoId, title: it.title, audioOnly: mode === "audio" })}
+                    onClick={() =>
+                      setPlaying({
+                        id: it.videoId,
+                        title: it.title,
+                        audioOnly: mode === "audio",
+                        isLive: mode === "live" || it.liveBroadcastContent === "live",
+                      })
+                    }
                     className="text-left"
                   >
                     <p className="text-sm font-medium line-clamp-2">{it.title}</p>
@@ -170,6 +186,7 @@ export function MusicTab() {
           videoId={playing.id}
           title={playing.title}
           audioOnly={playing.audioOnly}
+          isLive={playing.isLive}
           onClose={() => setPlaying(null)}
         />
       )}
