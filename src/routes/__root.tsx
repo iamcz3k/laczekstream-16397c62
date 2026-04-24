@@ -32,11 +32,15 @@ export const Route = createRootRoute({
       { title: "LACZEK STREAM — Free Movies, TV, Football & Music" },
       { name: "description", content: "LACZEK STREAM: stream free movies, live TV, football and music — sleek, clean, no ads." },
       { name: "author", content: "LACZEK STREAM" },
-      { property: "og:title", content: "LACZEK STREAM" },
-      { property: "og:description", content: "Free movies, live TV, football and music in one matte-black player." },
+      { property: "og:title", content: "LACZEK STREAM — Free Movies, TV, Football & Music" },
+      { property: "og:description", content: "LACZEK STREAM: stream free movies, live TV, football and music — sleek, clean, no ads." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "LACZEK STREAM — Free Movies, TV, Football & Music" },
+      { name: "twitter:description", content: "LACZEK STREAM: stream free movies, live TV, football and music — sleek, clean, no ads." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ff1d4406-0346-47ec-9265-4c87ecf2d141/id-preview-1615ea0b--aa00440a-8748-4fa2-aefa-2305913f75e2.lovable.app-1777046110384.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ff1d4406-0346-47ec-9265-4c87ecf2d141/id-preview-1615ea0b--aa00440a-8748-4fa2-aefa-2305913f75e2.lovable.app-1777046110384.png" },
     ],
     links: [
       {
