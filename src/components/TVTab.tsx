@@ -127,7 +127,14 @@ export function TVTab() {
         {filtered.length === 0 && <p className="col-span-full text-center text-muted-foreground py-20">No channels in this country.</p>}
       </div>
 
-      {playing && <HlsPlayer src={playing.url} title={playing.name} onClose={() => setPlaying(null)} />}
+      {playing && (
+        <HlsPlayer
+          src={playing.url}
+          sources={playing.streams ?? [playing.url]}
+          title={playing.name}
+          onClose={() => setPlaying(null)}
+        />
+      )}
     </div>
   );
 }

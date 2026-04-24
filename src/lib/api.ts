@@ -60,22 +60,42 @@ export async function tmdbSearch(kind: "movie" | "tv", q: string): Promise<Media
 }
 
 // Embed providers (TMDB id based, work in iframes)
-export type EmbedProvider = "vidsrc" | "2embed" | "vidlink";
+export type EmbedProvider = "vidsrccc" | "vidsrcto" | "autoembed" | "multiembed" | "vidlink" | "2embed";
+export const EMBED_PROVIDERS: { id: EmbedProvider; label: string }[] = [
+  { id: "vidsrccc", label: "Server 1" },
+  { id: "vidsrcto", label: "Server 2" },
+  { id: "autoembed", label: "Server 3" },
+  { id: "multiembed", label: "Server 4" },
+  { id: "vidlink", label: "Server 5" },
+  { id: "2embed", label: "Server 6" },
+];
 export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, season = 1, episode = 1) {
-  if (p === "vidsrc") {
-    return kind === "movie"
-      ? `https://vidsrc.xyz/embed/movie?tmdb=${id}`
-      : `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`;
+  switch (p) {
+    case "vidsrccc":
+      return kind === "movie"
+        ? `https://vidsrc.cc/v2/embed/movie/${id}?autoPlay=true`
+        : `https://vidsrc.cc/v2/embed/tv/${id}/${season}/${episode}?autoPlay=true`;
+    case "vidsrcto":
+      return kind === "movie"
+        ? `https://vidsrc.to/embed/movie/${id}`
+        : `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`;
+    case "autoembed":
+      return kind === "movie"
+        ? `https://player.autoembed.cc/embed/movie/${id}`
+        : `https://player.autoembed.cc/embed/tv/${id}/${season}/${episode}`;
+    case "multiembed":
+      return kind === "movie"
+        ? `https://multiembed.mov/?video_id=${id}&tmdb=1`
+        : `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${season}&e=${episode}`;
+    case "vidlink":
+      return kind === "movie"
+        ? `https://vidlink.pro/movie/${id}`
+        : `https://vidlink.pro/tv/${id}/${season}/${episode}`;
+    case "2embed":
+      return kind === "movie"
+        ? `https://www.2embed.cc/embed/${id}`
+        : `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}`;
   }
-  if (p === "2embed") {
-    return kind === "movie"
-      ? `https://www.2embed.cc/embed/${id}`
-      : `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}`;
-  }
-  // vidlink.pro
-  return kind === "movie"
-    ? `https://vidlink.pro/movie/${id}`
-    : `https://vidlink.pro/tv/${id}/${season}/${episode}`;
 }
 
 // =====================================================================
@@ -88,6 +108,7 @@ export type Channel = {
   categories: string[];
   logo?: string;
   url: string;
+  streams?: string[];
 };
 
 let _channelCache: Channel[] | null = null;
@@ -102,10 +123,23 @@ export async function iptvChannels(): Promise<Channel[]> {
   const streams = await stRes.json();
   const logos = await lgRes.json();
 
-  const streamMap = new Map<string, string>();
-  for (const s of streams) {
-    if (s.channel && s.url && !streamMap.has(s.channel)) streamMap.set(s.channel, s.url);
+  // Collect ALL streams per channel so we can fall back when one is broken
+  const streamMap = new Map<string, string[]>();
+  for (const s of streams as any[]) {
+    if (!s.channel || !s.url) continue;
+    const arr = streamMap.get(s.channel) ?? [];
+    arr.push(s.url);
+    streamMap.set(s.channel, arr);
   }
+  for (const [k, arr] of streamMap) {
+    arr.sort((a, b) => {
+      const score = (u: string) =>
+        (u.startsWith("https") ? 2 : 0) + (u.includes(".m3u8") ? 1 : 0);
+      return score(b) - score(a);
+    });
+    streamMap.set(k, arr);
+  }
+
   const logoMap = new Map<string, string>();
   for (const l of logos) {
     if (l.channel && l.url && !logoMap.has(l.channel)) logoMap.set(l.channel, l.url);
@@ -119,7 +153,8 @@ export async function iptvChannels(): Promise<Channel[]> {
       country: (c.country as string) || "INT",
       categories: (c.categories ?? []) as string[],
       logo: logoMap.get(c.id),
-      url: streamMap.get(c.id)!,
+      url: streamMap.get(c.id)![0],
+      streams: streamMap.get(c.id)!,
     }));
   return _channelCache;
 }
@@ -215,4 +250,10 @@ export function downloadLinks(videoId: string) {
     { label: "MP4 360p", href: `https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=360&color=ffb347` },
     { label: "Open on Y2mate", href: `https://www.y2mate.com/youtube/${videoId}` },
   ];
+}
+
+// YouTube live-chat iframe URL (no quota usage; works for live broadcasts)
+export function youtubeLiveChatUrl(videoId: string) {
+  const host = typeof window !== "undefined" ? window.location.hostname : "www.youtube.com";
+  return `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${host}`;
 }
