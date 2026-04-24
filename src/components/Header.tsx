@@ -11,7 +11,7 @@ const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?
 
 export function Header({ active, onChange }: { active: TabKey; onChange: (k: TabKey) => void }) {
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/70 border-b border-border">
+    <header className="sticky top-0 z-50 glass border-b border-border rounded-none">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center font-black text-primary-foreground">L</div>
@@ -20,7 +20,7 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
             <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">free · clean · no ads</p>
           </div>
         </div>
-        <nav className="flex items-center gap-1 bg-secondary/60 rounded-full p-1 border border-border">
+        <nav className="flex items-center gap-1 glass rounded-full p-1">
           {TABS.map((t) => {
             const Icon = t.icon;
             const isActive = t.key === active;
