@@ -9,7 +9,7 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
   const [q, setQ] = useState("");
   const [section, setSection] = useState<"trending" | "popular">("trending");
   const [playing, setPlaying] = useState<MediaItem | null>(null);
-  const [provider, setProvider] = useState<EmbedProvider>("vidsrccc");
+  const [provider, setProvider] = useState<EmbedProvider>("vidsrcxyz");
 
   useEffect(() => {
     setLoading(true);
