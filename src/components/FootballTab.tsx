@@ -73,9 +73,9 @@ export function FootballTab() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-                <div className="flex items-center gap-3 justify-end text-right min-w-0">
-                  <span className="font-medium truncate">{home?.team?.displayName}</span>
+              <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
+                <div className="flex items-center gap-3 justify-end text-right">
+                  <span className="font-medium leading-tight break-words">{home?.team?.displayName ?? home?.team?.name}</span>
                   {home?.team?.logo && <img src={home.team.logo} alt="" className="w-9 h-9 object-contain shrink-0" />}
                 </div>
                 <div className="text-center min-w-[90px]">
@@ -92,9 +92,9 @@ export function FootballTab() {
                     {isFinal ? "Full Time" : status?.shortDetail?.includes(",") ? "Scheduled" : status?.shortDetail}
                   </div>
                 </div>
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-3">
                   {away?.team?.logo && <img src={away.team.logo} alt="" className="w-9 h-9 object-contain shrink-0" />}
-                  <span className="font-medium truncate">{away?.team?.displayName}</span>
+                  <span className="font-medium leading-tight break-words">{away?.team?.displayName ?? away?.team?.name}</span>
                 </div>
               </div>
 
