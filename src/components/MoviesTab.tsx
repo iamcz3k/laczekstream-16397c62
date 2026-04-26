@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Search, Play, Loader2, Star } from "lucide-react";
-import { tmdbTrending, tmdbSearch, tmdbPopular, embedUrl, EMBED_PROVIDERS, type MediaItem, type EmbedProvider } from "@/lib/api";
-import { IframePlayer } from "./IframePlayer";
+import { tmdbTrending, tmdbSearch, tmdbPopular, type MediaItem } from "@/lib/api";
 
 export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [section, setSection] = useState<"trending" | "popular">("trending");
-  const [playing, setPlaying] = useState<MediaItem | null>(null);
-  const [provider, setProvider] = useState<EmbedProvider>("vidsrcxyz");
 
   useEffect(() => {
     setLoading(true);
@@ -67,9 +65,10 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {items.map((it) => (
-            <button
+            <Link
               key={it.id}
-              onClick={() => setPlaying(it)}
+              to="/watch/$kind/$id"
+              params={{ kind: it.type, id: String(it.id) }}
               className="group text-left rounded-xl overflow-hidden glass-card hover:border-primary transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-glow)]"
             >
               <div className="aspect-[2/3] bg-muted relative overflow-hidden">
@@ -94,22 +93,12 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
                 <p className="text-sm font-medium truncate">{it.title}</p>
                 {it.year && <p className="text-xs text-muted-foreground">{it.year}</p>}
               </div>
-            </button>
+            </Link>
           ))}
           {items.length === 0 && <p className="col-span-full text-center text-muted-foreground py-20">Nothing found.</p>}
         </div>
       )}
 
-      {playing && (
-        <IframePlayer
-          src={embedUrl(provider, playing.type, playing.id)}
-          title={playing.title}
-          onClose={() => setPlaying(null)}
-          providers={EMBED_PROVIDERS}
-          activeProvider={provider}
-          onProviderChange={(p) => setProvider(p as EmbedProvider)}
-        />
-      )}
     </div>
   );
 }

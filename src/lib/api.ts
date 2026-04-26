@@ -339,7 +339,16 @@ export type FootballStreamMatch = {
 };
 
 export type FootballStreamDetail = FootballStreamMatch & {
-  sources: { embedUrl: string; source?: string; quality?: string }[];
+  sources: {
+    id?: string;
+    streamNo?: number;
+    language?: string;
+    hd?: boolean;
+    embedUrl: string;
+    source?: string;
+    quality?: string;
+    viewers?: number;
+  }[];
 };
 
 const SPORTSRC = "https://api.sportsrc.org";
