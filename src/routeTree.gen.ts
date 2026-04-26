@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FootballStreamMatchIdRouteImport } from './routes/football-stream.$matchId'
+import { Route as WatchKindIdRouteImport } from './routes/watch.$kind.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +23,40 @@ const FootballStreamMatchIdRoute = FootballStreamMatchIdRouteImport.update({
   path: '/football-stream/$matchId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WatchKindIdRoute = WatchKindIdRouteImport.update({
+  id: '/watch/$kind/$id',
+  path: '/watch/$kind/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
+  '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
+  '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
+  '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/football-stream/$matchId'
+  fullPaths: '/' | '/football-stream/$matchId' | '/watch/$kind/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/football-stream/$matchId'
-  id: '__root__' | '/' | '/football-stream/$matchId'
+  to: '/' | '/football-stream/$matchId' | '/watch/$kind/$id'
+  id: '__root__' | '/' | '/football-stream/$matchId' | '/watch/$kind/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FootballStreamMatchIdRoute: typeof FootballStreamMatchIdRoute
+  WatchKindIdRoute: typeof WatchKindIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FootballStreamMatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/watch/$kind/$id': {
+      id: '/watch/$kind/$id'
+      path: '/watch/$kind/$id'
+      fullPath: '/watch/$kind/$id'
+      preLoaderRoute: typeof WatchKindIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FootballStreamMatchIdRoute: FootballStreamMatchIdRoute,
+  WatchKindIdRoute: WatchKindIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
