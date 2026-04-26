@@ -43,7 +43,7 @@ export function FootballTab() {
     try {
       const detail = await footballStreamDetail(match.id);
       const source = detail?.sources?.find((item) => item.embedUrl)?.embedUrl;
-      if (source) setPlayer({ title: detail?.title || match.title, url: `${source}${source.includes("?") ? "&" : "?"}autoplay=1` });
+      if (source) setPlayer({ title: detail?.title || match.title, url: source });
     } finally {
       setStreamLoadingId(null);
     }
