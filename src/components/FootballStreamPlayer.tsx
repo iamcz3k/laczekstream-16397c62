@@ -19,7 +19,7 @@ export function FootballStreamPlayer({ src, title, onClose }: { src: string; tit
         <div className="min-w-0">
           <h3 className="truncate font-semibold">{title}</h3>
           <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-            <Shield className="h-3 w-3" /> Redirects and popups blocked
+            <Shield className="h-3 w-3" /> External stream isolated in player
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -47,7 +47,6 @@ export function FootballStreamPlayer({ src, title, onClose }: { src: string; tit
           allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
           allowFullScreen
           referrerPolicy="no-referrer"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
         />
       </div>
     </div>
