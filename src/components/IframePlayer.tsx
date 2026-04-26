@@ -23,6 +23,7 @@ export function IframePlayer({
   activeResolution,
   onResolutionChange,
   sidebar,
+  sandbox,
 }: {
   src: string;
   title: string;
@@ -34,6 +35,7 @@ export function IframePlayer({
   activeResolution?: string;
   onResolutionChange?: (value: string) => void;
   sidebar?: React.ReactNode;
+  sandbox?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const activeProviderLabel = useMemo(
@@ -115,7 +117,7 @@ export function IframePlayer({
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
+            {...(sandbox ? { sandbox } : {})}
           />
         </div>
         {sidebar ? <div className="w-full lg:w-[360px] border-t lg:border-t-0 lg:border-l border-border bg-background/80 overflow-auto">{sidebar}</div> : null}

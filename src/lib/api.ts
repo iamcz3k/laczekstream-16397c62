@@ -325,6 +325,40 @@ export async function footballMatches() {
   return (json?.events ?? []) as any[];
 }
 
+export type FootballStreamMatch = {
+  id: string;
+  title: string;
+  league?: string;
+  poster?: string;
+  date?: number;
+  viewers?: number;
+  teams?: {
+    home?: { name?: string; badge?: string };
+    away?: { name?: string; badge?: string };
+  };
+};
+
+export type FootballStreamDetail = FootballStreamMatch & {
+  sources: { embedUrl: string; source?: string; quality?: string }[];
+};
+
+const SPORTSRC = "https://api.sportsrc.org";
+
+export async function footballStreamMatches(): Promise<FootballStreamMatch[]> {
+  const res = await fetch(`${SPORTSRC}/?data=matches&category=football`);
+  if (!res.ok) throw new Error("football streams failed");
+  const json = await res.json();
+  return json?.success ? (json.data ?? []) : [];
+}
+
+export async function footballStreamDetail(id: string): Promise<FootballStreamDetail | null> {
+  const res = await fetch(`${SPORTSRC}/?data=detail&category=football&id=${encodeURIComponent(id)}`);
+  if (!res.ok) throw new Error("football stream detail failed");
+  const json = await res.json();
+  if (!json?.success || !json.data?.sources?.length) return null;
+  return json.data as FootballStreamDetail;
+}
+
 const YT = "https://www.googleapis.com/youtube/v3";
 
 export type YTItem = {
