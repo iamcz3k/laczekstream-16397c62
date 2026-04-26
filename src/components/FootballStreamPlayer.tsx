@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { Expand, Shield, X } from "lucide-react";
 
 async function enterLandscapeFullscreen(element: HTMLElement | null) {
@@ -12,6 +12,15 @@ async function enterLandscapeFullscreen(element: HTMLElement | null) {
 
 export function FootballStreamPlayer({ src, title, onClose }: { src: string; title: string; onClose: () => void }) {
   const shellRef = useRef<HTMLDivElement>(null);
+  const safeSrc = useMemo(() => {
+    try {
+      const url = new URL(src);
+      url.searchParams.set("autoplay", "1");
+      return url.toString();
+    } catch {
+      return src;
+    }
+  }, [src]);
 
   return (
     <div ref={shellRef} className="fixed inset-0 z-[100] flex flex-col bg-background/95 backdrop-blur-2xl animate-in fade-in duration-200">
@@ -41,12 +50,13 @@ export function FootballStreamPlayer({ src, title, onClose }: { src: string; tit
       </div>
       <div className="relative flex-1 overflow-hidden bg-black">
         <iframe
-          src={src}
+          src={safeSrc}
           title={title}
           className="h-full w-full border-0"
           allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
           allowFullScreen
           referrerPolicy="no-referrer"
+          sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"
         />
       </div>
     </div>
