@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Calendar, Clock, Loader2, MapPin, Play, Radio } from "lucide-react";
-import { footballMatches, footballStreamDetail, footballStreamMatches, type FootballStreamMatch } from "@/lib/api";
-import { FootballStreamPlayer } from "./FootballStreamPlayer";
+import { footballMatches, footballStreamMatches, type FootballStreamMatch } from "@/lib/api";
 
 function formatKickoff(iso?: string | number) {
   if (!iso) return { date: "", time: "" };
@@ -21,8 +21,6 @@ export function FootballTab() {
   const [events, setEvents] = useState<any[]>([]);
   const [streams, setStreams] = useState<FootballStreamMatch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [streamLoadingId, setStreamLoadingId] = useState<string | null>(null);
-  const [player, setPlayer] = useState<{ title: string; url: string } | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -37,17 +35,6 @@ export function FootballTab() {
       return acc;
     }, {});
   }, [streams]);
-
-  async function openStream(match: FootballStreamMatch) {
-    setStreamLoadingId(match.id);
-    try {
-      const detail = await footballStreamDetail(match.id);
-      const source = detail?.sources?.find((item) => item.embedUrl)?.embedUrl;
-      if (source) setPlayer({ title: detail?.title || match.title, url: source });
-    } finally {
-      setStreamLoadingId(null);
-    }
-  }
 
   return (
     <div className="space-y-4">
@@ -134,7 +121,7 @@ export function FootballTab() {
                 {matches.map((match) => {
                   const kickoff = formatKickoff(match.date);
                   return (
-                    <button key={match.id} onClick={() => openStream(match)} className="glass-card overflow-hidden rounded-xl text-left transition hover:border-primary/50">
+                    <Link key={match.id} to="/football-stream/$matchId" params={{ matchId: match.id }} className="glass-card block overflow-hidden rounded-xl text-left transition hover:border-primary/50">
                       {match.poster && <img src={match.poster} alt={match.title} className="h-36 w-full object-cover" loading="lazy" />}
                       <div className="space-y-3 p-4">
                         <p className="text-base font-bold leading-tight break-words">{match.title}</p>
@@ -143,10 +130,10 @@ export function FootballTab() {
                           <span>{match.viewers ? `${match.viewers.toLocaleString()} views` : "Stream"}</span>
                         </div>
                         <span className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
-                          {streamLoadingId === match.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" fill="currentColor" />} Watch
+                          <Play className="h-4 w-4" fill="currentColor" /> Watch
                         </span>
                       </div>
-                    </button>
+                    </Link>
                   );
                 })}
               </div>
@@ -156,7 +143,6 @@ export function FootballTab() {
         </div>
       )}
 
-      {player && <FootballStreamPlayer src={player.url} title={player.title} onClose={() => setPlayer(null)} />}
     </div>
   );
 }
