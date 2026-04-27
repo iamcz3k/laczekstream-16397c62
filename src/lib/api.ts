@@ -223,12 +223,12 @@ export async function tmdbSeasonEpisodes(tvId: number, seasonNumber: number): Pr
 export type EmbedProvider = "vidsrcxyz" | "111movies" | "videasy" | "vidfast" | "2embed" | "vidsrcto";
 
 export const EMBED_PROVIDERS: { id: EmbedProvider; label: string }[] = [
-  { id: "vidsrcxyz", label: "Auto" },
+  { id: "vidsrcxyz", label: "Asian/Anime" },
   { id: "111movies", label: "Server 2" },
   { id: "videasy", label: "Server 3" },
   { id: "vidfast", label: "Server 4" },
   { id: "2embed", label: "Server 5" },
-  { id: "vidsrcto", label: "Server 6" },
+  { id: "vidsrcto", label: "Auto" },
 ];
 
 export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, season = 1, episode = 1) {
