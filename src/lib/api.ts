@@ -130,11 +130,17 @@ export async function tmdbSearch(kind: "movie" | "tv", q: string): Promise<Media
   return (j.results ?? []).map((x: any) => mapTmdb(x, kind));
 }
 
+function proxiedAnimePoster(src?: string) {
+  if (!src) return undefined;
+  if (/otakudesu\./i.test(src)) return undefined;
+  return src;
+}
+
 function mapAnime(item: any): AnimeItem {
   return {
     id: item.animeId || item.slug || item.id,
     title: item.title || "Untitled anime",
-    poster: item.poster,
+    poster: proxiedAnimePoster(item.poster),
     status: item.status,
     episodes: item.episodes,
     score: item.score,
@@ -211,6 +217,14 @@ export async function animeServerUrl(serverId: string): Promise<string> {
   if (!r.ok) throw new Error("anime server failed");
   const j = await r.json();
   return j?.data?.url || "";
+}
+
+export async function animeDirectVideoUrl(embedUrl: string): Promise<string> {
+  if (!/mp4upload\.com/i.test(embedUrl)) return "";
+  const r = await fetch(embedUrl, { headers: { "User-Agent": "Mozilla/5.0" } });
+  if (!r.ok) return "";
+  const html = await r.text();
+  return html.match(/https?:\/\/[^"']+\/video\.mp4[^"']*/i)?.[0] || "";
 }
 
 export async function tmdbTvSeasons(tvId: number): Promise<MediaSeason[]> {
