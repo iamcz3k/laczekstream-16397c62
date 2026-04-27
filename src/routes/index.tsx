@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Header, type TabKey } from "@/components/Header";
 import { MoviesTab } from "@/components/MoviesTab";
+import { AnimeTab } from "@/components/AnimeTab";
 import { TVTab } from "@/components/TVTab";
 import { FootballTab } from "@/components/FootballTab";
 import { MusicTab } from "@/components/MusicTab";
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [tab, setTab] = useState<TabKey>("movies");
-  const [movieKind, setMovieKind] = useState<"movie" | "tv">("movie");
+  const [movieKind, setMovieKind] = useState<"movie" | "tv" | "anime">("movie");
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -29,24 +30,24 @@ function Index() {
           <section className="space-y-6">
             <div className="flex items-end justify-between flex-wrap gap-3">
               <div>
-                <h2 className="text-3xl font-black tracking-tight">{movieKind === "movie" ? "Movies" : "TV Shows"}</h2>
+                <h2 className="text-3xl font-black tracking-tight">{movieKind === "movie" ? "Movies" : movieKind === "tv" ? "TV Shows" : "Anime"}</h2>
                 <p className="text-sm text-muted-foreground mt-1">Trending now · play instantly · no ads</p>
               </div>
-              <div className="inline-flex bg-secondary rounded-full p-1 border border-border">
-                {(["movie", "tv"] as const).map((k) => (
+              <div className="inline-flex bg-secondary rounded-full p-1 border border-border shadow-[inset_0_1px_0_color-mix(in_oklab,white_7%,transparent)]">
+                {(["movie", "tv", "anime"] as const).map((k) => (
                   <button
                     key={k}
                     onClick={() => setMovieKind(k)}
-                    className={`px-5 py-2 rounded-full text-sm font-medium capitalize transition ${
+                    className={`px-5 py-2 rounded-full text-sm font-medium capitalize transition-all duration-300 ${
                       movieKind === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                     }`}
                   >
-                    {k === "movie" ? "Movies" : "Series"}
+                    {k === "movie" ? "Movies" : k === "tv" ? "Series" : "Anime"}
                   </button>
                 ))}
               </div>
             </div>
-            <MoviesTab kind={movieKind} />
+            {movieKind === "anime" ? <AnimeTab /> : <MoviesTab kind={movieKind} />}
           </section>
         )}
 
