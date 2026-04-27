@@ -96,16 +96,25 @@ function FootballStreamPage() {
                   <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
                 </button>
               </div>
-              <iframe
-                key={playerSrc}
-                src={playerSrc}
-                title={detail.title}
-                className="min-h-0 flex-1 border-0"
-                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                allowFullScreen
-                referrerPolicy="no-referrer"
-                sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"
-              />
+              <div className="relative min-h-0 flex-1">
+                {frameLoading && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/80 text-center backdrop-blur-xl">
+                    <Loader2 className="h-9 w-9 animate-spin text-primary" />
+                    <p className="text-sm font-semibold">Loading live stream…</p>
+                  </div>
+                )}
+                <iframe
+                  key={playerSrc}
+                  src={playerSrc}
+                  title={detail.title}
+                  className="h-full w-full border-0"
+                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  referrerPolicy="no-referrer"
+                  sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"
+                  onLoad={() => window.setTimeout(() => setFrameLoading(false), 900)}
+                />
+              </div>
             </section>
 
             <aside className="space-y-3 overflow-auto pb-4 lg:max-h-[calc(100vh-6rem)]">
