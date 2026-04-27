@@ -199,14 +199,15 @@ export async function animeEpisodeDetail(id: string): Promise<AnimeEpisodeDetail
       url: "",
     })),
   );
+  const rankedSources = serverSources.sort((a, b) => {
+    const score = (item: AnimeStreamSource) => (/mp4/i.test(item.label) ? 40 : /yourupload|yuplod/i.test(item.label) ? 30 : /moedesu|desu/i.test(item.label) ? 10 : /mega/i.test(item.label) ? -10 : 0) + (parseInt(item.quality, 10) || 0) / 100;
+    return score(b) - score(a);
+  });
   return {
     title: d.title || "Anime episode",
     animeId: d.animeId,
     defaultStreamingUrl: d.defaultStreamingUrl,
-    sources: [
-      ...(d.defaultStreamingUrl ? [{ label: "Auto", quality: "Auto", url: d.defaultStreamingUrl }] : []),
-      ...serverSources,
-    ],
+    sources: [...rankedSources, ...(d.defaultStreamingUrl ? [{ label: "Auto", quality: "Auto", url: d.defaultStreamingUrl }] : [])],
     prevEpisodeId: d.prevEpisode?.episodeId,
     nextEpisodeId: d.nextEpisode?.episodeId,
   };
