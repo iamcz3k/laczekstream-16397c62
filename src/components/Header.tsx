@@ -1,4 +1,5 @@
 import { Film, Tv, Trophy, Music2 } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 
 export type TabKey = "movies" | "tv" | "football" | "music";
 
@@ -13,13 +14,7 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
   return (
     <header className="sticky top-0 z-50 glass border-b border-border rounded-none supports-[backdrop-filter]:bg-card/55">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-[14px] bg-primary flex items-center justify-center font-black text-primary-foreground shadow-[inset_0_1px_0_color-mix(in_oklab,white_25%,transparent)]">L</div>
-          <div>
-            <h1 className="text-lg font-black tracking-tight leading-none">LACZEK STREAM</h1>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">free · clean · no ads</p>
-          </div>
-        </div>
+        <BrandMark />
         <nav className="flex items-center gap-1 glass rounded-full p-1 shadow-[inset_0_1px_0_color-mix(in_oklab,white_8%,transparent)]">
           {TABS.map((t) => {
             const Icon = t.icon;
