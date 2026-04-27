@@ -253,15 +253,18 @@ export async function tmdbSeasonEpisodes(tvId: number, seasonNumber: number): Pr
   }));
 }
 
-export type EmbedProvider = "vidsrcxyz" | "111movies" | "videasy" | "vidfast" | "2embed" | "vidsrcto";
+export type EmbedProvider = "vidsrcxyz" | "vidsrcicu" | "vidlink" | "autoembed" | "111movies" | "videasy" | "vidfast" | "2embed" | "vidsrcto";
 
 export const EMBED_PROVIDERS: { id: EmbedProvider; label: string }[] = [
-  { id: "vidsrcxyz", label: "Asian/Anime" },
-  { id: "111movies", label: "Server 2" },
-  { id: "videasy", label: "Server 3" },
-  { id: "vidfast", label: "Server 4" },
-  { id: "2embed", label: "Server 5" },
-  { id: "vidsrcto", label: "Auto" },
+  { id: "vidsrcxyz", label: "Asian 1" },
+  { id: "vidsrcicu", label: "Asian 2" },
+  { id: "vidlink", label: "Asian 3" },
+  { id: "autoembed", label: "Auto 1" },
+  { id: "vidsrcto", label: "Auto 2" },
+  { id: "111movies", label: "Server 3" },
+  { id: "videasy", label: "Server 4" },
+  { id: "vidfast", label: "Server 5" },
+  { id: "2embed", label: "Server 6" },
 ];
 
 export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, season = 1, episode = 1) {
@@ -270,6 +273,18 @@ export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, sea
       return kind === "movie"
         ? `https://vidsrc.xyz/embed/movie?tmdb=${id}`
         : `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`;
+    case "vidsrcicu":
+      return kind === "movie"
+        ? `https://vidsrc.icu/embed/movie/${id}`
+        : `https://vidsrc.icu/embed/tv/${id}/${season}/${episode}`;
+    case "vidlink":
+      return kind === "movie"
+        ? `https://vidlink.pro/movie/${id}`
+        : `https://vidlink.pro/tv/${id}/${season}/${episode}`;
+    case "autoembed":
+      return kind === "movie"
+        ? `https://autoembed.co/movie/tmdb/${id}`
+        : `https://autoembed.co/tv/tmdb/${id}-${season}-${episode}`;
     case "111movies":
       return kind === "movie"
         ? `https://111movies.com/movie/${id}`
