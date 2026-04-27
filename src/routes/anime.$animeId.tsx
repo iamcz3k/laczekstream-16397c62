@@ -69,14 +69,23 @@ function AnimeWatchPage() {
     async function resolve() {
       setDirectVideoUrl("");
       setPlayerLoading(true);
-      if (!source) return setResolvedUrl("");
+      if (!source) {
+        setPlayerLoading(false);
+        return setResolvedUrl("");
+      }
       if (source.url) return setResolvedUrl(source.url);
-      if (!source.serverId) return setResolvedUrl("");
+      if (!source.serverId) {
+        setPlayerLoading(false);
+        return setResolvedUrl("");
+      }
       try {
         const url = await animeServerUrl(source.serverId);
         if (!cancelled) setResolvedUrl(url);
       } catch {
-        if (!cancelled) setResolvedUrl("");
+        if (!cancelled) {
+          setResolvedUrl("");
+          setPlayerLoading(false);
+        }
       }
     }
     resolve();
@@ -140,7 +149,21 @@ function AnimeWatchPage() {
                   <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
                 </button>
               </div>
-              {playerSrc ? <iframe key={playerSrc} src={playerSrc} title={episode?.title || detail.title} className="min-h-0 flex-1 border-0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="no-referrer" /> : <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">Select another source.</div>}
+              <div className="relative min-h-0 flex-1">
+                {(episodeLoading || playerLoading) && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/80 text-center backdrop-blur-xl">
+                    <Loader2 className="h-9 w-9 animate-spin text-primary" />
+                    <p className="text-sm font-semibold">Loading anime stream…</p>
+                  </div>
+                )}
+                {directVideoUrl ? (
+                  <video key={directVideoUrl} src={directVideoUrl} title={episode?.title || detail.title} controls autoPlay playsInline className="h-full w-full bg-black" onCanPlay={() => setPlayerLoading(false)} onLoadedData={() => setPlayerLoading(false)} />
+                ) : playerSrc ? (
+                  <iframe key={playerSrc} src={playerSrc} title={episode?.title || detail.title} className="h-full w-full border-0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="no-referrer" onLoad={() => window.setTimeout(() => setPlayerLoading(false), 900)} />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Select another source.</div>
+                )}
+              </div>
             </section>
 
             <aside className="space-y-4 overflow-auto pb-4 lg:max-h-[calc(100vh-6rem)]">
