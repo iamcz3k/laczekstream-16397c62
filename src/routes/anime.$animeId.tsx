@@ -1,7 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Expand, Loader2, Play, Shield } from "lucide-react";
 import { animeDetail, animeEpisodeDetail, animeServerUrl, type AnimeDetail, type AnimeEpisodeDetail } from "@/lib/api";
+import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/anime/$animeId")({
   component: AnimeWatchPage,
@@ -33,7 +34,10 @@ function AnimeWatchPage() {
   const [episode, setEpisode] = useState<AnimeEpisodeDetail | null>(null);
   const [sourceIndex, setSourceIndex] = useState(0);
   const [resolvedUrl, setResolvedUrl] = useState("");
+  const [directVideoUrl, setDirectVideoUrl] = useState("");
   const [loading, setLoading] = useState(true);
+  const [episodeLoading, setEpisodeLoading] = useState(false);
+  const [playerLoading, setPlayerLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -48,12 +52,14 @@ function AnimeWatchPage() {
 
   useEffect(() => {
     if (!episodeId) return;
+    setEpisodeLoading(true);
     animeEpisodeDetail(episodeId)
       .then((data) => {
         setEpisode(data);
         setSourceIndex(0);
       })
-      .catch(() => setEpisode(null));
+      .catch(() => setEpisode(null))
+      .finally(() => setEpisodeLoading(false));
   }, [episodeId]);
 
   const source = episode?.sources?.[sourceIndex];
@@ -61,14 +67,25 @@ function AnimeWatchPage() {
   useEffect(() => {
     let cancelled = false;
     async function resolve() {
-      if (!source) return setResolvedUrl("");
+      setDirectVideoUrl("");
+      setPlayerLoading(true);
+      if (!source) {
+        setPlayerLoading(false);
+        return setResolvedUrl("");
+      }
       if (source.url) return setResolvedUrl(source.url);
-      if (!source.serverId) return setResolvedUrl("");
+      if (!source.serverId) {
+        setPlayerLoading(false);
+        return setResolvedUrl("");
+      }
       try {
         const url = await animeServerUrl(source.serverId);
         if (!cancelled) setResolvedUrl(url);
       } catch {
-        if (!cancelled) setResolvedUrl("");
+        if (!cancelled) {
+          setResolvedUrl("");
+          setPlayerLoading(false);
+        }
       }
     }
     resolve();
@@ -77,7 +94,25 @@ function AnimeWatchPage() {
     };
   }, [source]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function extractDirectVideo() {
+      setDirectVideoUrl("");
+      if (!resolvedUrl || !/mp4upload\.com/i.test(resolvedUrl)) return;
+      try {
+        const res = await fetch(`/api/public/anime-video?url=${encodeURIComponent(resolvedUrl)}`);
+        const data = await res.json();
+        if (!cancelled && data?.url) setDirectVideoUrl(`/api/public/anime-proxy?url=${encodeURIComponent(data.url)}`);
+      } catch {}
+    }
+    extractDirectVideo();
+    return () => {
+      cancelled = true;
+    };
+  }, [resolvedUrl]);
+
   const playerSrc = useMemo(() => {
+    if (directVideoUrl) return directVideoUrl;
     if (!resolvedUrl) return "";
     try {
       const url = new URL(resolvedUrl);
@@ -86,7 +121,7 @@ function AnimeWatchPage() {
     } catch {
       return resolvedUrl;
     }
-  }, [resolvedUrl]);
+  }, [directVideoUrl, resolvedUrl]);
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -95,7 +130,7 @@ function AnimeWatchPage() {
           <button onClick={() => navigate({ to: "/" })} className="inline-flex h-10 items-center gap-2 rounded-full glass px-4 text-sm font-medium transition hover:bg-primary hover:text-primary-foreground">
             <ArrowLeft className="h-4 w-4" /> Anime
           </button>
-          <Link to="/" className="text-sm font-black tracking-tight">LACZEK STREAM</Link>
+          <BrandMark compact />
         </header>
 
         {loading ? (
@@ -114,7 +149,21 @@ function AnimeWatchPage() {
                   <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
                 </button>
               </div>
-              {playerSrc ? <iframe key={playerSrc} src={playerSrc} title={episode?.title || detail.title} className="min-h-0 flex-1 border-0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="no-referrer" /> : <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">Select another source.</div>}
+              <div className="relative min-h-0 flex-1">
+                {(episodeLoading || playerLoading) && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/80 text-center backdrop-blur-xl">
+                    <Loader2 className="h-9 w-9 animate-spin text-primary" />
+                    <p className="text-sm font-semibold">Loading anime stream…</p>
+                  </div>
+                )}
+                {directVideoUrl ? (
+                  <video key={directVideoUrl} src={directVideoUrl} title={episode?.title || detail.title} controls autoPlay playsInline className="h-full w-full bg-black" onCanPlay={() => setPlayerLoading(false)} onLoadedData={() => setPlayerLoading(false)} />
+                ) : playerSrc ? (
+                  <iframe key={playerSrc} src={playerSrc} title={episode?.title || detail.title} className="h-full w-full border-0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="no-referrer" onLoad={() => window.setTimeout(() => setPlayerLoading(false), 900)} />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Select another source.</div>
+                )}
+              </div>
             </section>
 
             <aside className="space-y-4 overflow-auto pb-4 lg:max-h-[calc(100vh-6rem)]">

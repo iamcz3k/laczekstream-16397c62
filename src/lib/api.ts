@@ -18,6 +18,7 @@ export type MediaItem = {
 };
 
 const ANIME_API = "https://www.sankavollerei.com/anime";
+const JIKAN_API = "https://api.jikan.moe/v4";
 
 export type AnimeItem = {
   id: string;
@@ -50,6 +51,24 @@ export type AnimeStreamSource = {
   serverId?: string;
   url: string;
 };
+
+const animePosterCache = new Map<string, string>();
+
+function cleanAnimeTitle(title: string) {
+  return title.replace(/subtitle\s+indonesia/gi, "").replace(/sub\s+indo/gi, "").replace(/\s+/g, " ").trim();
+}
+
+export async function animePosterFallback(title: string): Promise<string> {
+  const key = cleanAnimeTitle(title).toLowerCase();
+  if (!key) return "";
+  if (animePosterCache.has(key)) return animePosterCache.get(key)!;
+  const r = await fetch(`${JIKAN_API}/anime?q=${encodeURIComponent(key)}&limit=1`);
+  if (!r.ok) return "";
+  const j = await r.json();
+  const poster = j?.data?.[0]?.images?.webp?.large_image_url || j?.data?.[0]?.images?.jpg?.large_image_url || "";
+  if (poster) animePosterCache.set(key, poster);
+  return poster;
+}
 
 export type AnimeEpisodeDetail = {
   title: string;
@@ -111,11 +130,17 @@ export async function tmdbSearch(kind: "movie" | "tv", q: string): Promise<Media
   return (j.results ?? []).map((x: any) => mapTmdb(x, kind));
 }
 
+function proxiedAnimePoster(src?: string) {
+  if (!src) return undefined;
+  if (/otakudesu\./i.test(src)) return undefined;
+  return src;
+}
+
 function mapAnime(item: any): AnimeItem {
   return {
     id: item.animeId || item.slug || item.id,
     title: item.title || "Untitled anime",
-    poster: item.poster,
+    poster: proxiedAnimePoster(item.poster),
     status: item.status,
     episodes: item.episodes,
     score: item.score,
@@ -174,14 +199,15 @@ export async function animeEpisodeDetail(id: string): Promise<AnimeEpisodeDetail
       url: "",
     })),
   );
+  const rankedSources = serverSources.sort((a, b) => {
+    const score = (item: AnimeStreamSource) => (/mp4/i.test(item.label) ? 40 : /yourupload|yuplod/i.test(item.label) ? 30 : /moedesu|desu/i.test(item.label) ? 10 : /mega/i.test(item.label) ? -10 : 0) + (parseInt(item.quality, 10) || 0) / 100;
+    return score(b) - score(a);
+  });
   return {
     title: d.title || "Anime episode",
     animeId: d.animeId,
     defaultStreamingUrl: d.defaultStreamingUrl,
-    sources: [
-      ...(d.defaultStreamingUrl ? [{ label: "Auto", quality: "Auto", url: d.defaultStreamingUrl }] : []),
-      ...serverSources,
-    ],
+    sources: [...rankedSources, ...(d.defaultStreamingUrl ? [{ label: "Auto", quality: "Auto", url: d.defaultStreamingUrl }] : [])],
     prevEpisodeId: d.prevEpisode?.episodeId,
     nextEpisodeId: d.nextEpisode?.episodeId,
   };
@@ -192,6 +218,14 @@ export async function animeServerUrl(serverId: string): Promise<string> {
   if (!r.ok) throw new Error("anime server failed");
   const j = await r.json();
   return j?.data?.url || "";
+}
+
+export async function animeDirectVideoUrl(embedUrl: string): Promise<string> {
+  if (!/mp4upload\.com/i.test(embedUrl)) return "";
+  const r = await fetch(embedUrl, { headers: { "User-Agent": "Mozilla/5.0" } });
+  if (!r.ok) return "";
+  const html = await r.text();
+  return html.match(/https?:\/\/[^"']+\/video\.mp4[^"']*/i)?.[0] || "";
 }
 
 export async function tmdbTvSeasons(tvId: number): Promise<MediaSeason[]> {
@@ -220,15 +254,18 @@ export async function tmdbSeasonEpisodes(tvId: number, seasonNumber: number): Pr
   }));
 }
 
-export type EmbedProvider = "vidsrcxyz" | "111movies" | "videasy" | "vidfast" | "2embed" | "vidsrcto";
+export type EmbedProvider = "vidsrcxyz" | "vidsrcicu" | "vidlink" | "autoembed" | "111movies" | "videasy" | "vidfast" | "2embed" | "vidsrcto";
 
 export const EMBED_PROVIDERS: { id: EmbedProvider; label: string }[] = [
-  { id: "vidsrcxyz", label: "Asian/Anime" },
-  { id: "111movies", label: "Server 2" },
-  { id: "videasy", label: "Server 3" },
-  { id: "vidfast", label: "Server 4" },
-  { id: "2embed", label: "Server 5" },
-  { id: "vidsrcto", label: "Auto" },
+  { id: "vidsrcxyz", label: "Asian 1" },
+  { id: "vidsrcicu", label: "Asian 2" },
+  { id: "vidlink", label: "Asian 3" },
+  { id: "autoembed", label: "Auto 1" },
+  { id: "vidsrcto", label: "Auto 2" },
+  { id: "111movies", label: "Server 3" },
+  { id: "videasy", label: "Server 4" },
+  { id: "vidfast", label: "Server 5" },
+  { id: "2embed", label: "Server 6" },
 ];
 
 export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, season = 1, episode = 1) {
@@ -237,6 +274,18 @@ export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, sea
       return kind === "movie"
         ? `https://vidsrc.xyz/embed/movie?tmdb=${id}`
         : `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`;
+    case "vidsrcicu":
+      return kind === "movie"
+        ? `https://vidsrc.icu/embed/movie/${id}`
+        : `https://vidsrc.icu/embed/tv/${id}/${season}/${episode}`;
+    case "vidlink":
+      return kind === "movie"
+        ? `https://vidlink.pro/movie/${id}`
+        : `https://vidlink.pro/tv/${id}/${season}/${episode}`;
+    case "autoembed":
+      return kind === "movie"
+        ? `https://autoembed.co/movie/tmdb/${id}`
+        : `https://autoembed.co/tv/tmdb/${id}-${season}-${episode}`;
     case "111movies":
       return kind === "movie"
         ? `https://111movies.com/movie/${id}`
