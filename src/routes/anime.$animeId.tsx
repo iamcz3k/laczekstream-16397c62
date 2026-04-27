@@ -101,7 +101,7 @@ function AnimeWatchPage() {
           <button onClick={() => navigate({ to: "/" })} className="inline-flex h-10 items-center gap-2 rounded-full glass px-4 text-sm font-medium transition hover:bg-primary hover:text-primary-foreground">
             <ArrowLeft className="h-4 w-4" /> Anime
           </button>
-          <Link to="/" className="text-sm font-black tracking-tight">LACZEK STREAM</Link>
+          <BrandMark compact />
         </header>
 
         {loading ? (
