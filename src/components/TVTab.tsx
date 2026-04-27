@@ -47,7 +47,7 @@ export function TVTab() {
     return inCountry
       .filter((c) => (cat === "all" ? true : c.categories.includes(cat)))
       .filter((c) => (q ? c.name.toLowerCase().includes(q.toLowerCase()) : true))
-      .slice(0, 300);
+      .slice(0, 600);
   }, [inCountry, cat, q]);
 
   if (loading)
@@ -93,7 +93,7 @@ export function TVTab() {
           <button
             key={c}
             onClick={() => setCat(c)}
-            className={`px-4 py-2 rounded-full text-xs font-medium uppercase tracking-wider whitespace-nowrap transition ${
+            className={`px-4 py-2 rounded-full text-xs font-medium uppercase tracking-wider whitespace-nowrap transition-all duration-300 ${
               cat === c ? "bg-primary text-primary-foreground" : "glass text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -107,9 +107,9 @@ export function TVTab() {
           <button
             key={c.id}
             onClick={() => setPlaying(c)}
-            className="group p-4 rounded-xl glass-card hover:border-primary hover:shadow-[var(--shadow-glow)] transition-all text-left"
+            className="group p-4 rounded-[22px] glass-card hover:border-primary hover:shadow-[var(--shadow-glow)] transition-all duration-300 active:scale-[0.98] text-left"
           >
-            <div className="aspect-video bg-muted/50 rounded-lg flex items-center justify-center mb-3 overflow-hidden">
+            <div className="aspect-video bg-muted/50 rounded-[16px] flex items-center justify-center mb-3 overflow-hidden">
               {c.logo ? (
                 <img
                   src={c.logo}
