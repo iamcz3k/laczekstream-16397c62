@@ -12,6 +12,7 @@ import {
   type MediaSeason,
 } from "@/lib/api";
 import { isBlockedAdUrl } from "@/lib/adblock";
+import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
@@ -40,7 +41,7 @@ function WatchPage() {
   const playerRef = useRef<HTMLDivElement>(null);
   const mediaKind = kind === "tv" ? "tv" : "movie";
   const mediaId = Number(id);
-  const [provider, setProvider] = useState<EmbedProvider>("vidsrcto");
+  const [provider, setProvider] = useState<EmbedProvider>("vidsrcxyz");
   const [quality, setQuality] = useState<(typeof QUALITY_OPTIONS)[number]>("720p");
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);
@@ -88,7 +89,7 @@ function WatchPage() {
           <button onClick={() => navigate({ to: "/" })} className="inline-flex h-10 items-center gap-2 rounded-full glass px-4 text-sm font-medium transition hover:bg-primary hover:text-primary-foreground">
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
-          <Link to="/" className="text-sm font-black tracking-tight">LACZEK STREAM</Link>
+          <BrandMark compact />
         </header>
 
         <div className="grid flex-1 gap-4 lg:grid-cols-[1fr_340px]">
