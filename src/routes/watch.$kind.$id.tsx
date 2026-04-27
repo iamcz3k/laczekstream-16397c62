@@ -11,6 +11,7 @@ import {
   type MediaEpisode,
   type MediaSeason,
 } from "@/lib/api";
+import { isBlockedAdUrl } from "@/lib/adblock";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
@@ -72,6 +73,14 @@ function WatchPage() {
   const src = useMemo(() => embedUrl(provider, mediaKind, mediaId, season, episode), [episode, mediaId, mediaKind, provider, season]);
   const title = mediaKind === "movie" ? `Movie #${mediaId}` : `Series #${mediaId} · S${season} E${episode}`;
 
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (typeof event.data === "string" && isBlockedAdUrl(event.data)) event.stopImmediatePropagation();
+    };
+    window.addEventListener("message", handleMessage, true);
+    return () => window.removeEventListener("message", handleMessage, true);
+  }, []);
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6">
@@ -83,11 +92,11 @@ function WatchPage() {
         </header>
 
         <div className="grid flex-1 gap-4 lg:grid-cols-[1fr_340px]">
-          <section ref={playerRef} className="flex min-h-[58vh] flex-col overflow-hidden rounded-xl border border-border bg-black lg:min-h-0">
+          <section ref={playerRef} className="flex min-h-[58vh] flex-col overflow-hidden rounded-[28px] border border-border bg-black lg:min-h-0">
             <div className="glass flex items-center justify-between gap-3 border-b border-border px-4 py-3">
               <div className="min-w-0">
                 <h1 className="truncate text-base font-bold">{title}</h1>
-                <p className="mt-1 text-xs text-muted-foreground">No app sandbox · {EMBED_PROVIDERS.find((item) => item.id === provider)?.label}</p>
+                <p className="mt-1 text-xs text-muted-foreground">No sandbox · silent page ad blocking · {EMBED_PROVIDERS.find((item) => item.id === provider)?.label}</p>
               </div>
               <button onClick={() => enterLandscapeFullscreen(playerRef.current)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
                 <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
@@ -109,7 +118,7 @@ function WatchPage() {
               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Servers</h2>
               <div className="grid grid-cols-2 gap-2">
                 {EMBED_PROVIDERS.map((item) => (
-                  <button key={item.id} onClick={() => setProvider(item.id)} className={`rounded-xl border px-3 py-3 text-sm font-bold transition ${provider === item.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
+                  <button key={item.id} onClick={() => setProvider(item.id)} className={`rounded-[18px] border px-3 py-3 text-sm font-bold transition-all duration-300 ${provider === item.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
                     {item.label}
                   </button>
                 ))}
@@ -120,7 +129,7 @@ function WatchPage() {
               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Quality</h2>
               <div className="grid grid-cols-3 gap-2">
                 {QUALITY_OPTIONS.map((item) => (
-                  <button key={item} onClick={() => setQuality(item)} className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${quality === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
+                  <button key={item} onClick={() => setQuality(item)} className={`rounded-[18px] border px-3 py-2 text-sm font-bold transition-all duration-300 ${quality === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
                     {item}
                   </button>
                 ))}
@@ -140,7 +149,7 @@ function WatchPage() {
                 {loadingEpisodes ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : (
                   <div className="grid grid-cols-2 gap-2">
                     {episodes.map((item) => (
-                      <button key={item.id} onClick={() => setEpisode(item.episodeNumber)} className={`rounded-xl border p-3 text-left text-sm transition ${episode === item.episodeNumber ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
+                      <button key={item.id} onClick={() => setEpisode(item.episodeNumber)} className={`rounded-[18px] border p-3 text-left text-sm transition-all duration-300 ${episode === item.episodeNumber ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
                         <span className="flex items-center gap-2 font-bold"><Play className="h-3 w-3" fill="currentColor" /> Episode {item.episodeNumber}</span>
                         <span className="mt-1 line-clamp-2 block text-xs opacity-75">{item.name}</span>
                       </button>

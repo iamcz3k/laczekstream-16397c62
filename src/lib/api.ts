@@ -17,6 +17,49 @@ export type MediaItem = {
   rating?: number;
 };
 
+const ANIME_API = "https://www.sankavollerei.com/anime";
+
+export type AnimeItem = {
+  id: string;
+  title: string;
+  poster?: string;
+  status?: string;
+  episodes?: number;
+  score?: string;
+  latestReleaseDate?: string;
+};
+
+export type AnimeEpisode = {
+  id: string;
+  title: string;
+  episode?: number;
+  date?: string;
+};
+
+export type AnimeDetail = AnimeItem & {
+  japanese?: string;
+  duration?: string;
+  studios?: string;
+  genres: string[];
+  episodeList: AnimeEpisode[];
+};
+
+export type AnimeStreamSource = {
+  label: string;
+  quality: string;
+  serverId?: string;
+  url: string;
+};
+
+export type AnimeEpisodeDetail = {
+  title: string;
+  animeId?: string;
+  defaultStreamingUrl?: string;
+  sources: AnimeStreamSource[];
+  prevEpisodeId?: string;
+  nextEpisodeId?: string;
+};
+
 export type MediaSeason = {
   seasonNumber: number;
   name: string;
@@ -68,6 +111,89 @@ export async function tmdbSearch(kind: "movie" | "tv", q: string): Promise<Media
   return (j.results ?? []).map((x: any) => mapTmdb(x, kind));
 }
 
+function mapAnime(item: any): AnimeItem {
+  return {
+    id: item.animeId || item.slug || item.id,
+    title: item.title || "Untitled anime",
+    poster: item.poster,
+    status: item.status,
+    episodes: item.episodes,
+    score: item.score,
+    latestReleaseDate: item.latestReleaseDate,
+  };
+}
+
+export async function animeHome(): Promise<AnimeItem[]> {
+  const r = await fetch(`${ANIME_API}/home`);
+  if (!r.ok) throw new Error("anime home failed");
+  const j = await r.json();
+  const ongoing = j?.data?.ongoing?.animeList ?? [];
+  const complete = j?.data?.complete?.animeList ?? [];
+  return [...ongoing, ...complete].map(mapAnime).filter((item) => item.id);
+}
+
+export async function animeSearch(q: string): Promise<AnimeItem[]> {
+  const r = await fetch(`${ANIME_API}/search/${encodeURIComponent(q)}`);
+  if (!r.ok) throw new Error("anime search failed");
+  const j = await r.json();
+  return (j?.data?.animeList ?? []).map(mapAnime).filter((item: AnimeItem) => item.id);
+}
+
+export async function animeDetail(id: string): Promise<AnimeDetail | null> {
+  const r = await fetch(`${ANIME_API}/anime/${encodeURIComponent(id)}`);
+  if (!r.ok) throw new Error("anime detail failed");
+  const j = await r.json();
+  const d = j?.data;
+  if (!d) return null;
+  return {
+    ...mapAnime({ ...d, animeId: id }),
+    japanese: d.japanese,
+    duration: d.duration,
+    studios: d.studios,
+    genres: (d.genreList ?? []).map((g: any) => g.title).filter(Boolean),
+    episodeList: (d.episodeList ?? []).map((episode: any) => ({
+      id: episode.episodeId,
+      title: episode.title || `Episode ${episode.eps ?? ""}`,
+      episode: episode.eps,
+      date: episode.date,
+    })).filter((episode: AnimeEpisode) => episode.id),
+  };
+}
+
+export async function animeEpisodeDetail(id: string): Promise<AnimeEpisodeDetail | null> {
+  const r = await fetch(`${ANIME_API}/episode/${encodeURIComponent(id)}`);
+  if (!r.ok) throw new Error("anime episode failed");
+  const j = await r.json();
+  const d = j?.data;
+  if (!d) return null;
+  const serverSources: AnimeStreamSource[] = (d.server?.qualities ?? []).flatMap((quality: any) =>
+    (quality.serverList ?? []).map((server: any) => ({
+      label: (server.title || "Server").trim(),
+      quality: quality.title || "Auto",
+      serverId: server.serverId,
+      url: "",
+    })),
+  );
+  return {
+    title: d.title || "Anime episode",
+    animeId: d.animeId,
+    defaultStreamingUrl: d.defaultStreamingUrl,
+    sources: [
+      ...(d.defaultStreamingUrl ? [{ label: "Auto", quality: "Auto", url: d.defaultStreamingUrl }] : []),
+      ...serverSources,
+    ],
+    prevEpisodeId: d.prevEpisode?.episodeId,
+    nextEpisodeId: d.nextEpisode?.episodeId,
+  };
+}
+
+export async function animeServerUrl(serverId: string): Promise<string> {
+  const r = await fetch(`${ANIME_API}/server/${encodeURIComponent(serverId)}`);
+  if (!r.ok) throw new Error("anime server failed");
+  const j = await r.json();
+  return j?.data?.url || "";
+}
+
 export async function tmdbTvSeasons(tvId: number): Promise<MediaSeason[]> {
   const r = await fetch(`${TMDB}/tv/${tvId}?api_key=${TMDB_KEY}`);
   if (!r.ok) throw new Error("tmdb tv details failed");
@@ -97,12 +223,12 @@ export async function tmdbSeasonEpisodes(tvId: number, seasonNumber: number): Pr
 export type EmbedProvider = "vidsrcxyz" | "111movies" | "videasy" | "vidfast" | "2embed" | "vidsrcto";
 
 export const EMBED_PROVIDERS: { id: EmbedProvider; label: string }[] = [
-  { id: "vidsrcxyz", label: "Auto" },
+  { id: "vidsrcxyz", label: "Asian/Anime" },
   { id: "111movies", label: "Server 2" },
   { id: "videasy", label: "Server 3" },
   { id: "vidfast", label: "Server 4" },
   { id: "2embed", label: "Server 5" },
-  { id: "vidsrcto", label: "Server 6" },
+  { id: "vidsrcto", label: "Auto" },
 ];
 
 export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, season = 1, episode = 1) {
@@ -227,8 +353,8 @@ function isPlayableStream(s: RawStream) {
   const url = s.url ?? "";
   return Boolean(
     s.channel &&
-      url.startsWith("https://") &&
-      (url.includes(".m3u8") || url.includes("playlist") || url.includes("manifest")) &&
+      /^https?:\/\//.test(url) &&
+      (/\.m3u8(\?|$)|playlist|manifest|\.mpd(\?|$)/i.test(url)) &&
       !s.user_agent &&
       !s.referrer,
   );

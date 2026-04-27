@@ -69,7 +69,7 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
               key={it.id}
               to="/watch/$kind/$id"
               params={{ kind: it.type, id: String(it.id) }}
-              className="group text-left rounded-xl overflow-hidden glass-card hover:border-primary transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-glow)]"
+              className="group text-left rounded-[22px] overflow-hidden glass-card hover:border-primary transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-glow)] active:scale-[0.98]"
             >
               <div className="aspect-[2/3] bg-muted relative overflow-hidden">
                 {it.poster ? (

@@ -38,7 +38,7 @@ export function FootballTab() {
 
   return (
     <div className="space-y-4">
-      <div className="inline-flex w-full rounded-full glass p-1 sm:w-auto">
+      <div className="inline-flex w-full rounded-full glass p-1 shadow-[inset_0_1px_0_color-mix(in_oklab,white_8%,transparent)] sm:w-auto">
         {([
           ["schedule", "Schedule"],
           ["watch", "Watch Live"],
@@ -46,7 +46,7 @@ export function FootballTab() {
           <button
             key={key}
             onClick={() => setMode(key)}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition sm:flex-none ${
+            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 active:scale-95 sm:flex-none ${
               mode === key ? "bg-primary text-primary-foreground shadow-[var(--shadow-glow)]" : "text-muted-foreground"
             }`}
           >
@@ -76,7 +76,7 @@ export function FootballTab() {
             const league = ev.season?.slug?.replace(/-/g, " ") || ev.shortName;
 
             return (
-              <article key={ev.id} className="glass-card rounded-xl p-4 transition hover:border-primary/50">
+                <article key={ev.id} className="glass-card rounded-[22px] p-4 transition-all duration-300 hover:border-primary/50">
                 <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{league}</span>
                   <span className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-1 text-xs font-bold ${isLive ? "bg-primary text-primary-foreground" : "glass text-muted-foreground"}`}>
@@ -121,7 +121,7 @@ export function FootballTab() {
                 {matches.map((match) => {
                   const kickoff = formatKickoff(match.date);
                   return (
-                    <Link key={match.id} to="/football-stream/$matchId" params={{ matchId: match.id }} className="glass-card block overflow-hidden rounded-xl text-left transition hover:border-primary/50">
+                    <Link key={match.id} to="/football-stream/$matchId" params={{ matchId: match.id }} className="glass-card block overflow-hidden rounded-[22px] text-left transition-all duration-300 hover:border-primary/50 active:scale-[0.98]">
                       {match.poster && <img src={match.poster} alt={match.title} className="h-36 w-full object-cover" loading="lazy" />}
                       <div className="space-y-3 p-4">
                         <p className="text-base font-bold leading-tight break-words">{match.title}</p>

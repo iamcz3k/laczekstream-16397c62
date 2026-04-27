@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Expand, Loader2, Play, Shield } from "lucide-react";
 import { footballStreamDetail, type FootballStreamDetail } from "@/lib/api";
+import { isBlockedAdUrl } from "@/lib/adblock";
 
 export const Route = createFileRoute("/football-stream/$matchId")({
   component: FootballStreamPage,
@@ -55,6 +56,14 @@ function FootballStreamPage() {
     }
   }, [source?.embedUrl]);
 
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (typeof event.data === "string" && isBlockedAdUrl(event.data)) event.stopImmediatePropagation();
+    };
+    window.addEventListener("message", handleMessage, true);
+    return () => window.removeEventListener("message", handleMessage, true);
+  }, []);
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6">
@@ -71,7 +80,7 @@ function FootballStreamPage() {
           <div className="flex flex-1 items-center justify-center text-center text-muted-foreground">No sources are available for this match.</div>
         ) : (
           <div className="grid flex-1 gap-4 lg:grid-cols-[1fr_340px]">
-            <section ref={playerRef} className="flex min-h-[55vh] flex-col overflow-hidden rounded-xl border border-border bg-black lg:min-h-0">
+            <section ref={playerRef} className="flex min-h-[55vh] flex-col overflow-hidden rounded-[28px] border border-border bg-black lg:min-h-0">
               <div className="glass flex items-center justify-between gap-3 border-b border-border px-4 py-3">
                 <div className="min-w-0">
                   <h1 className="truncate text-base font-bold">{detail.title}</h1>
@@ -96,7 +105,7 @@ function FootballStreamPage() {
             <aside className="space-y-3 overflow-auto pb-4 lg:max-h-[calc(100vh-6rem)]">
               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Sources</h2>
               {detail.sources.map((item, index) => (
-                <button key={`${item.embedUrl}-${index}`} onClick={() => setSourceIndex(index)} className={`w-full rounded-xl border p-4 text-left transition ${index === sourceIndex ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
+                <button key={`${item.embedUrl}-${index}`} onClick={() => setSourceIndex(index)} className={`w-full rounded-[20px] border p-4 text-left transition-all duration-300 ${index === sourceIndex ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-bold">Source {item.streamNo ?? index + 1}</span>
                     <span className="inline-flex items-center gap-1 text-xs"><Play className="h-3 w-3" fill="currentColor" /> {item.hd ? "HD" : item.quality || "SD"}</span>

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FootballStreamMatchIdRouteImport } from './routes/football-stream.$matchId'
+import { Route as AnimeAnimeIdRouteImport } from './routes/anime.$animeId'
 import { Route as WatchKindIdRouteImport } from './routes/watch.$kind.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const FootballStreamMatchIdRoute = FootballStreamMatchIdRouteImport.update({
   path: '/football-stream/$matchId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnimeAnimeIdRoute = AnimeAnimeIdRouteImport.update({
+  id: '/anime/$animeId',
+  path: '/anime/$animeId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WatchKindIdRoute = WatchKindIdRouteImport.update({
   id: '/watch/$kind/$id',
   path: '/watch/$kind/$id',
@@ -31,30 +37,43 @@ const WatchKindIdRoute = WatchKindIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/football-stream/$matchId' | '/watch/$kind/$id'
+  fullPaths:
+    | '/'
+    | '/anime/$animeId'
+    | '/football-stream/$matchId'
+    | '/watch/$kind/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/football-stream/$matchId' | '/watch/$kind/$id'
-  id: '__root__' | '/' | '/football-stream/$matchId' | '/watch/$kind/$id'
+  to: '/' | '/anime/$animeId' | '/football-stream/$matchId' | '/watch/$kind/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/anime/$animeId'
+    | '/football-stream/$matchId'
+    | '/watch/$kind/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnimeAnimeIdRoute: typeof AnimeAnimeIdRoute
   FootballStreamMatchIdRoute: typeof FootballStreamMatchIdRoute
   WatchKindIdRoute: typeof WatchKindIdRoute
 }
@@ -75,6 +94,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FootballStreamMatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/anime/$animeId': {
+      id: '/anime/$animeId'
+      path: '/anime/$animeId'
+      fullPath: '/anime/$animeId'
+      preLoaderRoute: typeof AnimeAnimeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/watch/$kind/$id': {
       id: '/watch/$kind/$id'
       path: '/watch/$kind/$id'
@@ -87,6 +113,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnimeAnimeIdRoute: AnimeAnimeIdRoute,
   FootballStreamMatchIdRoute: FootballStreamMatchIdRoute,
   WatchKindIdRoute: WatchKindIdRoute,
 }
