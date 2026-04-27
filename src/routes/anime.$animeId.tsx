@@ -1,7 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Expand, Loader2, Play, Shield } from "lucide-react";
 import { animeDetail, animeEpisodeDetail, animeServerUrl, type AnimeDetail, type AnimeEpisodeDetail } from "@/lib/api";
+import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/anime/$animeId")({
   component: AnimeWatchPage,
@@ -33,7 +34,10 @@ function AnimeWatchPage() {
   const [episode, setEpisode] = useState<AnimeEpisodeDetail | null>(null);
   const [sourceIndex, setSourceIndex] = useState(0);
   const [resolvedUrl, setResolvedUrl] = useState("");
+  const [directVideoUrl, setDirectVideoUrl] = useState("");
   const [loading, setLoading] = useState(true);
+  const [episodeLoading, setEpisodeLoading] = useState(false);
+  const [playerLoading, setPlayerLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -48,12 +52,14 @@ function AnimeWatchPage() {
 
   useEffect(() => {
     if (!episodeId) return;
+    setEpisodeLoading(true);
     animeEpisodeDetail(episodeId)
       .then((data) => {
         setEpisode(data);
         setSourceIndex(0);
       })
-      .catch(() => setEpisode(null));
+      .catch(() => setEpisode(null))
+      .finally(() => setEpisodeLoading(false));
   }, [episodeId]);
 
   const source = episode?.sources?.[sourceIndex];
