@@ -18,6 +18,7 @@ export type MediaItem = {
 };
 
 const ANIME_API = "https://www.sankavollerei.com/anime";
+const JIKAN_API = "https://api.jikan.moe/v4";
 
 export type AnimeItem = {
   id: string;
@@ -50,6 +51,24 @@ export type AnimeStreamSource = {
   serverId?: string;
   url: string;
 };
+
+const animePosterCache = new Map<string, string>();
+
+function cleanAnimeTitle(title: string) {
+  return title.replace(/subtitle\s+indonesia/gi, "").replace(/sub\s+indo/gi, "").replace(/\s+/g, " ").trim();
+}
+
+export async function animePosterFallback(title: string): Promise<string> {
+  const key = cleanAnimeTitle(title).toLowerCase();
+  if (!key) return "";
+  if (animePosterCache.has(key)) return animePosterCache.get(key)!;
+  const r = await fetch(`${JIKAN_API}/anime?q=${encodeURIComponent(key)}&limit=1`);
+  if (!r.ok) return "";
+  const j = await r.json();
+  const poster = j?.data?.[0]?.images?.webp?.large_image_url || j?.data?.[0]?.images?.jpg?.large_image_url || "";
+  if (poster) animePosterCache.set(key, poster);
+  return poster;
+}
 
 export type AnimeEpisodeDetail = {
   title: string;
