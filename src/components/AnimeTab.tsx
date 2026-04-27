@@ -1,7 +1,27 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Loader2, Play, Search, Star } from "lucide-react";
-import { animeHome, animeSearch, type AnimeItem } from "@/lib/api";
+import { animeHome, animePosterFallback, animeSearch, type AnimeItem } from "@/lib/api";
+
+function AnimePoster({ anime }: { anime: AnimeItem }) {
+  const [src, setSrc] = useState(anime.poster || "");
+
+  useEffect(() => {
+    let cancelled = false;
+    setSrc(anime.poster || "");
+    if (!anime.poster) {
+      animePosterFallback(anime.title).then((poster) => {
+        if (!cancelled) setSrc(poster);
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [anime.poster, anime.title]);
+
+  if (!src) return <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">Loading cover…</div>;
+  return <img src={src} alt={anime.title} loading="lazy" onError={() => animePosterFallback(anime.title).then(setSrc)} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />;
+}
 
 export function AnimeTab() {
   const [items, setItems] = useState<AnimeItem[]>([]);
@@ -46,7 +66,7 @@ export function AnimeTab() {
           {items.map((anime) => (
             <Link key={anime.id} to="/anime/$animeId" params={{ animeId: anime.id }} className="group overflow-hidden rounded-[22px] glass-card text-left transition-all duration-300 hover:-translate-y-1 hover:border-primary hover:shadow-[var(--shadow-glow)]">
               <div className="relative aspect-[2/3] overflow-hidden bg-muted">
-                {anime.poster ? <img src={anime.poster} alt={anime.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">No poster</div>}
+                <AnimePoster anime={anime} />
                 {anime.score ? (
                   <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full glass px-2 py-0.5 text-[10px] font-bold">
                     <Star className="h-2.5 w-2.5 fill-primary text-primary" /> {anime.score}
