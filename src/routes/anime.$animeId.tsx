@@ -67,6 +67,8 @@ function AnimeWatchPage() {
   useEffect(() => {
     let cancelled = false;
     async function resolve() {
+      setDirectVideoUrl("");
+      setPlayerLoading(true);
       if (!source) return setResolvedUrl("");
       if (source.url) return setResolvedUrl(source.url);
       if (!source.serverId) return setResolvedUrl("");
@@ -83,7 +85,25 @@ function AnimeWatchPage() {
     };
   }, [source]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function extractDirectVideo() {
+      setDirectVideoUrl("");
+      if (!resolvedUrl || !/mp4upload\.com/i.test(resolvedUrl)) return;
+      try {
+        const res = await fetch(`/api/public/anime-video?url=${encodeURIComponent(resolvedUrl)}`);
+        const data = await res.json();
+        if (!cancelled && data?.url) setDirectVideoUrl(`/api/public/anime-proxy?url=${encodeURIComponent(data.url)}`);
+      } catch {}
+    }
+    extractDirectVideo();
+    return () => {
+      cancelled = true;
+    };
+  }, [resolvedUrl]);
+
   const playerSrc = useMemo(() => {
+    if (directVideoUrl) return directVideoUrl;
     if (!resolvedUrl) return "";
     try {
       const url = new URL(resolvedUrl);
@@ -92,7 +112,7 @@ function AnimeWatchPage() {
     } catch {
       return resolvedUrl;
     }
-  }, [resolvedUrl]);
+  }, [directVideoUrl, resolvedUrl]);
 
   return (
     <main className="min-h-screen bg-background text-foreground">
