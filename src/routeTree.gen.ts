@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as FootballStreamMatchIdRouteImport } from './routes/football-stream.$matchId'
 import { Route as AnimeAnimeIdRouteImport } from './routes/anime.$animeId'
 import { Route as WatchKindIdRouteImport } from './routes/watch.$kind.$id'
+import { Route as ApiPublicFootballStreamsRouteImport } from './routes/api.public.football-streams'
 import { Route as ApiPublicAnimeVideoRouteImport } from './routes/api.public.anime-video'
 import { Route as ApiPublicAnimeProxyRouteImport } from './routes/api.public.anime-proxy'
 import { Route as ApiPublicAnimeImageRouteImport } from './routes/api.public.anime-image'
@@ -37,6 +38,12 @@ const WatchKindIdRoute = WatchKindIdRouteImport.update({
   path: '/watch/$kind/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFootballStreamsRoute =
+  ApiPublicFootballStreamsRouteImport.update({
+    id: '/api/public/football-streams',
+    path: '/api/public/football-streams',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAnimeVideoRoute = ApiPublicAnimeVideoRouteImport.update({
   id: '/api/public/anime-video',
   path: '/api/public/anime-video',
@@ -60,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
+  '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +77,7 @@ export interface FileRoutesByTo {
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
+  '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRoutesById {
@@ -79,6 +88,7 @@ export interface FileRoutesById {
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
+  '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +100,7 @@ export interface FileRouteTypes {
     | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
+    | '/api/public/football-streams'
     | '/watch/$kind/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +110,7 @@ export interface FileRouteTypes {
     | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
+    | '/api/public/football-streams'
     | '/watch/$kind/$id'
   id:
     | '__root__'
@@ -108,6 +120,7 @@ export interface FileRouteTypes {
     | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
+    | '/api/public/football-streams'
     | '/watch/$kind/$id'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +131,7 @@ export interface RootRouteChildren {
   ApiPublicAnimeImageRoute: typeof ApiPublicAnimeImageRoute
   ApiPublicAnimeProxyRoute: typeof ApiPublicAnimeProxyRoute
   ApiPublicAnimeVideoRoute: typeof ApiPublicAnimeVideoRoute
+  ApiPublicFootballStreamsRoute: typeof ApiPublicFootballStreamsRoute
   WatchKindIdRoute: typeof WatchKindIdRoute
 }
 
@@ -151,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WatchKindIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/football-streams': {
+      id: '/api/public/football-streams'
+      path: '/api/public/football-streams'
+      fullPath: '/api/public/football-streams'
+      preLoaderRoute: typeof ApiPublicFootballStreamsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/anime-video': {
       id: '/api/public/anime-video'
       path: '/api/public/anime-video'
@@ -182,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAnimeImageRoute: ApiPublicAnimeImageRoute,
   ApiPublicAnimeProxyRoute: ApiPublicAnimeProxyRoute,
   ApiPublicAnimeVideoRoute: ApiPublicAnimeVideoRoute,
+  ApiPublicFootballStreamsRoute: ApiPublicFootballStreamsRoute,
   WatchKindIdRoute: WatchKindIdRoute,
 }
 export const routeTree = rootRouteImport
