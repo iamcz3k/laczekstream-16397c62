@@ -345,6 +345,7 @@ export type CctvCamera = {
   country?: string;
   info?: string;
   url: string;
+  thumbnail?: string;
   isIframe?: boolean;
   isStreaming?: boolean;
   latitude?: number;

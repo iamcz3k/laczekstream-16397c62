@@ -46,8 +46,23 @@ export function CctvTab() {
             onClick={() => setPlaying(camera)}
             className="group overflow-hidden rounded-[22px] glass-card text-left transition-all duration-300 hover:border-primary hover:shadow-[var(--shadow-glow)] active:scale-[0.98]"
           >
-            <div className="relative flex aspect-video items-center justify-center bg-muted/50">
-              <Camera className="h-10 w-10 text-muted-foreground transition group-hover:scale-110 group-hover:text-primary" />
+            <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-muted/50">
+              {camera.thumbnail ? (
+                <img
+                  src={camera.thumbnail}
+                  alt={`${camera.name} banner`}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-secondary">
+                  <Camera className="h-10 w-10 text-muted-foreground transition group-hover:scale-110 group-hover:text-primary" />
+                </div>
+              )}
+              <div className="absolute left-3 top-3 rounded-full glass px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-foreground">Live CCTV</div>
               <div className="absolute inset-0 flex items-center justify-center bg-background/45 opacity-0 backdrop-blur-sm transition group-hover:opacity-100">
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
                   <Play className="ml-0.5 h-5 w-5" fill="currentColor" />
