@@ -15,6 +15,7 @@ import { Route as AnimeAnimeIdRouteImport } from './routes/anime.$animeId'
 import { Route as WatchKindIdRouteImport } from './routes/watch.$kind.$id'
 import { Route as ApiPublicAnimeVideoRouteImport } from './routes/api.public.anime-video'
 import { Route as ApiPublicAnimeProxyRouteImport } from './routes/api.public.anime-proxy'
+import { Route as ApiPublicAnimeImageRouteImport } from './routes/api.public.anime-image'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,11 +47,17 @@ const ApiPublicAnimeProxyRoute = ApiPublicAnimeProxyRouteImport.update({
   path: '/api/public/anime-proxy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAnimeImageRoute = ApiPublicAnimeImageRouteImport.update({
+  id: '/api/public/anime-image',
+  path: '/api/public/anime-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
+  '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
+  '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
+  '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
+    | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
     | '/watch/$kind/$id'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
+    | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
     | '/watch/$kind/$id'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
+    | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
     | '/watch/$kind/$id'
@@ -103,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnimeAnimeIdRoute: typeof AnimeAnimeIdRoute
   FootballStreamMatchIdRoute: typeof FootballStreamMatchIdRoute
+  ApiPublicAnimeImageRoute: typeof ApiPublicAnimeImageRoute
   ApiPublicAnimeProxyRoute: typeof ApiPublicAnimeProxyRoute
   ApiPublicAnimeVideoRoute: typeof ApiPublicAnimeVideoRoute
   WatchKindIdRoute: typeof WatchKindIdRoute
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAnimeProxyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/anime-image': {
+      id: '/api/public/anime-image'
+      path: '/api/public/anime-image'
+      fullPath: '/api/public/anime-image'
+      preLoaderRoute: typeof ApiPublicAnimeImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -159,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnimeAnimeIdRoute: AnimeAnimeIdRoute,
   FootballStreamMatchIdRoute: FootballStreamMatchIdRoute,
+  ApiPublicAnimeImageRoute: ApiPublicAnimeImageRoute,
   ApiPublicAnimeProxyRoute: ApiPublicAnimeProxyRoute,
   ApiPublicAnimeVideoRoute: ApiPublicAnimeVideoRoute,
   WatchKindIdRoute: WatchKindIdRoute,
