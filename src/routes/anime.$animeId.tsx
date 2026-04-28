@@ -114,12 +114,6 @@ function AnimeWatchPage() {
     };
   }, [resolvedUrl]);
 
-  useEffect(() => {
-    if (!playerSrc) return;
-    const timer = window.setTimeout(() => setPlayerLoading(false), 12000);
-    return () => window.clearTimeout(timer);
-  }, [playerSrc]);
-
   const playerSrc = useMemo(() => {
     if (directVideoUrl) return directVideoUrl;
     if (!resolvedUrl) return "";
@@ -131,6 +125,12 @@ function AnimeWatchPage() {
       return resolvedUrl;
     }
   }, [directVideoUrl, resolvedUrl]);
+
+  useEffect(() => {
+    if (!playerSrc) return;
+    const timer = window.setTimeout(() => setPlayerLoading(false), 12000);
+    return () => window.clearTimeout(timer);
+  }, [playerSrc]);
 
   return (
     <main className="min-h-screen bg-background text-foreground">
