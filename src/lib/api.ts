@@ -338,6 +338,26 @@ export type Channel = {
   streams?: string[];
 };
 
+export type CctvCamera = {
+  id: string;
+  name: string;
+  city?: string;
+  country?: string;
+  info?: string;
+  url: string;
+  isIframe?: boolean;
+  isStreaming?: boolean;
+  latitude?: number;
+  longitude?: number;
+};
+
+export async function cctvCameras(): Promise<CctvCamera[]> {
+  const res = await fetch("/api/public/cctv-cameras");
+  if (!res.ok) throw new Error("cctv cameras failed");
+  const json = await res.json();
+  return json?.cameras ?? [];
+}
+
 type RawStream = {
   channel?: string | null;
   url?: string | null;
