@@ -18,11 +18,17 @@ type Camera = {
   country?: string;
   info?: string;
   url: string;
+  thumbnail?: string;
   isIframe?: boolean;
   isStreaming?: boolean;
   latitude?: number;
   longitude?: number;
 };
+
+function mapThumbnail(latitude?: number, longitude?: number) {
+  if (typeof latitude !== "number" || typeof longitude !== "number") return undefined;
+  return `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/pin-s-camera+ffb347(${longitude},${latitude})/${longitude},${latitude},12,0/640x360@2x?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNrcmV5bzQ5azA1dDgycW10N2VqdmZsamMifQ.gE9I2uQImdzvx-f7T5UQHw`;
+}
 
 async function fetchWe4cityCameras(): Promise<Camera[]> {
   if (!WE4CITY_BASE_URL || !WE4CITY_ACCESS_TOKEN) return [];
@@ -39,6 +45,7 @@ async function fetchWe4cityCameras(): Promise<Camera[]> {
       country: "Public",
       info: camera.info,
       url: camera.url,
+      thumbnail: /\.(jpe?g|png|webp)(\?|$)/i.test(camera.url) ? camera.url : undefined,
       isIframe: Boolean(Number(camera.isIframe)),
       isStreaming: Boolean(Number(camera.isStreaming)),
     }));
@@ -60,6 +67,7 @@ async function fetchOpenTrafficCameras(): Promise<Camera[]> {
           country: "United States",
           info: `${state}${camera.direction ? ` · ${camera.direction}` : ""}`,
           url: camera.url,
+          thumbnail: mapThumbnail(camera.latitude, camera.longitude),
           isStreaming: /m3u8|mpd|stream|playlist/i.test(camera.url),
           latitude: camera.latitude,
           longitude: camera.longitude,
