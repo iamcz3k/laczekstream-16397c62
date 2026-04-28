@@ -1,13 +1,14 @@
-import { Film, Tv, Trophy, Music2 } from "lucide-react";
+import { Camera, Film, Tv, Trophy, Youtube } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 
-export type TabKey = "movies" | "tv" | "football" | "music";
+export type TabKey = "movies" | "tv" | "football" | "youtube" | "cctv";
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "movies", label: "Movies", icon: Film },
   { key: "tv", label: "TV", icon: Tv },
   { key: "football", label: "Football", icon: Trophy },
-  { key: "music", label: "Music", icon: Music2 },
+  { key: "youtube", label: "YouTube", icon: Youtube },
+  { key: "cctv", label: "CCTV", icon: Camera },
 ];
 
 export function Header({ active, onChange }: { active: TabKey; onChange: (k: TabKey) => void }) {
