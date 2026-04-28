@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Expand, Loader2, Play, Shield } from "lucide-react";
 import { footballStreamDetail, type FootballStreamDetail } from "@/lib/api";
-import { isBlockedAdUrl } from "@/lib/adblock";
 import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/football-stream/$matchId")({
@@ -40,7 +39,7 @@ function FootballStreamPage() {
     footballStreamDetail(matchId)
       .then((data) => {
         setDetail(data);
-        setSourceIndex(0);
+        setSourceIndex(Math.max((data?.sources?.length ?? 1) - 1, 0));
       })
       .catch(() => setDetail(null))
       .finally(() => setLoading(false));
@@ -62,14 +61,6 @@ function FootballStreamPage() {
     if (playerSrc) setFrameLoading(true);
   }, [playerSrc]);
 
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (typeof event.data === "string" && isBlockedAdUrl(event.data)) event.stopImmediatePropagation();
-    };
-    window.addEventListener("message", handleMessage, true);
-    return () => window.removeEventListener("message", handleMessage, true);
-  }, []);
-
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6">
@@ -81,7 +72,10 @@ function FootballStreamPage() {
         </header>
 
         {loading ? (
-          <div className="flex flex-1 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+            <Loader2 className="h-9 w-9 animate-spin text-primary" />
+            <p className="text-sm font-semibold text-muted-foreground">Loading live stream sources…</p>
+          </div>
         ) : !detail || !source ? (
           <div className="flex flex-1 items-center justify-center text-center text-muted-foreground">No sources are available for this match.</div>
         ) : (
@@ -90,7 +84,7 @@ function FootballStreamPage() {
               <div className="glass flex items-center justify-between gap-3 border-b border-border px-4 py-3">
                 <div className="min-w-0">
                   <h1 className="truncate text-base font-bold">{detail.title}</h1>
-                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Shield className="h-3 w-3" /> Popups and top-page redirects blocked</p>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Shield className="h-3 w-3" /> Full player mode · autoplay enabled</p>
                 </div>
                 <button onClick={() => enterLandscapeFullscreen(playerRef.current)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
                   <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
@@ -110,8 +104,6 @@ function FootballStreamPage() {
                   className="h-full w-full border-0"
                   allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                   allowFullScreen
-                  referrerPolicy="no-referrer"
-                  sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"
                   onLoad={() => window.setTimeout(() => setFrameLoading(false), 900)}
                 />
               </div>

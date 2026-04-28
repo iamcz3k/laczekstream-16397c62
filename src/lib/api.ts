@@ -132,7 +132,7 @@ export async function tmdbSearch(kind: "movie" | "tv", q: string): Promise<Media
 
 function proxiedAnimePoster(src?: string) {
   if (!src) return undefined;
-  if (/otakudesu\./i.test(src)) return undefined;
+  if (/^https?:\/\/[^/]*otakudesu\./i.test(src)) return `/api/public/anime-image?url=${encodeURIComponent(src)}`;
   return src;
 }
 
@@ -200,7 +200,9 @@ export async function animeEpisodeDetail(id: string): Promise<AnimeEpisodeDetail
     })),
   );
   const rankedSources = serverSources.sort((a, b) => {
-    const score = (item: AnimeStreamSource) => (/mp4/i.test(item.label) ? 40 : /yourupload|yuplod/i.test(item.label) ? 30 : /moedesu|desu/i.test(item.label) ? 10 : /mega/i.test(item.label) ? -10 : 0) + (parseInt(item.quality, 10) || 0) / 100;
+    const score = (item: AnimeStreamSource) =>
+      (/vidhide|filedon|yourupload|yuplod|streamwish|mp4/i.test(item.label) ? 50 : /ondesu|desu/i.test(item.label) ? -30 : /mega/i.test(item.label) ? -50 : 0) +
+      (parseInt(item.quality, 10) || 0) / 100;
     return score(b) - score(a);
   });
   return {
@@ -254,22 +256,41 @@ export async function tmdbSeasonEpisodes(tvId: number, seasonNumber: number): Pr
   }));
 }
 
-export type EmbedProvider = "vidsrcxyz" | "vidsrcicu" | "vidlink" | "autoembed" | "111movies" | "videasy" | "vidfast" | "2embed" | "vidsrcto";
+export type EmbedProvider = "videasy" | "vidsrcvip" | "vidsrcme" | "vidjoy" | "vidsrcxyz" | "vidsrcicu" | "vidlink" | "autoembed" | "111movies" | "vidfast" | "2embed" | "vidsrcto";
 
 export const EMBED_PROVIDERS: { id: EmbedProvider; label: string }[] = [
-  { id: "vidsrcxyz", label: "Asian 1" },
-  { id: "vidsrcicu", label: "Asian 2" },
-  { id: "vidlink", label: "Asian 3" },
-  { id: "autoembed", label: "Auto 1" },
-  { id: "vidsrcto", label: "Auto 2" },
+  { id: "videasy", label: "Auto 1" },
+  { id: "vidsrcvip", label: "Auto 2" },
+  { id: "vidsrcme", label: "Asian 1" },
+  { id: "vidjoy", label: "Asian 2" },
+  { id: "vidsrcxyz", label: "Asian 3" },
+  { id: "vidsrcicu", label: "Asian 4" },
+  { id: "vidlink", label: "Asian 5" },
+  { id: "autoembed", label: "Auto 3" },
+  { id: "vidsrcto", label: "Auto 4" },
   { id: "111movies", label: "Server 3" },
-  { id: "videasy", label: "Server 4" },
   { id: "vidfast", label: "Server 5" },
   { id: "2embed", label: "Server 6" },
 ];
 
 export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, season = 1, episode = 1) {
   switch (p) {
+    case "videasy":
+      return kind === "movie"
+        ? `https://player.videasy.net/movie/${id}?autoplay=true`
+        : `https://player.videasy.net/tv/${id}/${season}/${episode}?autoplay=true`;
+    case "vidsrcvip":
+      return kind === "movie"
+        ? `https://vidsrc.vip/embed/movie/${id}`
+        : `https://vidsrc.vip/embed/tv/${id}/${season}/${episode}`;
+    case "vidsrcme":
+      return kind === "movie"
+        ? `https://vidsrc.me/embed/movie?tmdb=${id}`
+        : `https://vidsrc.me/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`;
+    case "vidjoy":
+      return kind === "movie"
+        ? `https://vidjoy.pro/embed/movie/${id}`
+        : `https://vidjoy.pro/embed/tv/${id}/${season}/${episode}`;
     case "vidsrcxyz":
       return kind === "movie"
         ? `https://vidsrc.xyz/embed/movie?tmdb=${id}`
@@ -290,10 +311,6 @@ export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, sea
       return kind === "movie"
         ? `https://111movies.com/movie/${id}`
         : `https://111movies.com/tv/${id}/${season}/${episode}`;
-    case "videasy":
-      return kind === "movie"
-        ? `https://www.videasy.net/movie/${id}`
-        : `https://www.videasy.net/tv/${id}/${season}/${episode}`;
     case "vidfast":
       return kind === "movie"
         ? `https://vidfast.pro/movie/${id}`
@@ -529,14 +546,14 @@ export type FootballStreamDetail = FootballStreamMatch & {
 const SPORTSRC = "https://api.sportsrc.org";
 
 export async function footballStreamMatches(): Promise<FootballStreamMatch[]> {
-  const res = await fetch(`${SPORTSRC}/?data=matches&category=football`);
+  const res = await fetch(`/api/public/football-streams?mode=matches`);
   if (!res.ok) throw new Error("football streams failed");
   const json = await res.json();
   return json?.success ? (json.data ?? []) : [];
 }
 
 export async function footballStreamDetail(id: string): Promise<FootballStreamDetail | null> {
-  const res = await fetch(`${SPORTSRC}/?data=detail&category=football&id=${encodeURIComponent(id)}`);
+  const res = await fetch(`/api/public/football-streams?mode=detail&id=${encodeURIComponent(id)}`);
   if (!res.ok) throw new Error("football stream detail failed");
   const json = await res.json();
   if (!json?.success || !json.data?.sources?.length) return null;

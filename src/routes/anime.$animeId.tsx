@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Expand, Loader2, Play, Shield } from "lucide-react";
+import { ArrowLeft, Expand, Loader2, Play } from "lucide-react";
 import { animeDetail, animeEpisodeDetail, animeServerUrl, type AnimeDetail, type AnimeEpisodeDetail } from "@/lib/api";
 import { BrandMark } from "@/components/BrandMark";
 
@@ -38,6 +38,7 @@ function AnimeWatchPage() {
   const [loading, setLoading] = useState(true);
   const [episodeLoading, setEpisodeLoading] = useState(false);
   const [playerLoading, setPlayerLoading] = useState(false);
+  const [playerError, setPlayerError] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -68,6 +69,7 @@ function AnimeWatchPage() {
     let cancelled = false;
     async function resolve() {
       setDirectVideoUrl("");
+      setPlayerError("");
       setPlayerLoading(true);
       if (!source) {
         setPlayerLoading(false);
@@ -84,6 +86,7 @@ function AnimeWatchPage() {
       } catch {
         if (!cancelled) {
           setResolvedUrl("");
+          setPlayerError("This source is not responding. Try another source.");
           setPlayerLoading(false);
         }
       }
@@ -123,6 +126,12 @@ function AnimeWatchPage() {
     }
   }, [directVideoUrl, resolvedUrl]);
 
+  useEffect(() => {
+    if (!playerSrc) return;
+    const timer = window.setTimeout(() => setPlayerLoading(false), 12000);
+    return () => window.clearTimeout(timer);
+  }, [playerSrc]);
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6">
@@ -143,7 +152,7 @@ function AnimeWatchPage() {
               <div className="glass flex items-center justify-between gap-3 border-b border-border px-4 py-3">
                 <div className="min-w-0">
                   <h1 className="truncate text-base font-bold">{episode?.title || detail.title}</h1>
-                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Shield className="h-3 w-3" /> Silent page popup blocking enabled</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Auto-play enabled · use another source if one is slow</p>
                 </div>
                 <button onClick={() => enterLandscapeFullscreen(playerRef.current)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
                   <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
@@ -156,10 +165,12 @@ function AnimeWatchPage() {
                     <p className="text-sm font-semibold">Loading anime stream…</p>
                   </div>
                 )}
-                {directVideoUrl ? (
+                {playerError ? (
+                  <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">{playerError}</div>
+                ) : directVideoUrl ? (
                   <video key={directVideoUrl} src={directVideoUrl} title={episode?.title || detail.title} controls autoPlay playsInline className="h-full w-full bg-black" onCanPlay={() => setPlayerLoading(false)} onLoadedData={() => setPlayerLoading(false)} />
                 ) : playerSrc ? (
-                  <iframe key={playerSrc} src={playerSrc} title={episode?.title || detail.title} className="h-full w-full border-0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="no-referrer" onLoad={() => window.setTimeout(() => setPlayerLoading(false), 900)} />
+                  <iframe key={playerSrc} src={playerSrc} title={episode?.title || detail.title} className="h-full w-full border-0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowFullScreen onLoad={() => window.setTimeout(() => setPlayerLoading(false), 900)} />
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Select another source.</div>
                 )}
