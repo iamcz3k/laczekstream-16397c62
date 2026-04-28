@@ -6,13 +6,14 @@ import { AnimeTab } from "@/components/AnimeTab";
 import { TVTab } from "@/components/TVTab";
 import { FootballTab } from "@/components/FootballTab";
 import { MusicTab } from "@/components/MusicTab";
+import { CctvTab } from "@/components/CctvTab";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "LACZEK STREAM — Free Movies, TV, Football & Music" },
-      { name: "description", content: "Stream free movies, live TV channels, football and music — clean matte-black player, no ads." },
+      { title: "LACZEK STREAM — Free Movies, TV, Football & YouTube" },
+      { name: "description", content: "Stream free movies, live TV channels, football, YouTube and public CCTV cameras — clean matte-black player." },
     ],
   }),
 });
@@ -71,13 +72,23 @@ function Index() {
           </section>
         )}
 
-        {tab === "music" && (
+        {tab === "youtube" && (
           <section className="space-y-6">
             <div>
-              <h2 className="text-3xl font-black tracking-tight">Music</h2>
-              <p className="text-sm text-muted-foreground mt-1">Stream songs & music videos</p>
+              <h2 className="text-3xl font-black tracking-tight">YouTube</h2>
+              <p className="text-sm text-muted-foreground mt-1">Stream songs, videos, creators and live streams</p>
             </div>
             <MusicTab />
+          </section>
+        )}
+
+        {tab === "cctv" && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight">Live CCTV</h2>
+              <p className="text-sm text-muted-foreground mt-1">Free public camera streams from supported public APIs</p>
+            </div>
+            <CctvTab />
           </section>
         )}
       </main>
