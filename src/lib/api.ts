@@ -266,8 +266,8 @@ export const EMBED_PROVIDERS: { id: EmbedProvider; label: string }[] = [
   { id: "vidsrcxyz", label: "Asian 3" },
   { id: "vidsrcicu", label: "Asian 4" },
   { id: "vidlink", label: "Asian 5" },
-  { id: "autoembed", label: "Auto 1" },
-  { id: "vidsrcto", label: "Auto 2" },
+  { id: "autoembed", label: "Auto 3" },
+  { id: "vidsrcto", label: "Auto 4" },
   { id: "111movies", label: "Server 3" },
   { id: "vidfast", label: "Server 5" },
   { id: "2embed", label: "Server 6" },
@@ -275,6 +275,22 @@ export const EMBED_PROVIDERS: { id: EmbedProvider; label: string }[] = [
 
 export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, season = 1, episode = 1) {
   switch (p) {
+    case "videasy":
+      return kind === "movie"
+        ? `https://player.videasy.net/movie/${id}?autoplay=true`
+        : `https://player.videasy.net/tv/${id}/${season}/${episode}?autoplay=true`;
+    case "vidsrcvip":
+      return kind === "movie"
+        ? `https://vidsrc.vip/embed/movie/${id}`
+        : `https://vidsrc.vip/embed/tv/${id}/${season}/${episode}`;
+    case "vidsrcme":
+      return kind === "movie"
+        ? `https://vidsrc.me/embed/movie?tmdb=${id}`
+        : `https://vidsrc.me/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`;
+    case "vidjoy":
+      return kind === "movie"
+        ? `https://vidjoy.pro/embed/movie/${id}`
+        : `https://vidjoy.pro/embed/tv/${id}/${season}/${episode}`;
     case "vidsrcxyz":
       return kind === "movie"
         ? `https://vidsrc.xyz/embed/movie?tmdb=${id}`
@@ -295,10 +311,6 @@ export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, sea
       return kind === "movie"
         ? `https://111movies.com/movie/${id}`
         : `https://111movies.com/tv/${id}/${season}/${episode}`;
-    case "videasy":
-      return kind === "movie"
-        ? `https://www.videasy.net/movie/${id}`
-        : `https://www.videasy.net/tv/${id}/${season}/${episode}`;
     case "vidfast":
       return kind === "movie"
         ? `https://vidfast.pro/movie/${id}`
