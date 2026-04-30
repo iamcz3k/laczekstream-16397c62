@@ -1,7 +1,11 @@
-import { Camera, Film, Tv, Trophy, Youtube } from "lucide-react";
+import { useState } from "react";
+import { Camera, Film, Loader2, Shuffle, Tv, Trophy, Youtube } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { BrandMark } from "@/components/BrandMark";
+import { MoreMenu } from "@/components/MoreMenu";
+import { tmdbRandomMovie } from "@/lib/api";
 
-export type TabKey = "movies" | "tv" | "football" | "youtube" | "cctv";
+export type TabKey = "movies" | "tv" | "football" | "youtube" | "cctv" | "genres" | "library";
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "movies", label: "Movies", icon: Film },
@@ -12,6 +16,19 @@ const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?
 ];
 
 export function Header({ active, onChange }: { active: TabKey; onChange: (k: TabKey) => void }) {
+  const [busy, setBusy] = useState(false);
+  const navigate = useNavigate();
+
+  async function surprise() {
+    setBusy(true);
+    try {
+      const movie = await tmdbRandomMovie();
+      if (movie) navigate({ to: "/watch/$kind/$id", params: { kind: movie.type, id: String(movie.id) } });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 glass border-b border-border rounded-none supports-[backdrop-filter]:bg-card/55">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
@@ -36,6 +53,17 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
             );
           })}
         </nav>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={surprise}
+            disabled={busy}
+            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition active:scale-95 disabled:opacity-60"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shuffle className="h-4 w-4" />}
+            Surprise me
+          </button>
+          <MoreMenu />
+        </div>
       </div>
     </header>
   );
