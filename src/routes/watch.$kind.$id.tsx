@@ -103,7 +103,8 @@ function WatchPage() {
   }, [mediaId, mediaKind, season]);
 
   const src = useMemo(() => embedUrl(provider, mediaKind, mediaId, season, episode), [episode, mediaId, mediaKind, provider, season]);
-  const title = mediaKind === "movie" ? `Movie #${mediaId}` : `Series #${mediaId} · S${season} E${episode}`;
+  const baseTitle = meta?.title || (mediaKind === "movie" ? `Movie #${mediaId}` : `Series #${mediaId}`);
+  const title = mediaKind === "tv" ? `${baseTitle} · S${season} E${episode}` : baseTitle;
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
