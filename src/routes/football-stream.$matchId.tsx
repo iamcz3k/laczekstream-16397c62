@@ -104,6 +104,8 @@ function FootballStreamPage() {
                   className="h-full w-full border-0"
                   allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                   allowFullScreen
+                  referrerPolicy="no-referrer"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-orientation-lock"
                   onLoad={() => window.setTimeout(() => setFrameLoading(false), 900)}
                 />
               </div>
