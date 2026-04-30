@@ -1,18 +1,21 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Expand, Loader2, Play, RefreshCw } from "lucide-react";
+import { ArrowLeft, Bookmark, BookmarkCheck, Expand, Loader2, Play, RefreshCw } from "lucide-react";
 import {
   EMBED_PROVIDERS,
   QUALITY_OPTIONS,
   embedUrl,
   tmdbSeasonEpisodes,
   tmdbTvSeasons,
+  tmdbDetail,
+  type MediaItem,
   type EmbedProvider,
   type MediaEpisode,
   type MediaSeason,
 } from "@/lib/api";
 import { isBlockedAdUrl } from "@/lib/adblock";
 import { BrandMark } from "@/components/BrandMark";
+import { isInWatchlist, recordWatch, toggleWatchlist } from "@/lib/library";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
@@ -48,6 +51,34 @@ function WatchPage() {
   const [seasons, setSeasons] = useState<MediaSeason[]>([]);
   const [episodes, setEpisodes] = useState<MediaEpisode[]>([]);
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
+  const [meta, setMeta] = useState<MediaItem | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!Number.isFinite(mediaId)) return;
+    tmdbDetail(mediaKind, mediaId).then(setMeta).catch(() => setMeta(null));
+  }, [mediaId, mediaKind]);
+
+  useEffect(() => {
+    if (!meta) return;
+    setSaved(isInWatchlist({ id: meta.id, kind: meta.type, season: mediaKind === "tv" ? season : undefined, episode: mediaKind === "tv" ? episode : undefined }));
+  }, [meta, season, episode, mediaKind]);
+
+  // Track every play (for Continue Watching + History)
+  useEffect(() => {
+    if (!meta) return;
+    recordWatch({
+      id: meta.id,
+      kind: meta.type,
+      title: meta.title,
+      poster: meta.poster,
+      backdrop: meta.backdrop,
+      year: meta.year,
+      rating: meta.rating,
+      season: mediaKind === "tv" ? season : undefined,
+      episode: mediaKind === "tv" ? episode : undefined,
+    });
+  }, [meta, mediaKind, season, episode]);
 
   useEffect(() => {
     if (mediaKind !== "tv" || !Number.isFinite(mediaId)) return;
@@ -72,7 +103,8 @@ function WatchPage() {
   }, [mediaId, mediaKind, season]);
 
   const src = useMemo(() => embedUrl(provider, mediaKind, mediaId, season, episode), [episode, mediaId, mediaKind, provider, season]);
-  const title = mediaKind === "movie" ? `Movie #${mediaId}` : `Series #${mediaId} · S${season} E${episode}`;
+  const baseTitle = meta?.title || (mediaKind === "movie" ? `Movie #${mediaId}` : `Series #${mediaId}`);
+  const title = mediaKind === "tv" ? `${baseTitle} · S${season} E${episode}` : baseTitle;
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -82,6 +114,22 @@ function WatchPage() {
     return () => window.removeEventListener("message", handleMessage, true);
   }, []);
 
+  function handleSave() {
+    if (!meta) return;
+    const inList = toggleWatchlist({
+      id: meta.id,
+      kind: meta.type,
+      title: meta.title,
+      poster: meta.poster,
+      backdrop: meta.backdrop,
+      year: meta.year,
+      rating: meta.rating,
+      season: mediaKind === "tv" ? season : undefined,
+      episode: mediaKind === "tv" ? episode : undefined,
+    });
+    setSaved(inList);
+  }
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6">
@@ -89,7 +137,17 @@ function WatchPage() {
           <button onClick={() => navigate({ to: "/" })} className="inline-flex h-10 items-center gap-2 rounded-full glass px-4 text-sm font-medium transition hover:bg-primary hover:text-primary-foreground">
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
-          <BrandMark compact />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              disabled={!meta}
+              className={`inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-medium transition disabled:opacity-50 ${saved ? "bg-primary text-primary-foreground" : "glass hover:bg-primary hover:text-primary-foreground"}`}
+            >
+              {saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+              <span className="hidden sm:inline">{saved ? "Saved" : "Watchlist"}</span>
+            </button>
+            <BrandMark compact />
+          </div>
         </header>
 
         <div className="grid flex-1 gap-4 lg:grid-cols-[1fr_340px]">
@@ -111,6 +169,7 @@ function WatchPage() {
               allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
               allowFullScreen
               referrerPolicy="no-referrer"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-orientation-lock"
             />
           </section>
 

@@ -51,6 +51,14 @@ async function fetchWe4cityCameras(): Promise<Camera[]> {
     }));
 }
 
+function classify(url: string): { isStreaming: boolean; isIframe: boolean; isImage: boolean } {
+  const u = url.toLowerCase();
+  const isStreaming = /\.m3u8|\.mpd|playlist|manifest|\/hls\//i.test(u);
+  const isImage = !isStreaming && /\.(jpe?g|png|webp|gif|bmp)(\?|$)/i.test(u);
+  const isIframe = !isStreaming && !isImage && (/\.(mjpg|mjpeg|cgi)(\?|$)/i.test(u) || /youtube\.com|youtu\.be|skylinewebcams|earthcam/i.test(u));
+  return { isStreaming, isIframe, isImage };
+}
+
 async function fetchOpenTrafficCameras(): Promise<Camera[]> {
   const res = await fetch(OPEN_TRAFFIC_CAMERAS, { headers: { "user-agent": "Mozilla/5.0", accept: "application/json" } });
   if (!res.ok) return [];
@@ -60,6 +68,7 @@ async function fetchOpenTrafficCameras(): Promise<Camera[]> {
     for (const [city, list] of Object.entries(cities ?? {})) {
       for (const camera of list ?? []) {
         if (!camera?.url || !/^https?:\/\//i.test(camera.url)) continue;
+        const { isStreaming, isIframe, isImage } = classify(camera.url);
         cameras.push({
           id: `${state}-${city}-${camera.description}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 120),
           name: camera.description || `${city} traffic camera`,
@@ -67,8 +76,9 @@ async function fetchOpenTrafficCameras(): Promise<Camera[]> {
           country: "United States",
           info: `${state}${camera.direction ? ` · ${camera.direction}` : ""}`,
           url: camera.url,
-          thumbnail: mapThumbnail(camera.latitude, camera.longitude),
-          isStreaming: /m3u8|mpd|stream|playlist/i.test(camera.url),
+          thumbnail: isImage ? camera.url : mapThumbnail(camera.latitude, camera.longitude),
+          isStreaming,
+          isIframe,
           latitude: camera.latitude,
           longitude: camera.longitude,
         });
