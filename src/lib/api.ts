@@ -130,6 +130,39 @@ export async function tmdbSearch(kind: "movie" | "tv", q: string): Promise<Media
   return (j.results ?? []).map((x: any) => mapTmdb(x, kind));
 }
 
+export type Genre = { id: number; name: string };
+
+export async function tmdbGenres(kind: "movie" | "tv"): Promise<Genre[]> {
+  const r = await fetch(`${TMDB}/genre/${kind}/list?api_key=${TMDB_KEY}`);
+  if (!r.ok) return [];
+  const j = await r.json();
+  return (j.genres ?? []) as Genre[];
+}
+
+export async function tmdbDiscover(kind: "movie" | "tv", genreId: number, page = 1): Promise<MediaItem[]> {
+  const r = await fetch(`${TMDB}/discover/${kind}?api_key=${TMDB_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=${page}`);
+  if (!r.ok) return [];
+  const j = await r.json();
+  return (j.results ?? []).map((x: any) => mapTmdb(x, kind));
+}
+
+export async function tmdbDetail(kind: "movie" | "tv", id: number): Promise<MediaItem | null> {
+  const r = await fetch(`${TMDB}/${kind}/${id}?api_key=${TMDB_KEY}`);
+  if (!r.ok) return null;
+  const j = await r.json();
+  return mapTmdb(j, kind);
+}
+
+export async function tmdbRandomMovie(): Promise<MediaItem | null> {
+  const page = Math.floor(Math.random() * 20) + 1;
+  const r = await fetch(`${TMDB}/movie/popular?api_key=${TMDB_KEY}&page=${page}`);
+  if (!r.ok) return null;
+  const j = await r.json();
+  const list = (j.results ?? []).map((x: any) => mapTmdb(x, "movie"));
+  if (!list.length) return null;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 function proxiedAnimePoster(src?: string) {
   if (!src) return undefined;
   if (/^https?:\/\/[^/]*otakudesu\./i.test(src)) return `/api/public/anime-image?url=${encodeURIComponent(src)}`;
