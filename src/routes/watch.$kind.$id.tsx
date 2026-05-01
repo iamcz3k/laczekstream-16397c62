@@ -13,7 +13,6 @@ import {
   type MediaEpisode,
   type MediaSeason,
 } from "@/lib/api";
-import { isBlockedAdUrl } from "@/lib/adblock";
 import { BrandMark } from "@/components/BrandMark";
 import { isInWatchlist, recordWatch, toggleWatchlist } from "@/lib/library";
 
@@ -106,14 +105,6 @@ function WatchPage() {
   const baseTitle = meta?.title || (mediaKind === "movie" ? `Movie #${mediaId}` : `Series #${mediaId}`);
   const title = mediaKind === "tv" ? `${baseTitle} · S${season} E${episode}` : baseTitle;
 
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (typeof event.data === "string" && isBlockedAdUrl(event.data)) event.stopImmediatePropagation();
-    };
-    window.addEventListener("message", handleMessage, true);
-    return () => window.removeEventListener("message", handleMessage, true);
-  }, []);
-
   function handleSave() {
     if (!meta) return;
     const inList = toggleWatchlist({
@@ -155,7 +146,7 @@ function WatchPage() {
             <div className="glass flex items-center justify-between gap-3 border-b border-border px-4 py-3">
               <div className="min-w-0">
                 <h1 className="truncate text-base font-bold">{title}</h1>
-                <p className="mt-1 text-xs text-muted-foreground">No sandbox · silent page ad blocking · {EMBED_PROVIDERS.find((item) => item.id === provider)?.label}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Movie player · unrestricted iframe · {EMBED_PROVIDERS.find((item) => item.id === provider)?.label}</p>
               </div>
               <button onClick={() => enterLandscapeFullscreen(playerRef.current)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
                 <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
