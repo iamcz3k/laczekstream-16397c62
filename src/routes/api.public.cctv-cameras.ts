@@ -7,10 +7,6 @@ const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400",
 };
 
-const WE4CITY_BASE_URL = process.env.WE4CITY_BASE_URL;
-const WE4CITY_ACCESS_TOKEN = process.env.WE4CITY_ACCESS_TOKEN;
-const OPEN_TRAFFIC_CAMERAS = "https://raw.githubusercontent.com/AidanWelch/OpenTrafficCamMap/master/cameras/USA.json";
-
 type Camera = {
   id: string;
   name: string;
@@ -21,71 +17,47 @@ type Camera = {
   thumbnail?: string;
   isIframe?: boolean;
   isStreaming?: boolean;
-  latitude?: number;
-  longitude?: number;
 };
 
-function mapThumbnail(latitude?: number, longitude?: number) {
-  if (typeof latitude !== "number" || typeof longitude !== "number") return undefined;
-  return `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/pin-s-camera+ffb347(${longitude},${latitude})/${longitude},${latitude},12,0/640x360@2x?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNrcmV5bzQ5azA1dDgycW10N2VqdmZsamMifQ.gE9I2uQImdzvx-f7T5UQHw`;
-}
+// Curated free YouTube live CCTV streams (sourced from github.com/uzura89/webcam24)
+const YT_CAMERAS: { yt: string; desc: string; spot: string; region: string; country: string; cat?: "city" | "nature" }[] = [
+  { yt: 'ydYDqZQpim8', desc: 'Waterhole in the Namib Desert', spot: 'Namib Desert Waterhole', region: 'Namib Desert', country: 'Namibia', cat: 'nature' },
+  { yt: '2E22geZeZDA', desc: 'Times Square in New York', spot: 'Times Square', region: 'New York', country: 'USA', cat: 'city' },
+  { yt: 'Lfl2Nj_QRXU', desc: 'Shibuya Scramble Crossing', spot: 'Shibuya Scramble Crossing', region: 'Tokyo', country: 'Japan', cat: 'city' },
+  { yt: 'gFRtAAmiFbE', desc: 'Shinjuku Kabukicho', spot: 'Shinjuku Kabukicho', region: 'Tokyo', country: 'Japan', cat: 'city' },
+  { yt: 'F0GOOP82094', desc: 'Danish Forest', spot: 'Danish Forest', region: 'Denmark', country: 'Denmark', cat: 'nature' },
+  { yt: 'TfOOzM6mPT4', desc: 'Sukhumvit Road', spot: 'Sukhumvit Road', region: 'Bangkok', country: 'Thailand', cat: 'city' },
+  { yt: 'h1wly909BYw', desc: 'Nevsky Avenue', spot: 'Nevsky Avenue', region: 'St. Petersburg', country: 'Russia', cat: 'city' },
+  { yt: 'VR-x3HdhKLQ', desc: 'Koh Samui Hooters', spot: 'Koh Samui Hooters', region: 'Koh Samui', country: 'Thailand', cat: 'city' },
+  { yt: 'P9C25Un7xaM', desc: 'International Space Station', spot: 'International Space Station', region: 'Space', country: 'Space', cat: 'nature' },
+  { yt: '3LXQWU67Ufk', desc: 'Venice Beach', spot: 'Venice Beach', region: 'Los Angeles', country: 'USA', cat: 'city' },
+  { yt: 'rMRM_0t8rjU', desc: 'Eagle Nest', spot: 'Eagle Nest', region: 'Florida', country: 'USA', cat: 'nature' },
+  { yt: '39uYW98qOV0', desc: 'Waterhole at Ol Donyo Lodge', spot: 'Chyulu Hills Waterhole', region: 'Ol Donyo Lodge', country: 'Kenya', cat: 'nature' },
+  { yt: 'q0XCGZVzvWk', desc: 'Heathrow Airport', spot: 'Heathrow Airport', region: 'London', country: 'UK', cat: 'city' },
+  { yt: 'a0i1Kg6fROg', desc: 'Northern Lights', spot: 'Northern Lights Churchill', region: 'Churchill', country: 'Canada', cat: 'nature' },
+  { yt: 'O8xVFhgEv6Q', desc: 'Waterhole at Ol Jogi', spot: 'Ol Jogi Waterhole', region: 'Ol Jogi', country: 'Kenya', cat: 'nature' },
+  { yt: 'yfSyjwY6zSQ', desc: 'Gorilla Forest Corridor in Kasugho', spot: 'Gorilla Forest Corridor', region: 'Kasugho', country: 'Congo', cat: 'nature' },
+  { yt: 'O52zDyxg5QI', desc: 'Aurora in Fairbanks', spot: 'Aurora in Fairbanks', region: 'Fairbanks', country: 'USA', cat: 'nature' },
+  { yt: 'P_zJwpM2g68', desc: 'Big Buddha Beach', spot: 'Big Buddha Beach', region: 'Koh Samui', country: 'Thailand', cat: 'city' },
+  { yt: '6F1ABQXtCmI', desc: 'Port Huron', spot: 'Port Huron', region: 'Michigan', country: 'USA', cat: 'city' },
+  { yt: '6dp-bvQ7RWo', desc: 'Shinjuku Crossings', spot: 'Shinjuku Crossings', region: 'Tokyo', country: 'Japan', cat: 'city' },
+  { yt: 'ovLS4Ah4fcM', desc: 'Upper East Side', spot: 'Manhattan Upper East Side', region: 'New York', country: 'USA', cat: 'city' },
+  { yt: 'PyNuRpZOtAY', desc: 'Bicycle Crossing Amsterdam', spot: 'Bicycle Crossing Amsterdam', region: 'Amsterdam', country: 'Netherlands', cat: 'city' },
+];
 
-async function fetchWe4cityCameras(): Promise<Camera[]> {
-  if (!WE4CITY_BASE_URL || !WE4CITY_ACCESS_TOKEN) return [];
-  const endpoint = `${WE4CITY_BASE_URL.replace(/\/$/, "")}/api/v1/public/Cameras/Live/all`;
-  const res = await fetch(endpoint, { headers: { authorization: `Bearer ${WE4CITY_ACCESS_TOKEN}`, accept: "application/json" } });
-  if (!res.ok) return [];
-  const json = await res.json();
-  return (json?.ret?.cameras ?? [])
-    .filter((camera: any) => camera?.url && /^https?:\/\//i.test(camera.url))
-    .map((camera: any) => ({
-      id: String(camera.id ?? camera.cod ?? camera.url),
-      name: camera.descr || camera.cod || "Live CCTV Camera",
-      city: "We4city",
-      country: "Public",
-      info: camera.info,
-      url: camera.url,
-      thumbnail: /\.(jpe?g|png|webp)(\?|$)/i.test(camera.url) ? camera.url : undefined,
-      isIframe: Boolean(Number(camera.isIframe)),
-      isStreaming: Boolean(Number(camera.isStreaming)),
-    }));
-}
-
-function classify(url: string): { isStreaming: boolean; isIframe: boolean; isImage: boolean } {
-  const u = url.toLowerCase();
-  const isStreaming = /\.m3u8|\.mpd|playlist|manifest|\/hls\//i.test(u);
-  const isImage = !isStreaming && /\.(jpe?g|png|webp|gif|bmp)(\?|$)/i.test(u);
-  const isIframe = !isStreaming && !isImage && (/\.(mjpg|mjpeg|cgi)(\?|$)/i.test(u) || /youtube\.com|youtu\.be|skylinewebcams|earthcam/i.test(u));
-  return { isStreaming, isIframe, isImage };
-}
-
-async function fetchOpenTrafficCameras(): Promise<Camera[]> {
-  const res = await fetch(OPEN_TRAFFIC_CAMERAS, { headers: { "user-agent": "Mozilla/5.0", accept: "application/json" } });
-  if (!res.ok) return [];
-  const data = await res.json();
-  const cameras: Camera[] = [];
-  for (const [state, cities] of Object.entries(data as Record<string, Record<string, any[]>>)) {
-    for (const [city, list] of Object.entries(cities ?? {})) {
-      for (const camera of list ?? []) {
-        if (!camera?.url || !/^https?:\/\//i.test(camera.url)) continue;
-        const { isStreaming, isIframe, isImage } = classify(camera.url);
-        cameras.push({
-          id: `${state}-${city}-${camera.description}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 120),
-          name: camera.description || `${city} traffic camera`,
-          city,
-          country: "United States",
-          info: `${state}${camera.direction ? ` · ${camera.direction}` : ""}`,
-          url: camera.url,
-          thumbnail: isImage ? camera.url : mapThumbnail(camera.latitude, camera.longitude),
-          isStreaming,
-          isIframe,
-          latitude: camera.latitude,
-          longitude: camera.longitude,
-        });
-      }
-    }
-  }
-  return cameras.slice(0, 800);
+function youtubeCameras(): Camera[] {
+  return YT_CAMERAS.map((c) => ({
+    id: `yt-${c.yt}`,
+    name: c.spot,
+    city: c.region,
+    country: c.country,
+    info: c.desc,
+    // autoplay + mute required for browsers; playsinline + modest branding
+    url: `https://www.youtube.com/embed/${c.yt}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`,
+    thumbnail: `https://i.ytimg.com/vi/${c.yt}/hqdefault.jpg`,
+    isIframe: true,
+    isStreaming: false,
+  }));
 }
 
 export const Route = createFileRoute("/api/public/cctv-cameras")({
@@ -93,14 +65,11 @@ export const Route = createFileRoute("/api/public/cctv-cameras")({
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS_HEADERS }),
       GET: async () => {
-        const [we4city, fallback] = await Promise.all([fetchWe4cityCameras(), fetchOpenTrafficCameras()]);
-        const seen = new Set<string>();
-        const cameras = [...we4city, ...fallback].filter((camera) => {
-          if (seen.has(camera.url)) return false;
-          seen.add(camera.url);
-          return true;
-        });
-        return Response.json({ cameras, source: we4city.length ? "we4city" : "open-traffic-cam-map" }, { headers: { ...CORS_HEADERS, "cache-control": "public, max-age=3600" } });
+        const cameras = youtubeCameras();
+        return Response.json(
+          { cameras, source: "webcam24-youtube" },
+          { headers: { ...CORS_HEADERS, "cache-control": "public, max-age=3600" } },
+        );
       },
     },
   },
