@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  Bookmark,
+  Clock,
   Download,
+  History as HistoryIcon,
   Info,
   KeyboardIcon,
   MoreVertical,
   RefreshCcw,
   Share2,
   Shuffle,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
@@ -40,6 +44,18 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
       }
     } finally {
       setBusy(false);
+    }
+  }
+
+  function goTab(tab: "library" | "genres", section?: "continue" | "watchlist" | "history") {
+    setOpen(false);
+    // If we're not on the home route, navigate there first.
+    if (window.location.pathname !== "/") {
+      navigate({ to: "/" });
+      // give the page a tick to mount before dispatching
+      setTimeout(() => window.dispatchEvent(new CustomEvent("laczek:navigate-tab", { detail: { tab, section } })), 50);
+    } else {
+      window.dispatchEvent(new CustomEvent("laczek:navigate-tab", { detail: { tab, section } }));
     }
   }
 
@@ -84,6 +100,10 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
       </button>
       {open && (
         <div className="absolute right-0 top-12 z-[60] w-64 overflow-hidden rounded-2xl border border-border glass shadow-xl animate-in fade-in slide-in-from-top-2 duration-150">
+          <MenuItem icon={Clock} onClick={() => goTab("library", "continue")}>Continue watching</MenuItem>
+          <MenuItem icon={Bookmark} onClick={() => goTab("library", "watchlist")}>Watchlist</MenuItem>
+          <MenuItem icon={HistoryIcon} onClick={() => goTab("library", "history")}>History</MenuItem>
+          <MenuItem icon={Sparkles} onClick={() => goTab("genres")}>Browse genres</MenuItem>
           <MenuItem icon={Shuffle} onClick={surpriseMe} disabled={busy}>{busy ? "Picking…" : "Surprise me"}</MenuItem>
           <MenuItem icon={Share2} onClick={shareSite}>Share LACZEK STREAM</MenuItem>
           <MenuItem icon={Download} onClick={exportData}>Export my library</MenuItem>
