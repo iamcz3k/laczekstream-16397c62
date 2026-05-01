@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Bookmark, BookmarkCheck, Expand, Loader2, Play, RefreshCw } from "lucide-react";
+import { ArrowLeft, Bookmark, BookmarkCheck, Download, Expand, Loader2, Play, RefreshCw } from "lucide-react";
 import {
   EMBED_PROVIDERS,
   QUALITY_OPTIONS,
@@ -121,6 +121,31 @@ function WatchPage() {
     setSaved(inList);
   }
 
+  // Build download mirrors. These public mirrors detect the TMDB id and present
+  // a direct file download (forces a Save dialog when the user clicks Download
+  // on the mirror). Opening them in a new tab is the only legal pattern — we
+  // cannot blob-fetch cross-origin video files because the embed providers
+  // intentionally hide their CDN URLs.
+  const downloadMirrors = useMemo(() => {
+    const list: { label: string; url: string }[] = [];
+    if (mediaKind === "movie") {
+      list.push({ label: "Mirror 1 · dl.vidsrc", url: `https://dl.vidsrc.vip/movie/${mediaId}` });
+      list.push({ label: "Mirror 2 · vidsrc.icu", url: `https://vidsrc.icu/download/movie/${mediaId}` });
+      list.push({ label: "Mirror 3 · moviesapi", url: `https://moviesapi.club/movie/${mediaId}` });
+    } else {
+      list.push({ label: "Mirror 1 · dl.vidsrc", url: `https://dl.vidsrc.vip/tv/${mediaId}/${season}/${episode}` });
+      list.push({ label: "Mirror 2 · vidsrc.icu", url: `https://vidsrc.icu/download/tv/${mediaId}/${season}/${episode}` });
+    }
+    return list;
+  }, [mediaKind, mediaId, season, episode]);
+
+  function openDownload(url: string) {
+    // Open in a new tab — most ad-blockers / browsers will trigger the save
+    // dialog when the mirror responds with a Content-Disposition header. If the
+    // mirror returns a page, the user just clicks the download button there.
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6">
@@ -172,6 +197,23 @@ function WatchPage() {
                     {item.label}
                   </button>
                 ))}
+              </div>
+            </section>
+
+            <section className="space-y-2">
+              <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground"><Download className="h-3.5 w-3.5" /> Download</h2>
+              <div className="grid grid-cols-1 gap-2">
+                {downloadMirrors.map((m) => (
+                  <button
+                    key={m.url}
+                    onClick={() => openDownload(m.url)}
+                    className="inline-flex items-center justify-between gap-2 rounded-[18px] border border-border bg-secondary/50 px-3 py-3 text-sm font-bold transition hover:border-primary hover:bg-primary hover:text-primary-foreground"
+                  >
+                    <span>{m.label}</span>
+                    <Download className="h-4 w-4" />
+                  </button>
+                ))}
+                <p className="text-[11px] text-muted-foreground">Opens a public download mirror in a new tab. Click the green/red download button on the mirror page to save the file to your device.</p>
               </div>
             </section>
 
