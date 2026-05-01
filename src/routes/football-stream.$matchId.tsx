@@ -52,6 +52,8 @@ function FootballStreamPage() {
     try {
       const url = new URL(source.embedUrl);
       url.searchParams.set("autoplay", "1");
+      url.searchParams.set("auto", "1");
+      url.searchParams.set("muted", "1");
       return url.toString();
     } catch {
       return source.embedUrl;
@@ -118,10 +120,9 @@ function FootballStreamPage() {
                   src={playerSrc}
                   title={detail.title}
                   className="h-full w-full border-0"
-                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
                   allowFullScreen
                   referrerPolicy="no-referrer"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-orientation-lock"
                   onLoad={() => window.setTimeout(() => setFrameLoading(false), 900)}
                 />
               </div>
