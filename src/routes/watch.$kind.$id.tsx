@@ -169,7 +169,6 @@ function WatchPage() {
               allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
               allowFullScreen
               referrerPolicy="no-referrer"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-orientation-lock"
             />
           </section>
 
