@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Expand, Loader2, Play, Shield } from "lucide-react";
+import { ArrowLeft, Clock3, Expand, Loader2, Play, Shield } from "lucide-react";
 import { footballStreamDetail, type FootballStreamDetail } from "@/lib/api";
 import { BrandMark } from "@/components/BrandMark";
 
@@ -33,6 +33,7 @@ function FootballStreamPage() {
   const [sourceIndex, setSourceIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [frameLoading, setFrameLoading] = useState(false);
+  const [countdown, setCountdown] = useState(59);
 
   useEffect(() => {
     setLoading(true);
@@ -61,6 +62,13 @@ function FootballStreamPage() {
     if (playerSrc) setFrameLoading(true);
   }, [playerSrc]);
 
+  useEffect(() => {
+    setCountdown(59);
+    if (!playerSrc) return;
+    const timer = window.setInterval(() => setCountdown((value) => (value > 0 ? value - 1 : 0)), 1000);
+    return () => window.clearInterval(timer);
+  }, [playerSrc]);
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6">
@@ -84,11 +92,19 @@ function FootballStreamPage() {
               <div className="glass flex items-center justify-between gap-3 border-b border-border px-4 py-3">
                 <div className="min-w-0">
                   <h1 className="truncate text-base font-bold">{detail.title}</h1>
-                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Shield className="h-3 w-3" /> Full player mode · autoplay enabled</p>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Shield className="h-3 w-3" /> Football player · manual play</p>
                 </div>
-                <button onClick={() => enterLandscapeFullscreen(playerRef.current)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
-                  <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
-                </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="hidden items-center gap-2 rounded-full bg-secondary px-3 py-2 text-xs font-bold text-muted-foreground sm:flex">
+                    <Clock3 className="h-4 w-4 text-primary" /> Stream will play soon in {countdown}s
+                  </div>
+                  <button onClick={() => enterLandscapeFullscreen(playerRef.current)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
+                    <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center justify-center gap-2 border-b border-border bg-secondary/40 px-4 py-2 text-xs font-bold text-muted-foreground sm:hidden">
+                <Clock3 className="h-4 w-4 text-primary" /> Stream will play soon in {countdown}s
               </div>
               <div className="relative min-h-0 flex-1">
                 {frameLoading && (
