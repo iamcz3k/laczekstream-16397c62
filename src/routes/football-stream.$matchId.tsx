@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Clock3, Expand, Loader2, Play, Shield } from "lucide-react";
+import { ArrowLeft, Clock3, Expand, Loader2, Maximize2, Play, Shield } from "lucide-react";
 import { footballStreamDetail, type FootballStreamDetail } from "@/lib/api";
 import { BrandMark } from "@/components/BrandMark";
 
@@ -19,7 +19,11 @@ export const Route = createFileRoute("/football-stream/$matchId")({
 async function enterLandscapeFullscreen(element: HTMLElement | null) {
   if (!element) return;
   try {
-    if (!document.fullscreenElement) await element.requestFullscreen();
+    const el = element as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+    if (!document.fullscreenElement) {
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+    }
     const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
     await orientation?.lock?.("landscape");
   } catch {}
@@ -33,7 +37,9 @@ function FootballStreamPage() {
   const [sourceIndex, setSourceIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [frameLoading, setFrameLoading] = useState(false);
-  const [countdown, setCountdown] = useState(59);
+  const [countdown, setCountdown] = useState(30);
+  const [fillMode, setFillMode] = useState(false);
+  const [streamPlaying, setStreamPlaying] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -61,15 +67,30 @@ function FootballStreamPage() {
   }, [source?.embedUrl]);
 
   useEffect(() => {
-    if (playerSrc) setFrameLoading(true);
+    if (playerSrc) {
+      setFrameLoading(true);
+      setStreamPlaying(false);
+    }
   }, [playerSrc]);
 
   useEffect(() => {
-    setCountdown(59);
-    if (!playerSrc) return;
+    setCountdown(30);
+    if (!playerSrc || streamPlaying) return;
     const timer = window.setInterval(() => setCountdown((value) => (value > 0 ? value - 1 : 0)), 1000);
     return () => window.clearInterval(timer);
-  }, [playerSrc]);
+  }, [playerSrc, streamPlaying]);
+
+  // Detect when the iframe starts playing audio/video by listening for visibility/blur on
+  // the iframe — most embed players take focus when the user clicks play.
+  useEffect(() => {
+    function onBlur() {
+      if (document.activeElement && document.activeElement.tagName === "IFRAME") {
+        setStreamPlaying(true);
+      }
+    }
+    window.addEventListener("blur", onBlur);
+    return () => window.removeEventListener("blur", onBlur);
+  }, []);
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -98,16 +119,25 @@ function FootballStreamPage() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <div className="hidden items-center gap-2 rounded-full bg-secondary px-3 py-2 text-xs font-bold text-muted-foreground sm:flex">
-                    <Clock3 className="h-4 w-4 text-primary" /> Stream will play soon in {countdown}s
+                    {streamPlaying || countdown === 0 ? (
+                      <><span className="h-2 w-2 animate-pulse rounded-full bg-primary" /> Live</>
+                    ) : (
+                      <><Clock3 className="h-4 w-4 text-primary" /> Stream will play soon in {countdown}s</>
+                    )}
                   </div>
+                  <button onClick={() => setFillMode((v) => !v)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
+                    <Maximize2 className="h-4 w-4" /><span className="hidden sm:inline">{fillMode ? "Fit" : "Fill & Zoom"}</span>
+                  </button>
                   <button onClick={() => enterLandscapeFullscreen(playerRef.current)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
                     <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
                   </button>
                 </div>
               </div>
-              <div className="flex items-center justify-center gap-2 border-b border-border bg-secondary/40 px-4 py-2 text-xs font-bold text-muted-foreground sm:hidden">
-                <Clock3 className="h-4 w-4 text-primary" /> Stream will play soon in {countdown}s
-              </div>
+              {!streamPlaying && countdown > 0 && (
+                <div className="flex items-center justify-center gap-2 border-b border-border bg-secondary/40 px-4 py-2 text-xs font-bold text-muted-foreground sm:hidden">
+                  <Clock3 className="h-4 w-4 text-primary" /> Stream will play soon in {countdown}s
+                </div>
+              )}
               <div className="relative min-h-0 flex-1">
                 {frameLoading && (
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/80 text-center backdrop-blur-xl">
@@ -119,7 +149,7 @@ function FootballStreamPage() {
                   key={playerSrc}
                   src={playerSrc}
                   title={detail.title}
-                  className="h-full w-full border-0"
+                  className={`h-full w-full border-0 ${fillMode ? "scale-110" : ""} origin-center transition-transform`}
                   allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
                   allowFullScreen
                   referrerPolicy="no-referrer"

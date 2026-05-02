@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Bookmark, BookmarkCheck, Download, Expand, Loader2, Play, RefreshCw } from "lucide-react";
+import { ArrowLeft, Bookmark, BookmarkCheck, Download, Expand, Loader2, Maximize2, Play, RefreshCw } from "lucide-react";
 import {
   EMBED_PROVIDERS,
   QUALITY_OPTIONS,
@@ -31,7 +31,11 @@ export const Route = createFileRoute("/watch/$kind/$id")({
 async function enterLandscapeFullscreen(element: HTMLElement | null) {
   if (!element) return;
   try {
-    if (!document.fullscreenElement) await element.requestFullscreen();
+    const el = element as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+    if (!document.fullscreenElement) {
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+    }
     const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
     await orientation?.lock?.("landscape");
   } catch {}
@@ -52,6 +56,7 @@ function WatchPage() {
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
   const [meta, setMeta] = useState<MediaItem | null>(null);
   const [saved, setSaved] = useState(false);
+  const [fillMode, setFillMode] = useState(false);
 
   useEffect(() => {
     if (!Number.isFinite(mediaId)) return;
@@ -173,15 +178,20 @@ function WatchPage() {
                 <h1 className="truncate text-base font-bold">{title}</h1>
                 <p className="mt-1 text-xs text-muted-foreground">Movie player · unrestricted iframe · {EMBED_PROVIDERS.find((item) => item.id === provider)?.label}</p>
               </div>
-              <button onClick={() => enterLandscapeFullscreen(playerRef.current)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
-                <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setFillMode((v) => !v)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
+                  <Maximize2 className="h-4 w-4" /><span className="hidden sm:inline">{fillMode ? "Fit" : "Fill & Zoom"}</span>
+                </button>
+                <button onClick={() => enterLandscapeFullscreen(playerRef.current)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
+                  <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
+                </button>
+              </div>
             </div>
             <iframe
               key={`${src}-${quality}`}
               src={src}
               title={title}
-              className="min-h-0 flex-1 border-0"
+              className={`min-h-0 flex-1 border-0 ${fillMode ? "scale-110" : ""} origin-center transition-transform`}
               allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
               allowFullScreen
               referrerPolicy="no-referrer"
@@ -226,6 +236,7 @@ function WatchPage() {
                   </button>
                 ))}
               </div>
+              <p className="text-[11px] text-muted-foreground">Note: most embed providers stream adaptively and pick quality based on your bandwidth — the selector is a hint to the player.</p>
             </section>
 
             {mediaKind === "tv" && (

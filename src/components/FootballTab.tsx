@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Calendar, Clock, Loader2, MapPin, Play, Radio } from "lucide-react";
+import { Bell, BellRing, Calendar, Clock, Loader2, MapPin, Play, Radio } from "lucide-react";
 import { footballMatches, footballStreamMatches, type FootballStreamMatch } from "@/lib/api";
+import { isMatchScheduled, scheduleMatchNotification } from "@/lib/notifications";
 
 function formatKickoff(iso?: string | number) {
   if (!iso) return { date: "", time: "" };
@@ -102,6 +103,7 @@ export function FootballTab() {
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-[11px] text-muted-foreground">
                   <span>{isFinal ? "Full Time" : status?.shortDetail || "Scheduled"}</span>
                   {venue && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {venue}</span>}
+                  {state === "pre" && <NotifyButton id={ev.id} title={`${teamName(home)} vs ${teamName(away)}`} when={new Date(ev.date).getTime()} />}
                 </div>
               </article>
             );
@@ -144,5 +146,29 @@ export function FootballTab() {
       )}
 
     </div>
+  );
+}
+
+function NotifyButton({ id, title, when }: { id: string; title: string; when: number }) {
+  const [scheduled, setScheduled] = useState(() => isMatchScheduled(id));
+  const [busy, setBusy] = useState(false);
+
+  async function notify() {
+    setBusy(true);
+    const ok = await scheduleMatchNotification({ id, title, when, url: window.location.origin });
+    setBusy(false);
+    if (ok) setScheduled(true);
+    else alert("Notifications were blocked. Enable notifications in your browser settings to get a kickoff alert.");
+  }
+
+  return (
+    <button
+      onClick={notify}
+      disabled={busy || scheduled}
+      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold transition ${scheduled ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-primary hover:text-primary-foreground"}`}
+    >
+      {scheduled ? <BellRing className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
+      {scheduled ? "We'll notify you" : "Notify me"}
+    </button>
   );
 }

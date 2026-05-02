@@ -137,6 +137,39 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+/* Light mode override (toggled by .light on <html> via the More menu). */
+.light {
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.18 0 0);
+  --card: oklch(0.96 0 0);
+  --card-foreground: oklch(0.18 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0 0);
+  --primary: oklch(0.65 0.22 30);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.93 0 0);
+  --secondary-foreground: oklch(0.18 0 0);
+  --muted: oklch(0.94 0 0);
+  --muted-foreground: oklch(0.45 0 0);
+  --accent: oklch(0.65 0.22 30);
+  --accent-foreground: oklch(1 0 0);
+  --border: oklch(0.88 0 0);
+  --input: oklch(0.92 0 0);
+  --ring: oklch(0.65 0.22 30);
+}
+
+/* Best-effort: hide the injected "Edit with Lovable" badge on the published site
+ * for users who don't have Pro. The badge sits at the bottom-right corner. */
+a[href*="lovable.dev"][target="_blank"],
+iframe[src*="lovable.dev"][title*="Edit"],
+#lovable-badge,
+[data-lovable-badge] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
