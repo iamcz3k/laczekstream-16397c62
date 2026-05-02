@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock, Sparkles } from "lucide-react";
 import { Header, type TabKey } from "@/components/Header";
 import { MoviesTab } from "@/components/MoviesTab";
 import { AnimeTab } from "@/components/AnimeTab";
@@ -12,6 +12,13 @@ import { GenresTab } from "@/components/GenresTab";
 import { LibraryTab } from "@/components/LibraryTab";
 import { MediaCard } from "@/components/MediaCard";
 import { getContinueWatching, onLibraryChange, type LibraryEntry } from "@/lib/library";
+import { getPrefs, onPrefsChange } from "@/lib/preferences";
+import { OnboardingPopup } from "@/components/OnboardingPopup";
+import { LogoAnimation, type LogoAnimKind } from "@/components/LogoAnimation";
+import { BugReport } from "@/components/BugReport";
+import { playForTab } from "@/lib/sfx";
+import { tmdbPopular, type MediaItem } from "@/lib/api";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -24,16 +31,41 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [tab, setTab] = useState<TabKey>("movies");
+  const [tab, setTab] = useState<TabKey>(() => {
+    if (typeof window === "undefined") return "movies";
+    return (getPrefs().defaultTab as TabKey | undefined) || "movies";
+  });
   const [movieKind, setMovieKind] = useState<"movie" | "tv" | "anime">("movie");
   const [librarySection, setLibrarySection] = useState<"continue" | "watchlist" | "history">("continue");
   const [continueList, setContinueList] = useState<LibraryEntry[]>([]);
+  const [name, setName] = useState<string>(() => getPrefs().name || "");
+  const [recommended, setRecommended] = useState<MediaItem[]>([]);
+  const [logoAnim, setLogoAnim] = useState<LogoAnimKind | null>(null);
 
   useEffect(() => {
     const refresh = () => setContinueList(getContinueWatching().slice(0, 12));
     refresh();
     return onLibraryChange(refresh);
   }, []);
+
+  useEffect(() => onPrefsChange((p) => setName(p.name || "")), []);
+
+  useEffect(() => {
+    tmdbPopular("movie", 2).then((items) => setRecommended(items.slice(0, 12))).catch(() => setRecommended([]));
+  }, []);
+
+  // Listen for brand-logo clicks to play the per-tab celebration animation.
+  useEffect(() => {
+    function handler() {
+      const kind: LogoAnimKind = (["movies", "football", "tv", "youtube", "cctv"] as TabKey[]).includes(tab)
+        ? (tab as LogoAnimKind)
+        : "default";
+      setLogoAnim(kind);
+      playForTab(kind);
+    }
+    window.addEventListener("laczek:logo-click", handler);
+    return () => window.removeEventListener("laczek:logo-click", handler);
+  }, [tab]);
 
   // Listen for navigation events from the 3-dots menu (continue/watchlist/history/genres).
   useEffect(() => {
@@ -50,6 +82,9 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <OnboardingPopup onPickTab={(t) => setTab(t)} />
+      {logoAnim && <LogoAnimation kind={logoAnim} onDone={() => setLogoAnim(null)} />}
+      <BugReport />
       <Header active={tab} onChange={setTab} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -75,6 +110,37 @@ function Index() {
               </div>
             </div>
             {movieKind === "anime" ? <AnimeTab /> : <MoviesTab kind={movieKind} />}
+          </section>
+        )}
+
+        {tab === "movies" && movieKind === "movie" && recommended.length > 0 && (
+          <section className="mt-12 space-y-4">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <h3 className="flex items-center gap-2 text-2xl font-black tracking-tight">
+                  <Sparkles className="h-5 w-5 text-primary" /> {name ? `${name}, you might like` : "Recommended for you"}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">Hand-picked popular picks</p>
+              </div>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 sm:mx-0 sm:px-0">
+              {recommended.map((m) => (
+                <Link
+                  key={m.id}
+                  to="/watch/$kind/$id"
+                  params={{ kind: m.type, id: String(m.id) }}
+                  className="group w-40 shrink-0 sm:w-44 rounded-[20px] overflow-hidden glass-card hover:border-primary transition-all hover:-translate-y-1"
+                >
+                  <div className="aspect-[2/3] bg-muted overflow-hidden">
+                    {m.poster && <img src={m.poster} alt={m.title} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition" />}
+                  </div>
+                  <div className="p-2">
+                    <p className="truncate text-sm font-medium">{m.title}</p>
+                    {m.year && <p className="text-xs text-muted-foreground">{m.year}</p>}
+                  </div>
+                </Link>
+              ))}
+            </div>
           </section>
         )}
 
