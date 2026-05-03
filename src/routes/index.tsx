@@ -15,7 +15,6 @@ import { getContinueWatching, onLibraryChange, type LibraryEntry } from "@/lib/l
 import { getPrefs, onPrefsChange } from "@/lib/preferences";
 import { OnboardingPopup } from "@/components/OnboardingPopup";
 import { LogoAnimation, type LogoAnimKind } from "@/components/LogoAnimation";
-import { playForTab } from "@/lib/sfx";
 import { tmdbPopular, type MediaItem } from "@/lib/api";
 import { Link } from "@tanstack/react-router";
 
@@ -60,7 +59,6 @@ function Index() {
         ? (tab as LogoAnimKind)
         : "default";
       setLogoAnim(kind);
-      playForTab(kind);
     }
     window.addEventListener("laczek:logo-click", handler);
     return () => window.removeEventListener("laczek:logo-click", handler);

@@ -75,10 +75,11 @@ function RootComponent() {
     try {
       const raw = localStorage.getItem("laczek:prefs");
       const theme = raw ? JSON.parse(raw)?.theme : null;
+      document.documentElement.classList.remove("dark");
       if (theme === "light") document.documentElement.classList.add("light");
-      else document.documentElement.classList.add("dark");
+      else document.documentElement.classList.remove("light");
     } catch {
-      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("dark");
     }
     import("@/lib/notifications").then((m) => m.ensureSW()).catch(() => {});
   }, []);
