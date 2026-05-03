@@ -15,7 +15,6 @@ import { getContinueWatching, onLibraryChange, type LibraryEntry } from "@/lib/l
 import { getPrefs, onPrefsChange } from "@/lib/preferences";
 import { OnboardingPopup } from "@/components/OnboardingPopup";
 import { LogoAnimation, type LogoAnimKind } from "@/components/LogoAnimation";
-import { BugReport } from "@/components/BugReport";
 import { playForTab } from "@/lib/sfx";
 import { tmdbPopular, type MediaItem } from "@/lib/api";
 import { Link } from "@tanstack/react-router";
@@ -84,7 +83,7 @@ function Index() {
     <div className="min-h-screen bg-background text-foreground">
       <OnboardingPopup onPickTab={(t) => setTab(t)} />
       {logoAnim && <LogoAnimation kind={logoAnim} onDone={() => setLogoAnim(null)} />}
-      <BugReport />
+      {/* BugReport moved to MoreMenu (Settings) */}
       <Header active={tab} onChange={setTab} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
