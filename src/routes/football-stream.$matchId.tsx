@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Clock3, Expand, Loader2, Maximize2, MessageCircle, Play, Send, Shield, Volume2 } from "lucide-react";
+import { ArrowLeft, Clock3, Expand, Loader2, Maximize2, Play, Shield } from "lucide-react";
 import { footballStreamDetail, type FootballStreamDetail } from "@/lib/api";
 import { BrandMark } from "@/components/BrandMark";
 import { MatchChat } from "@/components/MatchChat";
@@ -173,6 +173,7 @@ function FootballStreamPage() {
                   {typeof item.viewers === "number" && <p className="mt-1 text-xs opacity-70">{item.viewers.toLocaleString()} viewers</p>}
                 </button>
               ))}
+              <MatchChat matchId={matchId} />
             </aside>
           </div>
         )}
