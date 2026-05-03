@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Bell, BellRing, Calendar, Clock, Loader2, MapPin, Play, Radio } from "lucide-react";
 import { footballMatches, footballStreamMatches, type FootballStreamMatch } from "@/lib/api";
 import { isMatchScheduled, scheduleMatchNotification } from "@/lib/notifications";
+import { getPrefs } from "@/lib/preferences";
 
 function formatKickoff(iso?: string | number) {
   if (!iso) return { date: "", time: "" };
@@ -22,12 +23,31 @@ export function FootballTab() {
   const [events, setEvents] = useState<any[]>([]);
   const [streams, setStreams] = useState<FootballStreamMatch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [allStreams, setAllStreams] = useState<FootballStreamMatch[]>([]);
+  const userName = getPrefs().name || "";
 
   useEffect(() => {
     setLoading(true);
     const loader = mode === "schedule" ? footballMatches().then(setEvents) : footballStreamMatches().then(setStreams);
     loader.catch(() => (mode === "schedule" ? setEvents([]) : setStreams([]))).finally(() => setLoading(false));
   }, [mode]);
+
+  // Always fetch the live stream catalog so the schedule view can show "Watch live" buttons
+  // when a match is also available as a live stream.
+  useEffect(() => {
+    footballStreamMatches().then(setAllStreams).catch(() => setAllStreams([]));
+  }, []);
+
+  function findStreamForEvent(ev: any): FootballStreamMatch | undefined {
+    const comp = ev.competitions?.[0];
+    const home = (comp?.competitors?.find((c: any) => c.homeAway === "home")?.team?.displayName || "").toLowerCase();
+    const away = (comp?.competitors?.find((c: any) => c.homeAway === "away")?.team?.displayName || "").toLowerCase();
+    if (!home && !away) return undefined;
+    return allStreams.find((s) => {
+      const t = (s.title || "").toLowerCase();
+      return (home && t.includes(home.split(" ")[0])) && (away && t.includes(away.split(" ")[0]));
+    });
+  }
 
   const groupedStreams = useMemo(() => {
     return streams.reduce<Record<string, FootballStreamMatch[]>>((acc, match) => {
@@ -39,6 +59,9 @@ export function FootballTab() {
 
   return (
     <div className="space-y-4">
+      {userName && (
+        <p className="text-sm text-muted-foreground">⚽ Welcome back, <span className="font-bold text-foreground">{userName}</span> — here's today's action.</p>
+      )}
       <div className="inline-flex w-full rounded-full glass p-1 shadow-[inset_0_1px_0_color-mix(in_oklab,white_8%,transparent)] sm:w-auto">
         {([
           ["schedule", "Schedule"],
@@ -75,6 +98,7 @@ export function FootballTab() {
             const kickoff = formatKickoff(ev.date);
             const venue = comp?.venue?.fullName;
             const league = ev.season?.slug?.replace(/-/g, " ") || ev.shortName;
+            const matchedStream = findStreamForEvent(ev);
 
             return (
                 <article key={ev.id} className="glass-card rounded-[22px] p-4 transition-all duration-300 hover:border-primary/50">
@@ -103,7 +127,15 @@ export function FootballTab() {
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-[11px] text-muted-foreground">
                   <span>{isFinal ? "Full Time" : status?.shortDetail || "Scheduled"}</span>
                   {venue && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {venue}</span>}
-                  {state === "pre" && <NotifyButton id={ev.id} title={`${teamName(home)} vs ${teamName(away)}`} when={new Date(ev.date).getTime()} />}
+                  {matchedStream && (
+                    <Link
+                      to="/football-stream/$matchId"
+                      params={{ matchId: matchedStream.id }}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground transition hover:scale-105"
+                    >
+                      <Play className="h-3 w-3" fill="currentColor" /> Watch live
+                    </Link>
+                  )}
                 </div>
               </article>
             );
@@ -122,6 +154,7 @@ export function FootballTab() {
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {matches.map((match) => {
                   const kickoff = formatKickoff(match.date);
+                  const notStarted = match.date ? match.date > Date.now() : false;
                   return (
                     <Link key={match.id} to="/football-stream/$matchId" params={{ matchId: match.id }} className="glass-card block overflow-hidden rounded-[22px] text-left transition-all duration-300 hover:border-primary/50 active:scale-[0.98]">
                       {match.poster && <img src={match.poster} alt={match.title} className="h-36 w-full object-cover" loading="lazy" />}
@@ -131,9 +164,16 @@ export function FootballTab() {
                           <span>{kickoff.time || "Live"}</span>
                           <span>{match.viewers ? `${match.viewers.toLocaleString()} views` : "Stream"}</span>
                         </div>
-                        <span className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
-                          <Play className="h-4 w-4" fill="currentColor" /> Watch
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
+                            <Play className="h-4 w-4" fill="currentColor" /> Watch
+                          </span>
+                          {notStarted && match.date && (
+                            <span onClick={(e) => e.preventDefault()}>
+                              <NotifyButton id={match.id} title={match.title} when={match.date} />
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </Link>
                   );

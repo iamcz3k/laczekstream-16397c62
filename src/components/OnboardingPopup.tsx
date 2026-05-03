@@ -40,7 +40,7 @@ export function OnboardingPopup({ onPickTab }: { onPickTab: (tab: TabKey) => voi
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/85 p-4 backdrop-blur-xl">
-      <div className="w-full max-w-md rounded-3xl border border-border bg-black p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+      <div className="w-full max-w-md rounded-3xl border border-border bg-popover text-popover-foreground p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
         {step === "name" && (
           <form onSubmit={submitName} className="space-y-5">
             <div className="text-center">
