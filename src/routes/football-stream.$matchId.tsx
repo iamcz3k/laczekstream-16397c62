@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Clock3, Expand, Loader2, Maximize2, Play, Shield } from "lucide-react";
+import { ArrowLeft, Clock3, Expand, Loader2, Maximize2, MessageCircle, Play, Send, Shield, Volume2 } from "lucide-react";
 import { footballStreamDetail, type FootballStreamDetail } from "@/lib/api";
 import { BrandMark } from "@/components/BrandMark";
+import { MatchChat } from "@/components/MatchChat";
 
 export const Route = createFileRoute("/football-stream/$matchId")({
   component: FootballStreamPage,
@@ -59,7 +60,9 @@ function FootballStreamPage() {
       const url = new URL(source.embedUrl);
       url.searchParams.set("autoplay", "1");
       url.searchParams.set("auto", "1");
-      url.searchParams.set("muted", "1");
+      // Don't force-mute — users want sound
+      url.searchParams.delete("muted");
+      url.searchParams.delete("mute");
       return url.toString();
     } catch {
       return source.embedUrl;
