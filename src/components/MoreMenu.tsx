@@ -23,6 +23,7 @@ import { clearLibrary, exportLibrary } from "@/lib/library";
 import { getPrefs, setPrefs } from "@/lib/preferences";
 import { DeveloperInfo } from "@/components/DeveloperInfo";
 import { QA_LIST } from "@/lib/qa";
+import { BugReport } from "@/components/BugReport";
 
 export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -121,7 +122,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
         <MoreVertical className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-12 z-[60] w-64 overflow-hidden rounded-2xl border border-border bg-black shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute right-0 top-12 z-[60] w-64 overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
           <MenuItem icon={Clock} onClick={() => goTab("library", "continue")}>Continue watching</MenuItem>
           <MenuItem icon={Bookmark} onClick={() => goTab("library", "watchlist")}>Watchlist</MenuItem>
           <MenuItem icon={HistoryIcon} onClick={() => goTab("library", "history")}>History</MenuItem>
@@ -134,6 +135,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
           <MenuItem icon={Download} onClick={exportData}>Export my library</MenuItem>
           <MenuItem icon={HelpCircle} onClick={() => { setOpen(false); setShowQA(true); }}>Help & FAQ</MenuItem>
           <MenuItem icon={Code2} onClick={() => { setOpen(false); setShowDev(true); }}>Developer</MenuItem>
+          <BugReport trigger="inline" />
           <MenuItem icon={KeyboardIcon} onClick={() => { setOpen(false); setShowShortcuts(true); }}>Keyboard shortcuts</MenuItem>
           <MenuItem icon={RefreshCcw} onClick={reload}>Reload streams</MenuItem>
           <MenuItem icon={Info} onClick={() => { setOpen(false); setShowAbout(true); }}>About</MenuItem>
@@ -205,7 +207,7 @@ function MenuItem({
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 p-4 backdrop-blur-xl" onClick={onClose}>
-      <div className="w-full max-w-md rounded-3xl border border-border bg-black p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-md rounded-3xl border border-border bg-popover text-popover-foreground p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <h3 className="mb-3 text-lg font-bold">{title}</h3>
         {children}
         <div className="mt-5 text-right">
