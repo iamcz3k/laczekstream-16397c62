@@ -60,7 +60,6 @@ function Index() {
         ? (tab as LogoAnimKind)
         : "default";
       setLogoAnim(kind);
-      playForTab(kind);
     }
     window.addEventListener("laczek:logo-click", handler);
     return () => window.removeEventListener("laczek:logo-click", handler);
