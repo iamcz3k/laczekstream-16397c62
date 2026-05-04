@@ -60,6 +60,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var r=localStorage.getItem('laczek:prefs');var t=r?JSON.parse(r).theme:null;document.documentElement.classList.remove('dark');if(t==='light')document.documentElement.classList.add('light');}catch(e){document.documentElement.classList.remove('dark');}})();`,
+          }}
+        />
       </head>
       <body>
         {children}
