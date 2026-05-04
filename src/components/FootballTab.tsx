@@ -156,26 +156,26 @@ export function FootballTab() {
                   const kickoff = formatKickoff(match.date);
                   const notStarted = match.date ? match.date > Date.now() : false;
                   return (
-                    <Link key={match.id} to="/football-stream/$matchId" params={{ matchId: match.id }} className="glass-card block overflow-hidden rounded-[22px] text-left transition-all duration-300 hover:border-primary/50 active:scale-[0.98]">
-                      {match.poster && <img src={match.poster} alt={match.title} className="h-36 w-full object-cover" loading="lazy" />}
-                      <div className="space-y-3 p-4">
-                        <p className="text-base font-bold leading-tight break-words">{match.title}</p>
-                        <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
-                          <span>{kickoff.time || "Live"}</span>
-                          <span>{match.viewers ? `${match.viewers.toLocaleString()} views` : "Stream"}</span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
+                    <div key={match.id} className="glass-card relative overflow-hidden rounded-[22px] text-left transition-all duration-300 hover:border-primary/50">
+                      <Link to="/football-stream/$matchId" params={{ matchId: match.id }} className="block active:scale-[0.98]">
+                        {match.poster && <img src={match.poster} alt={match.title} className="h-36 w-full object-cover" loading="lazy" />}
+                        <div className="space-y-3 p-4 pb-2">
+                          <p className="text-base font-bold leading-tight break-words">{match.title}</p>
+                          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+                            <span>{kickoff.time || "Live"}</span>
+                            <span>{match.viewers ? `${match.viewers.toLocaleString()} views` : "Stream"}</span>
+                          </div>
                           <span className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
                             <Play className="h-4 w-4" fill="currentColor" /> Watch
                           </span>
-                          {notStarted && match.date && (
-                            <span onClick={(e) => e.preventDefault()}>
-                              <NotifyButton id={match.id} title={match.title} when={match.date} />
-                            </span>
-                          )}
                         </div>
-                      </div>
-                    </Link>
+                      </Link>
+                      {notStarted && match.date && (
+                        <div className="px-4 pb-4">
+                          <NotifyButton id={match.id} title={match.title} when={match.date} />
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
