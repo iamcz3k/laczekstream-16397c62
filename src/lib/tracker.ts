@@ -1,6 +1,7 @@
 // Visitor session tracker. Persists a session row in Supabase and updates time spent,
 // current path, watched items, and searches. Geo-IP via free ipapi.co (no key).
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { getPrefs } from "@/lib/preferences";
 
 const SESSION_KEY_LS = "laczek:visitor:key";
@@ -126,17 +127,17 @@ async function updatePath() {
 export async function trackWatch(entry: { kind: string; id: string; title?: string }) {
   if (!sessionId) return;
   const { data } = await supabase.from("visitor_sessions").select("watched").eq("id", sessionId).single();
-  const watched = Array.isArray(data?.watched) ? (data!.watched as unknown[]) : [];
-  watched.unshift({ ...entry, at: new Date().toISOString() });
-  await supabase.from("visitor_sessions").update({ watched: watched.slice(0, 50) }).eq("id", sessionId);
+  const watched: Json[] = Array.isArray(data?.watched) ? (data!.watched as Json[]) : [];
+  watched.unshift({ ...entry, at: new Date().toISOString() } as unknown as Json);
+  await supabase.from("visitor_sessions").update({ watched: watched.slice(0, 50) as Json }).eq("id", sessionId);
 }
 
 export async function trackSearch(query: string) {
   if (!sessionId || !query.trim()) return;
   const { data } = await supabase.from("visitor_sessions").select("searches").eq("id", sessionId).single();
-  const searches = Array.isArray(data?.searches) ? (data!.searches as unknown[]) : [];
-  searches.unshift({ q: query, at: new Date().toISOString() });
-  await supabase.from("visitor_sessions").update({ searches: searches.slice(0, 30) }).eq("id", sessionId);
+  const searches: Json[] = Array.isArray(data?.searches) ? (data!.searches as Json[]) : [];
+  searches.unshift({ q: query, at: new Date().toISOString() } as unknown as Json);
+  await supabase.from("visitor_sessions").update({ searches: searches.slice(0, 30) as Json }).eq("id", sessionId);
 }
 
 export function stopTracking() {
