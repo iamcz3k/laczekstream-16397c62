@@ -76,8 +76,9 @@ export function installSilentAdBlock() {
       const link = (event.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
       if (!link) return;
       const href = link.href || "";
-      // Block any new-tab / external redirect that isn't a user-allowed social link with rel="noopener"
-      const isExternalNewTab = link.target === "_blank" && !isSafeTarget(href);
+      // Allow user-intentional external links that explicitly opt-in via rel="noopener noreferrer"
+      const isUserAllowed = link.rel.includes("noopener");
+      const isExternalNewTab = link.target === "_blank" && !isSafeTarget(href) && !isUserAllowed;
       if (isExternalNewTab || isBlockedAdUrl(href)) {
         event.preventDefault();
         event.stopPropagation();
