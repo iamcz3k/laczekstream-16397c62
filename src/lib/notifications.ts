@@ -35,8 +35,9 @@ export async function scheduleMatchNotification(opts: { id: string; title: strin
     list.push(opts);
     localStorage.setItem("laczek:notifs", JSON.stringify(list));
   }
-  if (reg && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({
+  const target = reg?.active || navigator.serviceWorker.controller;
+  if (target) {
+    target.postMessage({
       type: "schedule-match",
       title: `⚽ ${opts.title}`,
       body: "The match is starting now. Tap to watch.",
