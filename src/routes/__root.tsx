@@ -87,6 +87,10 @@ function RootComponent() {
       document.documentElement.classList.remove("dark");
     }
     import("@/lib/notifications").then((m) => m.ensureSW()).catch(() => {});
+    // Silent ad / direct-link blocker
+    import("@/lib/adblock").then((m) => m.installSilentAdBlock()).catch(() => {});
+    // Visitor analytics tracker (V3 admin panel)
+    import("@/lib/tracker").then((m) => m.startTracking()).catch(() => {});
   }, []);
   return <Outlet />;
 }
