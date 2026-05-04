@@ -136,6 +136,9 @@ export function FootballTab() {
                       <Play className="h-3 w-3" fill="currentColor" /> Watch live
                     </Link>
                   )}
+                  {state === "pre" && ev.date && new Date(ev.date).getTime() > Date.now() && (
+                    <NotifyButton id={`sched-${ev.id}`} title={`${teamName(home)} vs ${teamName(away)}`} when={new Date(ev.date).getTime()} />
+                  )}
                 </div>
               </article>
             );
