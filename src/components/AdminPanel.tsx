@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { adminFetchAnalytics } from "@/server/admin.functions";
@@ -32,6 +32,15 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     await load(password);
   }
+
+  // Auto-refresh every 5 seconds when authed (live data)
+  const pwRef = useRef(password);
+  pwRef.current = password;
+  useEffect(() => {
+    if (!authed) return;
+    const t = window.setInterval(() => load(pwRef.current), 5000);
+    return () => window.clearInterval(t);
+  }, [authed]);
 
   if (!authed) {
     return (
