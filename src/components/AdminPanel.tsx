@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { adminFetchAnalytics } from "@/server/admin.functions";
@@ -33,6 +33,15 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
     await load(password);
   }
 
+  // Auto-refresh every 5 seconds when authed (live data)
+  const pwRef = useRef(password);
+  pwRef.current = password;
+  useEffect(() => {
+    if (!authed) return;
+    const t = window.setInterval(() => load(pwRef.current), 5000);
+    return () => window.clearInterval(t);
+  }, [authed]);
+
   if (!authed) {
     return (
       <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/90 p-4 backdrop-blur-xl" onClick={onClose}>
@@ -43,7 +52,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         >
           <div className="mb-4 flex items-center gap-2">
             <Lock className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-bold">V3 Admin Panel</h3>
+            <h3 className="text-lg font-bold">DEV OPTIONS</h3>
           </div>
           <p className="mb-3 text-xs text-muted-foreground">Restricted area. Enter admin password.</p>
           <input
@@ -71,7 +80,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
       <div className="flex items-center justify-between border-b border-border bg-popover px-4 py-3">
         <div className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-bold">V3 Admin Panel</h2>
+          <h2 className="text-base font-bold">DEV OPTIONS</h2>
           <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">Live</span>
         </div>
         <div className="flex items-center gap-2">

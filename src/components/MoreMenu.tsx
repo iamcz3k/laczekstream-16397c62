@@ -8,14 +8,18 @@ import {
   History as HistoryIcon,
   Info,
   KeyboardIcon,
+  Languages,
+  ListChecks,
   Moon,
   MoreVertical,
   RefreshCcw,
+  Search as SearchIcon,
   Share2,
   Shuffle,
   Sparkles,
   Sun,
   Trash2,
+  X,
 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { tmdbRandomMovie } from "@/lib/api";
@@ -24,6 +28,8 @@ import { getPrefs, setPrefs } from "@/lib/preferences";
 import { DeveloperInfo } from "@/components/DeveloperInfo";
 import { QA_LIST } from "@/lib/qa";
 import { BugReport } from "@/components/BugReport";
+import { LANGUAGES } from "@/lib/languages";
+import { CHANGELOG, type ChangeKind } from "@/lib/changelog";
 
 export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -32,8 +38,9 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   const [showAbout, setShowAbout] = useState(false);
   const [showDev, setShowDev] = useState(false);
   const [showQA, setShowQA] = useState(false);
+  const [showLang, setShowLang] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">(() => getPrefs().theme || "dark");
-  const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,20 +48,19 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
+  // Lock body scroll when drawer open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
     setPrefs({ theme: next });
-    setOpen(false);
   }
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   async function surpriseMe() {
     setBusy(true);
@@ -72,10 +78,8 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
 
   function goTab(tab: "library" | "genres", section?: "continue" | "watchlist" | "history") {
     setOpen(false);
-    // If we're not on the home route, navigate there first.
     if (window.location.pathname !== "/") {
       navigate({ to: "/" });
-      // give the page a tick to mount before dispatching
       setTimeout(() => window.dispatchEvent(new CustomEvent("laczek:navigate-tab", { detail: { tab, section } })), 50);
     } else {
       window.dispatchEvent(new CustomEvent("laczek:navigate-tab", { detail: { tab, section } }));
@@ -86,10 +90,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
     setOpen(false);
     const data = { title: "LACZEK STREAM", text: "Free movies, TV, football, anime & live CCTV.", url: window.location.origin };
     if (navigator.share) navigator.share(data).catch(() => {});
-    else {
-      navigator.clipboard?.writeText(data.url);
-      alert("Link copied to clipboard");
-    }
+    else { navigator.clipboard?.writeText(data.url); alert("Link copied to clipboard"); }
   }
 
   function exportData() {
@@ -112,36 +113,77 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
     window.location.reload();
   }
 
+  const currentLang = LANGUAGES.find((l) => l.code === (getPrefs().language || "en")) || LANGUAGES[0];
+
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
-        onClick={() => setOpen((v) => !v)}
-        aria-label="More options"
+        onClick={() => setOpen(true)}
+        aria-label="Open menu"
         className="flex h-10 w-10 items-center justify-center rounded-full glass transition hover:bg-primary hover:text-primary-foreground"
       >
         <MoreVertical className="h-4 w-4" />
       </button>
-      {open && (
-        <div className="absolute right-0 top-12 z-[60] w-64 overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
-          <MenuItem icon={Clock} onClick={() => goTab("library", "continue")}>Continue watching</MenuItem>
-          <MenuItem icon={Bookmark} onClick={() => goTab("library", "watchlist")}>Watchlist</MenuItem>
-          <MenuItem icon={HistoryIcon} onClick={() => goTab("library", "history")}>History</MenuItem>
-          <MenuItem icon={Sparkles} onClick={() => goTab("genres")}>Browse genres</MenuItem>
-          <MenuItem icon={Shuffle} onClick={surpriseMe} disabled={busy}>{busy ? "Picking…" : "Surprise me"}</MenuItem>
-          <MenuItem icon={theme === "dark" ? Sun : Moon} onClick={toggleTheme}>
-            {theme === "dark" ? "Light mode" : "Dark mode"}
-          </MenuItem>
-          <MenuItem icon={Share2} onClick={shareSite}>Share LACZEK STREAM</MenuItem>
-          <MenuItem icon={Download} onClick={exportData}>Export my library</MenuItem>
-          <MenuItem icon={HelpCircle} onClick={() => { setOpen(false); setShowQA(true); }}>Help & FAQ</MenuItem>
-          <MenuItem icon={Code2} onClick={() => { setOpen(false); setShowDev(true); }}>Developer</MenuItem>
-          <BugReport trigger="inline" />
-          <MenuItem icon={KeyboardIcon} onClick={() => { setOpen(false); setShowShortcuts(true); }}>Keyboard shortcuts</MenuItem>
-          <MenuItem icon={RefreshCcw} onClick={reload}>Reload streams</MenuItem>
-          <MenuItem icon={Info} onClick={() => { setOpen(false); setShowAbout(true); }}>About</MenuItem>
-          <MenuItem icon={Trash2} onClick={clearAll} destructive>Clear my data</MenuItem>
-        </div>
-      )}
+
+      {/* Slide-in drawer */}
+      <div
+        className={`fixed inset-0 z-[80] transition-opacity duration-300 ${open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+        onClick={() => setOpen(false)}
+      >
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+        <aside
+          onClick={(e) => e.stopPropagation()}
+          className={`absolute right-0 top-0 flex h-full w-[88%] max-w-[380px] flex-col border-l border-border bg-popover text-popover-foreground shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"}`}
+        >
+          <header className="flex items-center justify-between border-b border-border px-5 py-4">
+            <div>
+              <h2 className="text-base font-black tracking-tight">Menu</h2>
+              <p className="text-[11px] text-muted-foreground">Quick actions & settings</p>
+            </div>
+            <button onClick={() => setOpen(false)} aria-label="Close menu" className="rounded-full bg-secondary p-2 transition hover:bg-primary hover:text-primary-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </header>
+
+          <div className="flex-1 overflow-y-auto py-2">
+            <Group label="Library">
+              <Row icon={Clock} onClick={() => goTab("library", "continue")}>Continue watching</Row>
+              <Row icon={Bookmark} onClick={() => goTab("library", "watchlist")}>Watchlist</Row>
+              <Row icon={HistoryIcon} onClick={() => goTab("library", "history")}>History</Row>
+              <Row icon={Sparkles} onClick={() => goTab("genres")}>Browse genres</Row>
+              <Row icon={Shuffle} onClick={surpriseMe} disabled={busy}>{busy ? "Picking…" : "Surprise me"}</Row>
+            </Group>
+
+            <Group label="Settings">
+              <Row icon={theme === "dark" ? Sun : Moon} onClick={toggleTheme}>
+                {theme === "dark" ? "Light mode" : "Dark mode"}
+              </Row>
+              <Row icon={Languages} onClick={() => setShowLang(true)} value={`${currentLang.native}`}>Language</Row>
+            </Group>
+
+            <Group label="More">
+              <Row icon={ListChecks} onClick={() => { setOpen(false); setShowChangelog(true); }}>What's new</Row>
+              <Row icon={Share2} onClick={shareSite}>Share LACZEK STREAM</Row>
+              <Row icon={Download} onClick={exportData}>Export my library</Row>
+              <Row icon={HelpCircle} onClick={() => { setOpen(false); setShowQA(true); }}>Help & FAQ</Row>
+              <Row icon={Code2} onClick={() => { setOpen(false); setShowDev(true); }}>Developer</Row>
+              <BugReport trigger="inline" />
+              <Row icon={KeyboardIcon} onClick={() => { setOpen(false); setShowShortcuts(true); }}>Keyboard shortcuts</Row>
+              <Row icon={RefreshCcw} onClick={reload}>Reload streams</Row>
+              <Row icon={Info} onClick={() => { setOpen(false); setShowAbout(true); }}>About</Row>
+            </Group>
+
+            <Group label="Danger zone">
+              <Row icon={Trash2} onClick={clearAll} destructive>Clear my data</Row>
+            </Group>
+          </div>
+
+          <footer className="border-t border-border px-5 py-3 text-center text-[11px] text-muted-foreground">
+            LACZEK STREAM · v3
+          </footer>
+        </aside>
+      </div>
+
       {showShortcuts && (
         <Modal title="Keyboard shortcuts" onClose={() => setShowShortcuts(false)}>
           <ul className="space-y-2 text-sm">
@@ -153,16 +195,8 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
           </ul>
         </Modal>
       )}
-      {showAbout && (
-        <Modal title="About LACZEK STREAM" onClose={() => setShowAbout(false)}>
-          <AboutBody />
-        </Modal>
-      )}
-      {showDev && (
-        <Modal title="Developer" onClose={() => setShowDev(false)}>
-          <DeveloperInfo />
-        </Modal>
-      )}
+      {showAbout && (<Modal title="About LACZEK STREAM" onClose={() => setShowAbout(false)}><AboutBody /></Modal>)}
+      {showDev && (<Modal title="Developer" onClose={() => setShowDev(false)}><DeveloperInfo /></Modal>)}
       {showQA && (
         <Modal title="Help & FAQ" onClose={() => setShowQA(false)}>
           <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-2">
@@ -175,38 +209,133 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
           </div>
         </Modal>
       )}
+      {showLang && <LanguagePicker onClose={() => setShowLang(false)} />}
+      {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
+    </>
+  );
+}
+
+function Group({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-2">
+      <p className="px-5 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+      <div>{children}</div>
     </div>
   );
 }
 
-function MenuItem({
-  icon: Icon,
-  children,
-  onClick,
-  destructive,
-  disabled,
-}: {
+function Row({ icon: Icon, children, onClick, destructive, disabled, value }: {
   icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
   onClick: () => void;
   destructive?: boolean;
   disabled?: boolean;
+  value?: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition disabled:opacity-50 ${destructive ? "text-destructive hover:bg-destructive hover:text-destructive-foreground" : "hover:bg-secondary"}`}
+      className={`flex w-full items-center gap-3 px-5 py-3 text-left text-sm transition disabled:opacity-50 ${destructive ? "text-destructive hover:bg-destructive/10" : "hover:bg-secondary"}`}
     >
-      <Icon className="h-4 w-4" />
-      <span className="flex-1">{children}</span>
+      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${destructive ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="flex-1 font-medium">{children}</span>
+      {value && <span className="text-xs text-muted-foreground">{value}</span>}
     </button>
+  );
+}
+
+function LanguagePicker({ onClose }: { onClose: () => void }) {
+  const [q, setQ] = useState("");
+  const current = getPrefs().language || "en";
+  const filtered = LANGUAGES.filter((l) =>
+    `${l.name} ${l.native} ${l.code}`.toLowerCase().includes(q.toLowerCase()),
+  );
+  function pick(code: string) {
+    setPrefs({ language: code });
+    document.documentElement.lang = code;
+    onClose();
+  }
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/85 p-0 backdrop-blur-xl sm:items-center sm:p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="flex h-[85vh] w-full flex-col rounded-t-3xl border border-border bg-popover text-popover-foreground shadow-2xl sm:h-[70vh] sm:max-w-md sm:rounded-3xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div>
+            <h3 className="text-base font-black">Choose language</h3>
+            <p className="text-[11px] text-muted-foreground">{LANGUAGES.length} languages</p>
+          </div>
+          <button onClick={onClose} className="rounded-full bg-secondary p-2"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="relative px-5 py-3">
+          <SearchIcon className="pointer-events-none absolute left-8 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search…"
+            className="w-full rounded-full border border-border bg-secondary/50 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
+            autoFocus
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 pb-4">
+          {filtered.map((l) => (
+            <button
+              key={l.code}
+              onClick={() => pick(l.code)}
+              className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left text-sm transition hover:bg-secondary ${current === l.code ? "bg-primary/10 text-primary" : ""}`}
+            >
+              <span>
+                <span className="font-bold">{l.native}</span>
+                <span className="ml-2 text-xs text-muted-foreground">{l.name}</span>
+              </span>
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{l.code}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChangelogModal({ onClose }: { onClose: () => void }) {
+  const colors: Record<ChangeKind, string> = {
+    new: "bg-primary text-primary-foreground",
+    fix: "bg-emerald-500 text-white",
+    improved: "bg-blue-500 text-white",
+    soon: "bg-amber-500 text-white",
+  };
+  const labels: Record<ChangeKind, string> = { new: "NEW", fix: "FIX", improved: "IMPROVED", soon: "SOON" };
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/85 p-0 backdrop-blur-xl sm:items-center sm:p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="flex h-[85vh] w-full flex-col rounded-t-3xl border border-border bg-popover text-popover-foreground shadow-2xl sm:h-[70vh] sm:max-w-lg sm:rounded-3xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div>
+            <h3 className="text-base font-black">What's new</h3>
+            <p className="text-[11px] text-muted-foreground">Updates, fixes, and what's coming soon</p>
+          </div>
+          <button onClick={onClose} className="rounded-full bg-secondary p-2"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          {CHANGELOG.map((c, i) => (
+            <div key={i} className="rounded-2xl border border-border bg-secondary/40 p-4">
+              <div className="mb-1 flex items-center gap-2">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${colors[c.kind]}`}>{labels[c.kind]}</span>
+                <span className="text-[11px] text-muted-foreground">{c.date}</span>
+              </div>
+              <p className="text-sm font-bold">{c.title}</p>
+              {c.detail && <p className="mt-1 text-xs text-muted-foreground">{c.detail}</p>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 p-4 backdrop-blur-xl" onClick={onClose}>
+    <div className="fixed inset-0 z-[85] flex items-center justify-center bg-black/85 p-4 backdrop-blur-xl" onClick={onClose}>
       <div className="w-full max-w-md rounded-3xl border border-border bg-popover text-popover-foreground p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <h3 className="mb-3 text-lg font-bold">{title}</h3>
         {children}
@@ -221,18 +350,10 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
 function AboutBody() {
   return (
     <div className="max-h-[55vh] space-y-3 overflow-y-auto pr-2 text-sm leading-relaxed text-muted-foreground">
-      <p>Welcome to <span className="font-bold text-foreground">LACZEK STREAMs</span> — your all-in-one digital entertainment hub designed to bring you closer to the content you love, anytime and anywhere. Whether you're a movie enthusiast, a sports fanatic, a music lover, or simply someone looking for real-time global access, LACZEK STREAMs is built to deliver a rich and diverse streaming experience without limits.</p>
-      <p>At LACZEK STREAMs, we believe entertainment should be accessible, flexible, and enjoyable. That's why our platform offers a wide range of features all in one place:</p>
-      <p><span className="font-bold text-foreground">🎬 Movies & Downloads</span> — Explore a growing collection of movies across different genres, from the latest releases to timeless classics. Stream movies directly or download selected titles for offline viewing — completely free. Availability may vary; some movies may not play due to temporary media issues or regional restrictions.</p>
-      <p><span className="font-bold text-foreground">⚽ Live Football & Scores</span> — Stay connected to the world of football with live match streaming and real-time score updates.</p>
-      <p><span className="font-bold text-foreground">📺 Free Live TV Channels</span> — Enjoy a variety of live TV channels from different regions: news, entertainment, sports and more.</p>
-      <p><span className="font-bold text-foreground">🎵 Free Music Streaming</span> — Discover and stream music across multiple genres, artists and moods.</p>
-      <p><span className="font-bold text-foreground">📹 Live CCTV Cameras</span> — Experience real-time views from various locations around the world through live CCTV camera feeds.</p>
-      <p className="text-foreground font-bold">Important Notes & Disclaimer</p>
-      <p>Some features may include advertisements from upstream sources. Not all content is guaranteed to be available at all times. We continuously work to improve availability and user experience, but occasional interruptions may occur.</p>
+      <p>Welcome to <span className="font-bold text-foreground">LACZEK STREAMs</span> — your all-in-one digital entertainment hub. Movies, live football, free TV, music, anime and live CCTV — all in one place.</p>
       <p className="text-foreground font-bold">Our Mission</p>
-      <p>LACZEK STREAMs is committed to providing a seamless, free, and engaging entertainment experience for users worldwide.</p>
-      <p className="text-center font-bold text-foreground">Start streaming. Stay connected. Enjoy more — only on LACZEK STREAMs.</p>
+      <p>Provide a seamless, free, and engaging entertainment experience for users worldwide.</p>
+      <p className="text-center font-bold text-foreground">Start streaming. Stay connected. Enjoy more.</p>
     </div>
   );
 }

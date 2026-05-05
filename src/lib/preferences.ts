@@ -9,6 +9,7 @@ export type Prefs = {
   theme?: "dark" | "light";
   onboardedName?: boolean;
   onboardedTab?: boolean;
+  language?: string;
 };
 
 function isBrowser() {
