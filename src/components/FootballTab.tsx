@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Bell, BellRing, Calendar, Clock, Loader2, MapPin, Play, Radio } from "lucide-react";
+import { Bell, BellRing, Calendar, Clock, Loader2, MapPin, Play, Radio, Search, X } from "lucide-react";
 import { footballMatches, footballStreamMatches, type FootballStreamMatch } from "@/lib/api";
 import { isMatchScheduled, scheduleMatchNotification } from "@/lib/notifications";
 import { getPrefs } from "@/lib/preferences";
@@ -19,7 +19,8 @@ function teamName(team: any) {
 }
 
 export function FootballTab() {
-  const [mode, setMode] = useState<"schedule" | "watch">("schedule");
+  const [mode, setMode] = useState<"schedule" | "watch">("watch");
+  const [search, setSearch] = useState("");
   const [events, setEvents] = useState<any[]>([]);
   const [streams, setStreams] = useState<FootballStreamMatch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,12 +51,16 @@ export function FootballTab() {
   }
 
   const groupedStreams = useMemo(() => {
-    return streams.reduce<Record<string, FootballStreamMatch[]>>((acc, match) => {
+    const q = search.trim().toLowerCase();
+    const filtered = q
+      ? streams.filter((m) => `${m.title} ${m.league ?? ""}`.toLowerCase().includes(q))
+      : streams;
+    return filtered.reduce<Record<string, FootballStreamMatch[]>>((acc, match) => {
       const league = match.league || "Football";
       acc[league] = [...(acc[league] ?? []), match];
       return acc;
     }, {});
-  }, [streams]);
+  }, [streams, search]);
 
   return (
     <div className="space-y-4">
@@ -64,8 +69,8 @@ export function FootballTab() {
       )}
       <div className="inline-flex w-full rounded-full glass p-1 shadow-[inset_0_1px_0_color-mix(in_oklab,white_8%,transparent)] sm:w-auto">
         {([
-          ["schedule", "Schedule"],
           ["watch", "Watch Live"],
+          ["schedule", "Schedule"],
         ] as const).map(([key, label]) => (
           <button
             key={key}
@@ -150,6 +155,20 @@ export function FootballTab() {
           <div className="flex items-center gap-2 text-muted-foreground">
             <Radio className="h-4 w-4" />
             <p className="text-sm">Live football streams from Peak Streams / SportsRC</p>
+          </div>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search team, match or league…"
+              className="w-full rounded-full border border-border bg-secondary/50 py-3 pl-11 pr-10 text-sm outline-none focus:border-primary"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground" aria-label="Clear">
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
           {Object.entries(groupedStreams).map(([league, matches]) => (
             <section key={league} className="space-y-3">
