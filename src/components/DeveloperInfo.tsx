@@ -42,7 +42,7 @@ export function DeveloperInfo() {
         className="flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm font-bold text-primary transition hover:bg-primary/20"
       >
         <ShieldCheck className="h-4 w-4" />
-        V3 Admin Panel
+        DEV OPTIONS
       </button>
       {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
     </div>
