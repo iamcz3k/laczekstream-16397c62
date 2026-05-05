@@ -57,6 +57,7 @@ function WatchPage() {
   const [meta, setMeta] = useState<MediaItem | null>(null);
   const [saved, setSaved] = useState(false);
   const [fillMode, setFillMode] = useState(false);
+  const [streamPlaying, setStreamPlaying] = useState(false);
 
   useEffect(() => {
     if (!Number.isFinite(mediaId)) return;
@@ -107,6 +108,35 @@ function WatchPage() {
   }, [mediaId, mediaKind, season]);
 
   const src = useMemo(() => embedUrl(provider, mediaKind, mediaId, season, episode), [episode, mediaId, mediaKind, provider, season]);
+
+  // Reset playing-detection whenever the iframe source changes
+  useEffect(() => {
+    setStreamPlaying(false);
+  }, [src]);
+
+  // Detect when iframe takes focus = stream actually playing
+  useEffect(() => {
+    function onBlur() {
+      if (document.activeElement && document.activeElement.tagName === "IFRAME") {
+        setStreamPlaying(true);
+      }
+    }
+    window.addEventListener("blur", onBlur);
+    return () => window.removeEventListener("blur", onBlur);
+  }, []);
+
+  // If a server doesn't start within 30s, automatically switch to the next one.
+  useEffect(() => {
+    if (streamPlaying) return;
+    const t = window.setTimeout(() => {
+      if (streamPlaying) return;
+      const idx = EMBED_PROVIDERS.findIndex((p) => p.id === provider);
+      const next = EMBED_PROVIDERS[(idx + 1) % EMBED_PROVIDERS.length];
+      if (next && next.id !== provider) setProvider(next.id);
+    }, 30_000);
+    return () => window.clearTimeout(t);
+  }, [provider, streamPlaying, src]);
+
   const baseTitle = meta?.title || (mediaKind === "movie" ? `Movie #${mediaId}` : `Series #${mediaId}`);
   const title = mediaKind === "tv" ? `${baseTitle} · S${season} E${episode}` : baseTitle;
 
