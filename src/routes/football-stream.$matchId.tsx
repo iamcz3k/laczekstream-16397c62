@@ -83,6 +83,19 @@ function FootballStreamPage() {
     return () => window.clearInterval(timer);
   }, [playerSrc, streamPlaying]);
 
+  // Auto-switch source if it doesn't start playing within 30 seconds
+  useEffect(() => {
+    if (!playerSrc || streamPlaying) return;
+    const sourcesCount = detail?.sources?.length ?? 0;
+    if (sourcesCount <= 1) return;
+    const t = window.setTimeout(() => {
+      if (!streamPlaying) {
+        setSourceIndex((idx) => (idx + 1) % sourcesCount);
+      }
+    }, 30_000);
+    return () => window.clearTimeout(t);
+  }, [playerSrc, streamPlaying, detail?.sources?.length]);
+
   // Detect when the iframe starts playing audio/video by listening for visibility/blur on
   // the iframe — most embed players take focus when the user clicks play.
   useEffect(() => {
