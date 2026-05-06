@@ -291,9 +291,6 @@ function LanguagePicker({ onClose }: { onClose: () => void }) {
       sel.dispatchEvent(new Event("change"));
     }
   }
-  function _closeOld() {
-    onClose();
-  }
   return (
     <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/85 p-0 backdrop-blur-xl sm:items-center sm:p-4" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="flex h-[85vh] w-full flex-col rounded-t-3xl border border-border bg-popover text-popover-foreground shadow-2xl sm:h-[70vh] sm:max-w-md sm:rounded-3xl">
