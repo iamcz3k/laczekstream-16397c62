@@ -15,6 +15,7 @@ import {
 } from "@/lib/api";
 import { BrandMark } from "@/components/BrandMark";
 import { isInWatchlist, recordWatch, toggleWatchlist } from "@/lib/library";
+import { trackWatch } from "@/lib/tracker";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
@@ -83,6 +84,7 @@ function WatchPage() {
       season: mediaKind === "tv" ? season : undefined,
       episode: mediaKind === "tv" ? episode : undefined,
     });
+    trackWatch({ kind: meta.type, id: String(meta.id), title: meta.title + (mediaKind === "tv" ? ` · S${season}E${episode}` : "") });
   }, [meta, mediaKind, season, episode]);
 
   useEffect(() => {

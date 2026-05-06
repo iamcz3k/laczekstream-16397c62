@@ -4,6 +4,7 @@ import { ArrowLeft, Clock3, Expand, Loader2, Maximize2, Play, Shield } from "luc
 import { footballStreamDetail, type FootballStreamDetail } from "@/lib/api";
 import { BrandMark } from "@/components/BrandMark";
 import { MatchChat } from "@/components/MatchChat";
+import { trackWatch } from "@/lib/tracker";
 
 export const Route = createFileRoute("/football-stream/$matchId")({
   component: FootballStreamPage,
@@ -48,6 +49,7 @@ function FootballStreamPage() {
       .then((data) => {
         setDetail(data);
         setSourceIndex(Math.max((data?.sources?.length ?? 1) - 1, 0));
+        if (data?.title) trackWatch({ kind: "football", id: matchId, title: data.title });
       })
       .catch(() => setDetail(null))
       .finally(() => setLoading(false));
