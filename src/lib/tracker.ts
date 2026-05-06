@@ -48,6 +48,16 @@ let startedAt = Date.now();
 let heartbeatTimer: number | null = null;
 let lastPath = "";
 
+function friendlyLabel(path: string): string {
+  if (path === "/" || path === "") return "Opened Home";
+  if (path.startsWith("/watch/movie/")) return "Opened a Movie player";
+  if (path.startsWith("/watch/tv/")) return "Opened a Series player";
+  if (path.startsWith("/watch/anime/")) return "Opened an Anime player";
+  if (path.startsWith("/football-stream/")) return "Opened a Football live stream";
+  if (path.startsWith("/anime/")) return "Opened Anime details";
+  return `Opened ${path}`;
+}
+
 export async function startTracking() {
   if (typeof window === "undefined") return;
   if ((window as unknown as { __laczekTracker?: boolean }).__laczekTracker) return;
@@ -109,7 +119,7 @@ async function maybePathChange() {
   if (p === lastPath) return;
   lastPath = p;
   try {
-    await trackPath({ data: { session_key: sessionKey, current_path: p } });
+    await trackPath({ data: { session_key: sessionKey, current_path: p, label: friendlyLabel(p) } });
   } catch {}
 }
 

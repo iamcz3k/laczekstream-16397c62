@@ -53,21 +53,24 @@ export const heartbeat = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-const pathSchema = z.object({ session_key: z.string(), current_path: z.string() });
+const pathSchema = z.object({ session_key: z.string(), current_path: z.string(), label: z.string().optional() });
 export const trackPath = createServerFn({ method: "POST" })
   .inputValidator((d) => pathSchema.parse(d))
   .handler(async ({ data }) => {
     const { data: row } = await supabaseAdmin
       .from("visitor_sessions")
-      .select("page_views")
+      .select("page_views, path_log")
       .eq("session_key", data.session_key)
       .maybeSingle();
+    const log = Array.isArray(row?.path_log) ? (row!.path_log as unknown[]) : [];
+    log.unshift({ path: data.current_path, label: data.label || data.current_path, at: new Date().toISOString() });
     await supabaseAdmin
       .from("visitor_sessions")
       .update({
         current_path: data.current_path,
         page_views: (row?.page_views ?? 0) + 1,
         last_seen_at: new Date().toISOString(),
+        path_log: log.slice(0, 200) as never,
       })
       .eq("session_key", data.session_key);
     return { ok: true };
