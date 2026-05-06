@@ -32,10 +32,11 @@ export const Route = createFileRoute("/watch/$kind/$id")({
 async function enterLandscapeFullscreen(element: HTMLElement | null) {
   if (!element) return;
   try {
-    const el = element as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+    const el = element as HTMLElement & { webkitRequestFullscreen?: () => Promise<void>; webkitEnterFullscreen?: () => void };
     if (!document.fullscreenElement) {
       if (el.requestFullscreen) await el.requestFullscreen();
       else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      else if (el.webkitEnterFullscreen) el.webkitEnterFullscreen();
     }
     const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
     await orientation?.lock?.("landscape");
