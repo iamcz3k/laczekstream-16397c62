@@ -256,6 +256,42 @@ function LanguagePicker({ onClose }: { onClose: () => void }) {
   function pick(code: string) {
     setPrefs({ language: code });
     document.documentElement.lang = code;
+    // Use Google Translate's no-cookie iframe trick to translate the live DOM.
+    // We inject the widget script once, then trigger a translation by setting the
+    // hidden select element's value.
+    try {
+      type GT = { TranslateElement: new (opts: { pageLanguage: string; autoDisplay: boolean }, el: string) => unknown };
+      const w = window as unknown as { google?: { translate?: GT }; googleTranslateElementInit?: () => void };
+      if (!w.google?.translate) {
+        w.googleTranslateElementInit = () => {
+          const g = (window as unknown as { google?: { translate?: GT } }).google;
+          if (g?.translate) new g.translate.TranslateElement({ pageLanguage: "en", autoDisplay: false }, "google_translate_element");
+          setTimeout(() => applyLang(code), 700);
+        };
+        if (!document.getElementById("google_translate_element")) {
+          const div = document.createElement("div");
+          div.id = "google_translate_element";
+          div.style.display = "none";
+          document.body.appendChild(div);
+        }
+        const s = document.createElement("script");
+        s.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+        s.async = true;
+        document.body.appendChild(s);
+      } else {
+        applyLang(code);
+      }
+    } catch {}
+    onClose();
+  }
+  function applyLang(code: string) {
+    const sel = document.querySelector<HTMLSelectElement>("select.goog-te-combo");
+    if (sel) {
+      sel.value = code;
+      sel.dispatchEvent(new Event("change"));
+    }
+  }
+  function _closeOld() {
     onClose();
   }
   return (
