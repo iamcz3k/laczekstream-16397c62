@@ -26,17 +26,25 @@ export async function requestNotifyPermission(): Promise<NotificationPermission>
 }
 
 export async function scheduleMatchNotification(opts: { id: string; title: string; when: number; url: string }) {
-  const perm = await requestNotifyPermission();
-  if (perm !== "granted") return false;
-  const reg = await ensureSW();
-  // Persist locally as a fallback (in-tab timer if SW not available)
+  // Always store locally so an in-tab fallback fires even if SW or notifications are blocked.
   const list = JSON.parse(localStorage.getItem("laczek:notifs") || "[]");
   if (!list.find((n: { id: string }) => n.id === opts.id)) {
     list.push(opts);
     localStorage.setItem("laczek:notifs", JSON.stringify(list));
   }
+  // In-page banner fallback always scheduled.
+  const delay = Math.max(0, opts.when - Date.now());
+  window.setTimeout(() => {
+    window.dispatchEvent(new CustomEvent("laczek:match-alert", { detail: { title: opts.title, url: opts.url } }));
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      try { new Notification(`⚽ ${opts.title}`, { body: "The match is starting now." }); } catch {}
+    }
+  }, delay);
+
+  const perm = await requestNotifyPermission();
+  const reg = await ensureSW();
   const target = reg?.active || navigator.serviceWorker.controller;
-  if (target) {
+  if (target && perm === "granted") {
     target.postMessage({
       type: "schedule-match",
       title: `⚽ ${opts.title}`,
@@ -45,16 +53,8 @@ export async function scheduleMatchNotification(opts: { id: string; title: strin
       tag: opts.id,
       url: opts.url,
     });
-  } else {
-    // Fallback: in-tab timer
-    const delay = Math.max(0, opts.when - Date.now());
-    window.setTimeout(() => {
-      if (Notification.permission === "granted") {
-        new Notification(`⚽ ${opts.title}`, { body: "The match is starting now." });
-      }
-    }, delay);
   }
-  return true;
+  return true; // always succeeds (banner fallback)
 }
 
 export function isMatchScheduled(id: string) {

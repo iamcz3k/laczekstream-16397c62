@@ -175,7 +175,7 @@ function Index() {
           <section className="space-y-6">
             <div>
               <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Live CCTV` : "Live CCTV"}</h2>
-              <p className="text-sm text-muted-foreground mt-1">Free public camera streams from supported public APIs</p>
+              <p className="text-sm text-muted-foreground mt-1">Free public camera streams worldwide</p>
             </div>
             <CctvTab />
           </section>
@@ -232,7 +232,7 @@ function Index() {
 
       <footer className="border-t border-border mt-16">
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-xs text-muted-foreground">
-          © LACZEK STREAM · Built for entertainment · All content served via public APIs
+          © LACZEK STREAM · Built for entertainment
         </div>
       </footer>
     </div>

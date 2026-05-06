@@ -4,6 +4,7 @@ import { Bell, BellRing, Calendar, Clock, Loader2, MapPin, Play, Radio, Search, 
 import { footballMatches, footballStreamMatches, type FootballStreamMatch } from "@/lib/api";
 import { isMatchScheduled, scheduleMatchNotification } from "@/lib/notifications";
 import { getPrefs } from "@/lib/preferences";
+import { trackSearch } from "@/lib/tracker";
 
 function formatKickoff(iso?: string | number) {
   if (!iso) return { date: "", time: "" };
@@ -154,13 +155,13 @@ export function FootballTab() {
         <div className="space-y-5">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Radio className="h-4 w-4" />
-            <p className="text-sm">Live football streams from Peak Streams / SportsRC</p>
+            <p className="text-sm">Live football streams · today's matches</p>
           </div>
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); if (e.target.value.trim().length > 2) trackSearch(e.target.value); }}
               placeholder="Search team, match or league…"
               className="w-full rounded-full border border-border bg-secondary/50 py-3 pl-11 pr-10 text-sm outline-none focus:border-primary"
             />

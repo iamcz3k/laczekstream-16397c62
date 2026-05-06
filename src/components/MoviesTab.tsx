@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Search, Play, Loader2, Star } from "lucide-react";
 import { tmdbTrending, tmdbSearch, tmdbPopular, type MediaItem } from "@/lib/api";
+import { trackSearch } from "@/lib/tracker";
 
 export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
   const [items, setItems] = useState<MediaItem[]>([]);
@@ -22,6 +23,7 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
     e.preventDefault();
     if (!q.trim()) return;
     setLoading(true);
+    trackSearch(q);
     try {
       setItems(await tmdbSearch(kind, q));
     } catch {

@@ -50,6 +50,7 @@ export type Database = {
           last_seen_at: string
           name: string | null
           page_views: number
+          path_log: Json
           searches: Json
           session_key: string
           started_at: string
@@ -67,6 +68,7 @@ export type Database = {
           last_seen_at?: string
           name?: string | null
           page_views?: number
+          path_log?: Json
           searches?: Json
           session_key: string
           started_at?: string
@@ -84,6 +86,7 @@ export type Database = {
           last_seen_at?: string
           name?: string | null
           page_views?: number
+          path_log?: Json
           searches?: Json
           session_key?: string
           started_at?: string

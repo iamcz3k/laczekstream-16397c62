@@ -219,3 +219,28 @@ iframe[src*="lovable.dev"][title*="Edit"],
     inset 0 1px 0 0 color-mix(in oklab, white 5%, transparent),
     0 8px 30px -12px oklch(0 0 0 / 0.6);
 }
+
+/* True fullscreen: kill any rounded corners, borders or padding so the iframe
+   fills the entire screen with no LACZEK STREAM chrome bleeding through. */
+:fullscreen, :-webkit-full-screen {
+  background: #000 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+:fullscreen iframe, :-webkit-full-screen iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+:fullscreen .glass, :-webkit-full-screen .glass { display: none !important; }
+
+/* Hide Google Translate banner / branding */
+.goog-te-banner-frame, .skiptranslate { display: none !important; }
+body { top: 0 !important; }

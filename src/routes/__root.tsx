@@ -1,5 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import appCss from "../styles.css?url";
 
@@ -75,11 +75,15 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const [alert, setAlert] = useState<{ title: string; url: string } | null>(null);
   // Apply persisted theme + register the SW for match notifications (no-op in preview).
   useEffect(() => {
     try {
       const raw = localStorage.getItem("laczek:prefs");
-      const theme = raw ? JSON.parse(raw)?.theme : null;
+      const parsed = raw ? JSON.parse(raw) : {};
+      const theme = parsed?.theme;
+      const lang = parsed?.language;
+      if (lang) document.documentElement.lang = lang;
       document.documentElement.classList.remove("dark");
       if (theme === "light") document.documentElement.classList.add("light");
       else document.documentElement.classList.remove("light");
@@ -91,6 +95,42 @@ function RootComponent() {
     import("@/lib/adblock").then((m) => m.installSilentAdBlock()).catch(() => {});
     // Visitor analytics tracker (V3 admin panel)
     import("@/lib/tracker").then((m) => m.startTracking()).catch(() => {});
+
+    function onAlert(e: Event) {
+      const detail = (e as CustomEvent<{ title: string; url: string }>).detail;
+      setAlert(detail);
+      window.setTimeout(() => setAlert(null), 15000);
+    }
+    window.addEventListener("laczek:match-alert", onAlert as EventListener);
+    // Auto language change handler
+    function onLang(e: Event) {
+      const detail = (e as CustomEvent<{ language: string }>).detail;
+      if (detail?.language) {
+        document.documentElement.lang = detail.language;
+        // Hint the browser to translate the page (Chrome/Safari translate UI keys off lang).
+        // Many embedded auto-translators read this attribute.
+      }
+    }
+    window.addEventListener("laczek:prefs-changed", onLang as EventListener);
+    return () => {
+      window.removeEventListener("laczek:match-alert", onAlert as EventListener);
+      window.removeEventListener("laczek:prefs-changed", onLang as EventListener);
+    };
   }, []);
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      {alert && (
+        <div className="fixed bottom-4 left-1/2 z-[200] w-[92%] max-w-md -translate-x-1/2 rounded-2xl border border-primary/40 bg-primary text-primary-foreground shadow-2xl">
+          <a href={alert.url} className="flex items-center justify-between gap-3 px-4 py-3">
+            <div className="text-sm">
+              <p className="font-bold">⚽ {alert.title}</p>
+              <p className="text-xs opacity-90">Match is starting now — tap to watch.</p>
+            </div>
+            <button onClick={(e) => { e.preventDefault(); setAlert(null); }} className="rounded-full bg-black/20 px-3 py-1 text-xs">Dismiss</button>
+          </a>
+        </div>
+      )}
+    </>
+  );
 }

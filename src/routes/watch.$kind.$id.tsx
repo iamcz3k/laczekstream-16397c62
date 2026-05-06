@@ -15,6 +15,7 @@ import {
 } from "@/lib/api";
 import { BrandMark } from "@/components/BrandMark";
 import { isInWatchlist, recordWatch, toggleWatchlist } from "@/lib/library";
+import { trackWatch } from "@/lib/tracker";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
@@ -31,10 +32,11 @@ export const Route = createFileRoute("/watch/$kind/$id")({
 async function enterLandscapeFullscreen(element: HTMLElement | null) {
   if (!element) return;
   try {
-    const el = element as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+    const el = element as HTMLElement & { webkitRequestFullscreen?: () => Promise<void>; webkitEnterFullscreen?: () => void };
     if (!document.fullscreenElement) {
       if (el.requestFullscreen) await el.requestFullscreen();
       else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      else if (el.webkitEnterFullscreen) el.webkitEnterFullscreen();
     }
     const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
     await orientation?.lock?.("landscape");
@@ -83,6 +85,7 @@ function WatchPage() {
       season: mediaKind === "tv" ? season : undefined,
       episode: mediaKind === "tv" ? episode : undefined,
     });
+    trackWatch({ kind: meta.type, id: String(meta.id), title: meta.title + (mediaKind === "tv" ? ` · S${season}E${episode}` : "") });
   }, [meta, mediaKind, season, episode]);
 
   useEffect(() => {
