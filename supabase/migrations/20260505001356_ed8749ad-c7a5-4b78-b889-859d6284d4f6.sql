@@ -1,0 +1,2 @@
+ALTER TABLE public.visitor_sessions ADD CONSTRAINT visitor_sessions_session_key_key UNIQUE (session_key);
+CREATE INDEX IF NOT EXISTS visitor_sessions_last_seen_idx ON public.visitor_sessions (last_seen_at DESC);
