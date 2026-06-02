@@ -4,6 +4,8 @@ import {
   Clock,
   Code2,
   Download,
+  Gauge,
+  Headphones,
   HelpCircle,
   History as HistoryIcon,
   Info,
@@ -12,10 +14,13 @@ import {
   ListChecks,
   Moon,
   MoreVertical,
+  Radio as RadioIcon,
   RefreshCcw,
   Search as SearchIcon,
+  Send,
   Share2,
   Shuffle,
+  Smartphone,
   Sparkles,
   Sun,
   Trash2,
@@ -42,6 +47,40 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   const [showChangelog, setShowChangelog] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">(() => getPrefs().theme || "dark");
   const navigate = useNavigate();
+  const [canInstall, setCanInstall] = useState(false);
+  const installPromptRef = useRef<unknown>(null);
+
+  useEffect(() => {
+    function onPrompt(e: Event) {
+      e.preventDefault();
+      installPromptRef.current = e;
+      setCanInstall(true);
+    }
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+  }, []);
+
+  async function installApp() {
+    const p = installPromptRef.current as { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> } | null;
+    if (p) {
+      await p.prompt();
+      await p.userChoice.catch(() => {});
+      installPromptRef.current = null;
+      setCanInstall(false);
+    } else {
+      window.open("https://www.mediafire.com/file/q823khadatbqlol/LACZEK_STREAM.apk/file", "_blank", "noopener");
+    }
+    setOpen(false);
+  }
+
+  function openUpdates() {
+    setOpen(false);
+    window.open("https://t.me/laczekstream", "_blank", "noopener");
+  }
+
+  function goSpeedTest() { setOpen(false); navigate({ to: "/speedtest" }); }
+  function goRadio() { setOpen(false); navigate({ to: "/radio" }); }
+  function goPodcasts() { setOpen(false); navigate({ to: "/podcasts" }); }
 
   useEffect(() => {
     document.documentElement.classList.toggle("light", theme === "light");
@@ -163,6 +202,11 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
 
             <Group label="More">
               <Row icon={ListChecks} onClick={() => { setOpen(false); setShowChangelog(true); }}>What's new</Row>
+              <Row icon={Send} onClick={openUpdates}>Updates · Telegram</Row>
+              <Row icon={Smartphone} onClick={installApp}>{canInstall ? "Install app" : "Download APK"}</Row>
+              <Row icon={RadioIcon} onClick={goRadio}>Radio worldwide</Row>
+              <Row icon={Headphones} onClick={goPodcasts}>Podcasts</Row>
+              <Row icon={Gauge} onClick={goSpeedTest}>Speed test</Row>
               <Row icon={Share2} onClick={shareSite}>Share LACZEK STREAM</Row>
               <Row icon={Download} onClick={exportData}>Export my library</Row>
               <Row icon={HelpCircle} onClick={() => { setOpen(false); setShowQA(true); }}>Help & FAQ</Row>
