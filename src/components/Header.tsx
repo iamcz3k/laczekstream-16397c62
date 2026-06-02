@@ -10,7 +10,7 @@ export type TabKey = "movies" | "tv" | "football" | "youtube" | "cctv" | "genres
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "movies", label: "Movies", icon: Film },
   { key: "tv", label: "TV", icon: Tv },
-  { key: "football", label: "Football", icon: Trophy },
+  { key: "football", label: "Live Sports", icon: Trophy },
   { key: "youtube", label: "YouTube", icon: Youtube },
   { key: "cctv", label: "CCTV", icon: Camera },
 ];

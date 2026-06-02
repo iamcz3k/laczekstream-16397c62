@@ -2,6 +2,19 @@ export type ChangeKind = "new" | "fix" | "improved" | "soon";
 export type ChangeEntry = { date: string; kind: ChangeKind; title: string; detail?: string };
 
 export const CHANGELOG: ChangeEntry[] = [
+  { date: "2026-06-02", kind: "new", title: "Radio worldwide", detail: "Stream thousands of free radio stations from anywhere — sticky player keeps playing while you browse." },
+  { date: "2026-06-02", kind: "new", title: "Podcasts", detail: "Search, browse and play podcasts. Episodes pulled from public iTunes / RSS feeds." },
+  { date: "2026-06-02", kind: "new", title: "Speed test in menu", detail: "Quick built-in internet speed test using Cloudflare's public endpoint." },
+  { date: "2026-06-02", kind: "new", title: "Download the app", detail: "Install LaCzek Stream as a PWA or grab the Android APK from the menu." },
+  { date: "2026-06-02", kind: "new", title: "Updates channel", detail: "Quick link to the LaCzek Telegram channel for live announcements." },
+  { date: "2026-06-02", kind: "improved", title: "Renamed Football tab → Live Sports", detail: "Groundwork for upcoming NBA, NFL, F1, UFC, tennis and more." },
+  { date: "—", kind: "soon", title: "Live Sports expansion", detail: "NBA, NFL, MLB, NHL, Formula 1, WNBA, NCAA, tennis and UFC tabs with live scores & streams." },
+  { date: "—", kind: "soon", title: "Actors & Cast system", detail: "Full /actor/:id pages, cast carousels, actor search, trending actors via TMDB." },
+  { date: "—", kind: "soon", title: "AI Developer Agent", detail: "Hidden admin dashboard with log scanner, AI chat and patch previews." },
+  { date: "—", kind: "soon", title: "Play-by-play stadium view", detail: "Real-time pitch visualization with events, attack direction & momentum." },
+  { date: "—", kind: "soon", title: "Featured events CMS & feature toggles", detail: "Admin can highlight matches/movies and enable/disable features instantly." },
+  { date: "—", kind: "soon", title: "Kids profile & parental controls" },
+  { date: "—", kind: "soon", title: "Recaps, autoplay next, mobile fill mode, PiP" },
   { date: "2026-05-05", kind: "new", title: "DEV OPTIONS panel", detail: "Real-time visitor analytics with country, time spent, current page and watch history — auto-refreshes every 5 seconds." },
   { date: "2026-05-05", kind: "new", title: "Slide-in navigation drawer", detail: "Cleaner, faster menu that slides in from the right." },
   { date: "2026-05-05", kind: "new", title: "Language selector", detail: "Pick from 70+ languages." },
