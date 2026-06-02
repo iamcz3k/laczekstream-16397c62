@@ -183,18 +183,18 @@ function PodcastsPage() {
 
       {playing && (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-popover/95 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-            <button onClick={togglePlay} className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-            </button>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold">{playing.title}</p>
-              {active && <p className="truncate text-xs text-muted-foreground">{active.collectionName}</p>}
+          <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-3">
+              <button onClick={togglePlay} className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              </button>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold">{playing.title}</p>
+                {active && <p className="truncate text-xs text-muted-foreground">{active.collectionName}</p>}
+              </div>
             </div>
-            <audio ref={audioRef} preload="none" controls className="hidden sm:block max-w-xs" onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} />
+            <audio ref={audioRef} preload="none" controls className="w-full sm:max-w-sm" onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} />
           </div>
-          {/* mobile inline audio */}
-          <audio ref={(el) => { if (el && !audioRef.current) audioRef.current = el; }} preload="none" controls className="block w-full sm:hidden" onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} />
         </div>
       )}
     </div>
