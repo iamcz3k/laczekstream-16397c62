@@ -1,0 +1,14 @@
+{
+  "name": "LACZEK STREAM",
+  "short_name": "LaCzek",
+  "description": "Free movies, TV, football, anime, radio, podcasts & live CCTV.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0a",
+  "theme_color": "#ff8a3d",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "any", "type": "image/x-icon" }
+  ]
+}

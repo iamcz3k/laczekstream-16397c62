@@ -154,8 +154,8 @@ function Index() {
         {tab === "football" && (
           <section className="space-y-6">
             <div>
-              <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Football` : "Football"}</h2>
-              <p className="text-sm text-muted-foreground mt-1">Live scores & today's fixtures</p>
+                <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Live Sports` : "Live Sports"}</h2>
+                <p className="text-sm text-muted-foreground mt-1">Live scores & today's fixtures</p>
             </div>
             <FootballTab />
           </section>

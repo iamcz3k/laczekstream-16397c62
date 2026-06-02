@@ -9,6 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SpeedtestRouteImport } from './routes/speedtest'
+import { Route as RadioRouteImport } from './routes/radio'
+import { Route as PodcastsRouteImport } from './routes/podcasts'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FootballStreamMatchIdRouteImport } from './routes/football-stream.$matchId'
 import { Route as AnimeAnimeIdRouteImport } from './routes/anime.$animeId'
@@ -19,6 +22,21 @@ import { Route as ApiPublicAnimeVideoRouteImport } from './routes/api.public.ani
 import { Route as ApiPublicAnimeProxyRouteImport } from './routes/api.public.anime-proxy'
 import { Route as ApiPublicAnimeImageRouteImport } from './routes/api.public.anime-image'
 
+const SpeedtestRoute = SpeedtestRouteImport.update({
+  id: '/speedtest',
+  path: '/speedtest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RadioRoute = RadioRouteImport.update({
+  id: '/radio',
+  path: '/radio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PodcastsRoute = PodcastsRouteImport.update({
+  id: '/podcasts',
+  path: '/podcasts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -68,6 +86,9 @@ const ApiPublicAnimeImageRoute = ApiPublicAnimeImageRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/podcasts': typeof PodcastsRoute
+  '/radio': typeof RadioRoute
+  '/speedtest': typeof SpeedtestRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
@@ -79,6 +100,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/podcasts': typeof PodcastsRoute
+  '/radio': typeof RadioRoute
+  '/speedtest': typeof SpeedtestRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
@@ -91,6 +115,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/podcasts': typeof PodcastsRoute
+  '/radio': typeof RadioRoute
+  '/speedtest': typeof SpeedtestRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
@@ -104,6 +131,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/podcasts'
+    | '/radio'
+    | '/speedtest'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
     | '/api/public/anime-image'
@@ -115,6 +145,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/podcasts'
+    | '/radio'
+    | '/speedtest'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
     | '/api/public/anime-image'
@@ -126,6 +159,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/podcasts'
+    | '/radio'
+    | '/speedtest'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
     | '/api/public/anime-image'
@@ -138,6 +174,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PodcastsRoute: typeof PodcastsRoute
+  RadioRoute: typeof RadioRoute
+  SpeedtestRoute: typeof SpeedtestRoute
   AnimeAnimeIdRoute: typeof AnimeAnimeIdRoute
   FootballStreamMatchIdRoute: typeof FootballStreamMatchIdRoute
   ApiPublicAnimeImageRoute: typeof ApiPublicAnimeImageRoute
@@ -150,6 +189,27 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/speedtest': {
+      id: '/speedtest'
+      path: '/speedtest'
+      fullPath: '/speedtest'
+      preLoaderRoute: typeof SpeedtestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/radio': {
+      id: '/radio'
+      path: '/radio'
+      fullPath: '/radio'
+      preLoaderRoute: typeof RadioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/podcasts': {
+      id: '/podcasts'
+      path: '/podcasts'
+      fullPath: '/podcasts'
+      preLoaderRoute: typeof PodcastsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -218,6 +278,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PodcastsRoute: PodcastsRoute,
+  RadioRoute: RadioRoute,
+  SpeedtestRoute: SpeedtestRoute,
   AnimeAnimeIdRoute: AnimeAnimeIdRoute,
   FootballStreamMatchIdRoute: FootballStreamMatchIdRoute,
   ApiPublicAnimeImageRoute: ApiPublicAnimeImageRoute,
@@ -230,12 +293,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
