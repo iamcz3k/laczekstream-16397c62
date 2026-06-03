@@ -130,6 +130,53 @@ export async function tmdbSearch(kind: "movie" | "tv", q: string): Promise<Media
   return (j.results ?? []).map((x: any) => mapTmdb(x, kind));
 }
 
+export type PersonHit = { id: number; name: string; profile?: string; knownFor: string };
+export type MultiSearchResult = { movies: MediaItem[]; tv: MediaItem[]; people: PersonHit[] };
+
+export async function tmdbMultiSearch(q: string): Promise<MultiSearchResult> {
+  if (!q.trim()) return { movies: [], tv: [], people: [] };
+  const r = await fetch(`${TMDB}/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}&include_adult=false`);
+  if (!r.ok) return { movies: [], tv: [], people: [] };
+  const j = await r.json();
+  const movies: MediaItem[] = [];
+  const tv: MediaItem[] = [];
+  const people: PersonHit[] = [];
+  for (const x of (j.results ?? []) as any[]) {
+    if (x.media_type === "movie") movies.push(mapTmdb(x, "movie"));
+    else if (x.media_type === "tv") tv.push(mapTmdb(x, "tv"));
+    else if (x.media_type === "person") people.push({
+      id: x.id,
+      name: x.name,
+      profile: x.profile_path ? `${IMG}${x.profile_path}` : undefined,
+      knownFor: (x.known_for ?? []).map((k: any) => k.title || k.name).filter(Boolean).slice(0, 3).join(", "),
+    });
+  }
+  return { movies, tv, people };
+}
+
+export type DiscoverOpts = {
+  genres?: number[];
+  year?: number;
+  sortBy?: "popularity.desc" | "vote_average.desc" | "release_date.desc" | "revenue.desc";
+  minRating?: number;
+  personId?: number;
+};
+
+export async function tmdbDiscoverAdvanced(kind: "movie" | "tv", opts: DiscoverOpts, page = 1): Promise<MediaItem[]> {
+  const params = new URLSearchParams({ api_key: TMDB_KEY, page: String(page), sort_by: opts.sortBy || "popularity.desc" });
+  if (opts.genres?.length) params.set("with_genres", opts.genres.join(","));
+  if (opts.minRating) params.set("vote_average.gte", String(opts.minRating));
+  if (opts.year) {
+    if (kind === "movie") params.set("primary_release_year", String(opts.year));
+    else params.set("first_air_date_year", String(opts.year));
+  }
+  if (opts.personId) params.set("with_people", String(opts.personId));
+  const r = await fetch(`${TMDB}/discover/${kind}?${params.toString()}`);
+  if (!r.ok) return [];
+  const j = await r.json();
+  return (j.results ?? []).map((x: any) => mapTmdb(x, kind));
+}
+
 export type Genre = { id: number; name: string };
 
 export async function tmdbGenres(kind: "movie" | "tv"): Promise<Genre[]> {
