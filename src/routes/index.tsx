@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Clock, Sparkles } from "lucide-react";
 import { Header, type TabKey } from "@/components/Header";
 import { MoviesTab } from "@/components/MoviesTab";
+import { FeaturedBanner } from "@/components/FeaturedBanner";
 import { AnimeTab } from "@/components/AnimeTab";
 import { TVTab } from "@/components/TVTab";
 import { LiveSportsTab } from "@/components/LiveSportsTab";
@@ -87,6 +88,7 @@ function Index() {
       <Header active={tab} onChange={setTab} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-6"><FeaturedBanner /></div>
         {tab === "movies" && (
           <section className="space-y-6">
             <div className="flex items-end justify-between flex-wrap gap-3">

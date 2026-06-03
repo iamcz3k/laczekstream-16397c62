@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User } from "lucide-react";
+import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User, Flag, Megaphone, Plus, Trash2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { adminFetchAnalytics } from "@/lib/admin.functions";
+import { adminFetchAnalytics, adminListConfig, adminSetFeatureFlag, adminUpsertFeaturedEvent, adminDeleteFeaturedEvent, adminAddFeatureFlag } from "@/lib/admin.functions";
 
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
 
-type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily";
+type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config";
 
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60);
@@ -108,6 +108,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
           ["visitors", "Visitor Log"],
           ["accounts", "Accounts"],
           ["daily", "Daily"],
+          ["config", "Flags & Events"],
         ] as Array<[Tab, string]>).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${tab === k ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>{l}</button>
         ))}
@@ -218,6 +219,10 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
               </ul>
             )}
           </Section>
+        )}
+
+        {tab === "config" && (
+          <ConfigPanel password={password} />
         )}
       </div>
     </div>
@@ -344,6 +349,138 @@ function Section({ title, icon: Icon, children }: { title: string; icon: React.C
     <div className="mt-5">
       <h3 className="mb-2 flex items-center gap-1.5 text-sm font-bold"><Icon className="h-4 w-4 text-primary" />{title}</h3>
       <div className="rounded-2xl border border-border bg-popover p-3">{children}</div>
+    </div>
+  );
+}
+
+type CfgFlag = { key: string; enabled: boolean; description: string | null };
+type CfgEvent = {
+  id: string; title: string; subtitle: string | null; image_url: string | null;
+  link_url: string; kind: string; starts_at: string | null; ends_at: string | null;
+  priority: number; active: boolean;
+};
+
+function ConfigPanel({ password }: { password: string }) {
+  const list = useServerFn(adminListConfig);
+  const setFlag = useServerFn(adminSetFeatureFlag);
+  const addFlag = useServerFn(adminAddFeatureFlag);
+  const upsertEvent = useServerFn(adminUpsertFeaturedEvent);
+  const deleteEvent = useServerFn(adminDeleteFeaturedEvent);
+  const [flags, setFlags] = useState<CfgFlag[]>([]);
+  const [events, setEvents] = useState<CfgEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newFlagKey, setNewFlagKey] = useState("");
+  const [newFlagDesc, setNewFlagDesc] = useState("");
+  const [editing, setEditing] = useState<Partial<CfgEvent> | null>(null);
+
+  async function refresh() {
+    setLoading(true);
+    try { const r = await list({ data: { password } }); setFlags(r.flags as CfgFlag[]); setEvents(r.events as CfgEvent[]); }
+    catch {} finally { setLoading(false); }
+  }
+  useEffect(() => { refresh(); /* eslint-disable-next-line */ }, []);
+
+  async function toggleFlag(key: string, enabled: boolean) {
+    setFlags((arr) => arr.map((f) => f.key === key ? { ...f, enabled } : f));
+    await setFlag({ data: { password, key, enabled } });
+  }
+  async function createFlag() {
+    if (!newFlagKey.trim()) return;
+    await addFlag({ data: { password, key: newFlagKey.trim(), description: newFlagDesc.trim() || undefined } });
+    setNewFlagKey(""); setNewFlagDesc(""); refresh();
+  }
+  async function saveEvent() {
+    if (!editing?.title || !editing?.link_url) return;
+    await upsertEvent({ data: {
+      password,
+      id: editing.id,
+      title: editing.title!,
+      subtitle: editing.subtitle ?? undefined,
+      image_url: editing.image_url ?? undefined,
+      link_url: editing.link_url!,
+      kind: editing.kind || "general",
+      starts_at: editing.starts_at ?? null,
+      ends_at: editing.ends_at ?? null,
+      priority: editing.priority ?? 0,
+      active: editing.active ?? true,
+    } });
+    setEditing(null); refresh();
+  }
+  async function removeEvent(id: string) {
+    if (!confirm("Delete this featured event?")) return;
+    await deleteEvent({ data: { password, id } }); refresh();
+  }
+
+  if (loading) return <p className="py-12 text-center text-sm text-muted-foreground">Loading…</p>;
+
+  return (
+    <div className="space-y-6">
+      <Section title="Feature flags" icon={Flag}>
+        <ul className="divide-y divide-border">
+          {flags.map((f) => (
+            <li key={f.key} className="flex items-start justify-between gap-3 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-bold">{f.key}</p>
+                {f.description && <p className="text-xs text-muted-foreground">{f.description}</p>}
+              </div>
+              <button
+                onClick={() => toggleFlag(f.key, !f.enabled)}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${f.enabled ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+              >{f.enabled ? "ON" : "OFF"}</button>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-4 grid grid-cols-1 gap-2 rounded-xl border border-border bg-secondary/40 p-3 sm:grid-cols-[1fr_1fr_auto]">
+          <input value={newFlagKey} onChange={(e) => setNewFlagKey(e.target.value)} placeholder="new_flag_key" className="rounded-lg bg-background px-3 py-2 text-xs" />
+          <input value={newFlagDesc} onChange={(e) => setNewFlagDesc(e.target.value)} placeholder="Description" className="rounded-lg bg-background px-3 py-2 text-xs" />
+          <button onClick={createFlag} className="inline-flex items-center justify-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"><Plus className="h-3 w-3" /> Add</button>
+        </div>
+      </Section>
+
+      <Section title="Featured events" icon={Megaphone}>
+        <button onClick={() => setEditing({ kind: "general", priority: 0, active: true })} className="mb-3 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"><Plus className="h-3 w-3" /> New event</button>
+        {events.length === 0 ? <Empty /> : (
+          <ul className="divide-y divide-border">
+            {events.map((e) => (
+              <li key={e.id} className="flex items-center gap-3 py-2">
+                {e.image_url ? <img src={e.image_url} alt="" className="h-10 w-16 rounded object-cover" /> : <div className="h-10 w-16 rounded bg-secondary" />}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold">{e.title} <span className="ml-1 text-[10px] text-muted-foreground">· {e.kind} · p{e.priority}</span></p>
+                  <p className="truncate text-[11px] text-muted-foreground">{e.link_url}</p>
+                </div>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${e.active ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>{e.active ? "live" : "off"}</span>
+                <button onClick={() => setEditing(e)} className="shrink-0 rounded-full bg-secondary px-2 py-1 text-[11px]">Edit</button>
+                <button onClick={() => removeEvent(e.id)} className="shrink-0 rounded-full bg-secondary p-1.5 text-destructive"><Trash2 className="h-3 w-3" /></button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      {editing && (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/85 p-4" onClick={() => setEditing(null)}>
+          <div onClick={(ev) => ev.stopPropagation()} className="w-full max-w-md space-y-3 rounded-3xl border border-border bg-popover p-5">
+            <h3 className="text-base font-bold">{editing.id ? "Edit event" : "New event"}</h3>
+            <input value={editing.title || ""} onChange={(ev) => setEditing({ ...editing, title: ev.target.value })} placeholder="Title *" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
+            <input value={editing.subtitle || ""} onChange={(ev) => setEditing({ ...editing, subtitle: ev.target.value })} placeholder="Subtitle" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
+            <input value={editing.image_url || ""} onChange={(ev) => setEditing({ ...editing, image_url: ev.target.value })} placeholder="Image URL" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
+            <input value={editing.link_url || ""} onChange={(ev) => setEditing({ ...editing, link_url: ev.target.value })} placeholder="Link (/watch/movie/123 or https://…) *" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
+            <div className="grid grid-cols-2 gap-2">
+              <input value={editing.kind || ""} onChange={(ev) => setEditing({ ...editing, kind: ev.target.value })} placeholder="Kind (match/premiere/…)" className="rounded-xl bg-background px-3 py-2 text-sm" />
+              <input type="number" value={editing.priority ?? 0} onChange={(ev) => setEditing({ ...editing, priority: Number(ev.target.value) })} placeholder="Priority" className="rounded-xl bg-background px-3 py-2 text-sm" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <input type="datetime-local" value={editing.starts_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, starts_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="rounded-xl bg-background px-3 py-2 text-xs" />
+              <input type="datetime-local" value={editing.ends_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, ends_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="rounded-xl bg-background px-3 py-2 text-xs" />
+            </div>
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={editing.active ?? true} onChange={(ev) => setEditing({ ...editing, active: ev.target.checked })} className="h-4 w-4 accent-primary" /> Active</label>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setEditing(null)} className="rounded-full bg-secondary px-4 py-2 text-xs">Cancel</button>
+              <button onClick={saveEvent} className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

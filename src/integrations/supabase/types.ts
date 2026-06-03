@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      feature_flags: {
+        Row: {
+          description: string | null
+          enabled: boolean
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          description?: string | null
+          enabled?: boolean
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          description?: string | null
+          enabled?: boolean
+          key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      featured_events: {
+        Row: {
+          active: boolean
+          click_count: number
+          created_at: string
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          kind: string
+          link_url: string
+          priority: number
+          starts_at: string | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          active?: boolean
+          click_count?: number
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          kind?: string
+          link_url: string
+          priority?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          active?: boolean
+          click_count?: number
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          kind?: string
+          link_url?: string
+          priority?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       match_chats: {
         Row: {
           created_at: string

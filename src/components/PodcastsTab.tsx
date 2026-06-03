@@ -58,12 +58,36 @@ export function PodcastsTab() {
     return () => clearTimeout(t);
   }, [q]);
 
+  // Default: rotate a random pool of popular podcasts so the page never feels
+  // empty. When the user types, switch to a real search.
   useEffect(() => {
-    if (!debounced) { setPodcasts([]); return; }
     setLoading(true);
-    fetch(`https://itunes.apple.com/search?media=podcast&limit=50&term=${encodeURIComponent(debounced)}`)
+    if (debounced) {
+      fetch(`https://itunes.apple.com/search?media=podcast&limit=50&term=${encodeURIComponent(debounced)}`)
+        .then((r) => r.json())
+        .then((d) => setPodcasts(d.results || []))
+        .catch(() => setPodcasts([]))
+        .finally(() => setLoading(false));
+      return;
+    }
+    // Featured pool — pick one random seed term per visit for variety.
+    const seeds = [
+      "true crime", "comedy", "news", "technology", "business", "sports",
+      "history", "science", "interview", "society", "music", "fiction",
+      "health", "education", "politics", "movies",
+    ];
+    const seed = seeds[Math.floor(Math.random() * seeds.length)];
+    fetch(`https://itunes.apple.com/search?media=podcast&limit=50&term=${encodeURIComponent(seed)}`)
       .then((r) => r.json())
-      .then((d) => setPodcasts(d.results || []))
+      .then((d) => {
+        const list: Podcast[] = (d.results || []).filter((p: Podcast) => p.feedUrl);
+        // Shuffle for a fresh feel.
+        for (let i = list.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [list[i], list[j]] = [list[j], list[i]];
+        }
+        setPodcasts(list);
+      })
       .catch(() => setPodcasts([]))
       .finally(() => setLoading(false));
   }, [debounced]);
@@ -131,13 +155,11 @@ export function PodcastsTab() {
 
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-      ) : !debounced ? (
-        <div className="rounded-2xl border border-border bg-secondary/40 p-10 text-center">
-          <Headphones className="mx-auto h-10 w-10 text-muted-foreground" />
-          <p className="mt-3 text-sm font-bold">Search for any podcast</p>
-          <p className="mt-1 text-xs text-muted-foreground">Try a title, host or topic to get started.</p>
-        </div>
       ) : (
+        <>
+        {!debounced && (
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Featured for you</p>
+        )}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {podcasts.map((p) => (
             <button key={p.collectionId} onClick={() => openPodcast(p)} className="glass-card group overflow-hidden rounded-2xl text-left transition hover:border-primary/50">
@@ -153,6 +175,7 @@ export function PodcastsTab() {
             </button>
           ))}
         </div>
+        </>
       )}
 
       {active && (
