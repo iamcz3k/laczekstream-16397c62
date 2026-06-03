@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Camera, Film, Loader2, Shuffle, Tv, Trophy, Youtube } from "lucide-react";
+import { Camera, Film, Headphones, Loader2, Radio as RadioIcon, Shuffle, Tv, Trophy, Youtube } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { BrandMark } from "@/components/BrandMark";
 import { MoreMenu } from "@/components/MoreMenu";
 import { tmdbRandomMovie } from "@/lib/api";
 
-export type TabKey = "movies" | "tv" | "football" | "youtube" | "cctv" | "genres" | "library";
+export type TabKey = "movies" | "tv" | "football" | "youtube" | "cctv" | "radio" | "podcasts" | "genres" | "library";
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "movies", label: "Movies", icon: Film },
@@ -13,6 +13,8 @@ const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?
   { key: "football", label: "Live Sports", icon: Trophy },
   { key: "youtube", label: "YouTube", icon: Youtube },
   { key: "cctv", label: "CCTV", icon: Camera },
+  { key: "radio", label: "Radio", icon: RadioIcon },
+  { key: "podcasts", label: "Podcasts", icon: Headphones },
 ];
 
 export function Header({ active, onChange }: { active: TabKey; onChange: (k: TabKey) => void }) {

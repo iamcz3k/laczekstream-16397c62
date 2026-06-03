@@ -5,7 +5,6 @@ import {
   Code2,
   Download,
   Gauge,
-  Headphones,
   HelpCircle,
   History as HistoryIcon,
   Info,
@@ -14,7 +13,6 @@ import {
   ListChecks,
   Moon,
   MoreVertical,
-  Radio as RadioIcon,
   RefreshCcw,
   Search as SearchIcon,
   Send,
@@ -79,8 +77,6 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   }
 
   function goSpeedTest() { setOpen(false); navigate({ to: "/speedtest" }); }
-  function goRadio() { setOpen(false); navigate({ to: "/radio" }); }
-  function goPodcasts() { setOpen(false); navigate({ to: "/podcasts" }); }
 
   useEffect(() => {
     document.documentElement.classList.toggle("light", theme === "light");
@@ -204,8 +200,6 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
               <Row icon={ListChecks} onClick={() => { setOpen(false); setShowChangelog(true); }}>What's new</Row>
               <Row icon={Send} onClick={openUpdates}>Updates · Telegram</Row>
               <Row icon={Smartphone} onClick={installApp}>{canInstall ? "Install app" : "Download APK"}</Row>
-              <Row icon={RadioIcon} onClick={goRadio}>Radio worldwide</Row>
-              <Row icon={Headphones} onClick={goPodcasts}>Podcasts</Row>
               <Row icon={Gauge} onClick={goSpeedTest}>Speed test</Row>
               <Row icon={Share2} onClick={shareSite}>Share LACZEK STREAM</Row>
               <Row icon={Download} onClick={exportData}>Export my library</Row>
