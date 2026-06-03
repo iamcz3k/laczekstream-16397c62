@@ -40,12 +40,13 @@ async function fetchFeed(url: string): Promise<string> {
 }
 
 export function PodcastsTab() {
-  const [q, setQ] = useState("daily news");
-  const [debounced, setDebounced] = useState(q);
+  const [q, setQ] = useState("");
+  const [debounced, setDebounced] = useState("");
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [active, setActive] = useState<Podcast | null>(null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [visibleCount, setVisibleCount] = useState(20);
   const [epLoading, setEpLoading] = useState(false);
   const [feedError, setFeedError] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -53,13 +54,14 @@ export function PodcastsTab() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(q.trim() || "podcasts"), 350);
+    const t = setTimeout(() => setDebounced(q.trim()), 350);
     return () => clearTimeout(t);
   }, [q]);
 
   useEffect(() => {
+    if (!debounced) { setPodcasts([]); return; }
     setLoading(true);
-    fetch(`https://itunes.apple.com/search?media=podcast&limit=40&term=${encodeURIComponent(debounced)}`)
+    fetch(`https://itunes.apple.com/search?media=podcast&limit=50&term=${encodeURIComponent(debounced)}`)
       .then((r) => r.json())
       .then((d) => setPodcasts(d.results || []))
       .catch(() => setPodcasts([]))
@@ -69,14 +71,14 @@ export function PodcastsTab() {
   useEffect(() => () => { audioRef.current?.pause(); audioRef.current = null; }, []);
 
   async function openPodcast(p: Podcast) {
-    setActive(p); setEpisodes([]); setFeedError(null);
+    setActive(p); setEpisodes([]); setFeedError(null); setVisibleCount(20);
     if (!p.feedUrl) { setFeedError("This podcast has no public feed."); return; }
     setEpLoading(true);
     try {
       const xml = await fetchFeed(p.feedUrl);
       const doc = new DOMParser().parseFromString(xml, "text/xml");
       if (doc.querySelector("parsererror")) throw new Error("Invalid feed");
-      const items = Array.from(doc.querySelectorAll("item, entry")).slice(0, 50).map((item, i) => {
+      const items = Array.from(doc.querySelectorAll("item, entry")).map((item, i) => {
         const enclosure = item.querySelector("enclosure");
         const media = item.querySelector("media\\:content, content");
         const link = Array.from(item.querySelectorAll("link")).find((node) => /audio|mpeg|mp3|m4a|ogg/i.test(node.getAttribute("type") || ""));
