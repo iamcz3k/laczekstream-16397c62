@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as FootballStreamMatchIdRouteImport } from './routes/football-stream.$matchId'
 import { Route as AnimeAnimeIdRouteImport } from './routes/anime.$animeId'
 import { Route as WatchKindIdRouteImport } from './routes/watch.$kind.$id'
+import { Route as ApiPublicPodcastFeedRouteImport } from './routes/api.public.podcast-feed'
 import { Route as ApiPublicFootballStreamsRouteImport } from './routes/api.public.football-streams'
 import { Route as ApiPublicCctvCamerasRouteImport } from './routes/api.public.cctv-cameras'
 import { Route as ApiPublicAnimeVideoRouteImport } from './routes/api.public.anime-video'
@@ -57,6 +58,11 @@ const WatchKindIdRoute = WatchKindIdRouteImport.update({
   path: '/watch/$kind/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPodcastFeedRoute = ApiPublicPodcastFeedRouteImport.update({
+  id: '/api/public/podcast-feed',
+  path: '/api/public/podcast-feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicFootballStreamsRoute =
   ApiPublicFootballStreamsRouteImport.update({
     id: '/api/public/football-streams',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
   '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
   '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
+  '/api/public/podcast-feed': typeof ApiPublicPodcastFeedRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRoutesByTo {
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
   '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
   '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
+  '/api/public/podcast-feed': typeof ApiPublicPodcastFeedRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRoutesById {
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
   '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
   '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
+  '/api/public/podcast-feed': typeof ApiPublicPodcastFeedRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRouteTypes {
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/api/public/anime-video'
     | '/api/public/cctv-cameras'
     | '/api/public/football-streams'
+    | '/api/public/podcast-feed'
     | '/watch/$kind/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/api/public/anime-video'
     | '/api/public/cctv-cameras'
     | '/api/public/football-streams'
+    | '/api/public/podcast-feed'
     | '/watch/$kind/$id'
   id:
     | '__root__'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/api/public/anime-video'
     | '/api/public/cctv-cameras'
     | '/api/public/football-streams'
+    | '/api/public/podcast-feed'
     | '/watch/$kind/$id'
   fileRoutesById: FileRoutesById
 }
@@ -184,6 +196,7 @@ export interface RootRouteChildren {
   ApiPublicAnimeVideoRoute: typeof ApiPublicAnimeVideoRoute
   ApiPublicCctvCamerasRoute: typeof ApiPublicCctvCamerasRoute
   ApiPublicFootballStreamsRoute: typeof ApiPublicFootballStreamsRoute
+  ApiPublicPodcastFeedRoute: typeof ApiPublicPodcastFeedRoute
   WatchKindIdRoute: typeof WatchKindIdRoute
 }
 
@@ -238,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WatchKindIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/podcast-feed': {
+      id: '/api/public/podcast-feed'
+      path: '/api/public/podcast-feed'
+      fullPath: '/api/public/podcast-feed'
+      preLoaderRoute: typeof ApiPublicPodcastFeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/football-streams': {
       id: '/api/public/football-streams'
       path: '/api/public/football-streams'
@@ -288,8 +308,18 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAnimeVideoRoute: ApiPublicAnimeVideoRoute,
   ApiPublicCctvCamerasRoute: ApiPublicCctvCamerasRoute,
   ApiPublicFootballStreamsRoute: ApiPublicFootballStreamsRoute,
+  ApiPublicPodcastFeedRoute: ApiPublicPodcastFeedRoute,
   WatchKindIdRoute: WatchKindIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
