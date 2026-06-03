@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User } from "lucide-react";
+import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User, Flag, Megaphone, Plus, Trash2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { adminFetchAnalytics } from "@/lib/admin.functions";
+import { adminFetchAnalytics, adminListConfig, adminSetFeatureFlag, adminUpsertFeaturedEvent, adminDeleteFeaturedEvent, adminAddFeatureFlag } from "@/lib/admin.functions";
 
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
 
-type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily";
+type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config";
 
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60);
@@ -108,6 +108,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
           ["visitors", "Visitor Log"],
           ["accounts", "Accounts"],
           ["daily", "Daily"],
+          ["config", "Flags & Events"],
         ] as Array<[Tab, string]>).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${tab === k ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>{l}</button>
         ))}
