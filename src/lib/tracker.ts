@@ -1,6 +1,6 @@
 // Visitor session tracker. Routes all writes through server functions
 // (admin client) so RLS stays locked down on the table.
-import { startVisit, heartbeat, trackPath, trackWatchFn, trackSearchFn } from "@/server/tracker.functions";
+import { startVisit, heartbeat, trackPath, trackWatchFn, trackSearchFn } from "@/lib/tracker.functions";
 import { getPrefs } from "@/lib/preferences";
 
 const SESSION_KEY_LS = "laczek:visitor:key";
