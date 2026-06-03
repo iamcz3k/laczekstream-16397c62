@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Pause, Play, Radio as RadioIcon, Search, Volume2 } from "lucide-react";
 
 type Station = {
@@ -13,6 +13,8 @@ type Station = {
   codec: string;
 };
 
+type CountryRow = { name: string; stationcount: number };
+
 const API = "https://de1.api.radio-browser.info/json";
 
 export function RadioTab() {
@@ -23,12 +25,21 @@ export function RadioTab() {
   const [current, setCurrent] = useState<Station | null>(null);
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.85);
+  const [countries, setCountries] = useState<string[]>([""]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const countries = useMemo(
-    () => ["", "United States", "United Kingdom", "Germany", "France", "Spain", "Italy", "Brazil", "India", "Japan", "South Africa", "Kenya", "Nigeria", "Mexico", "Australia", "Canada"],
-    [],
-  );
+  useEffect(() => {
+    fetch(`${API}/countries?hidebroken=true&order=stationcount&reverse=true`)
+      .then((r) => r.json())
+      .then((rows: CountryRow[]) => {
+        const names = rows
+          .filter((r) => r.name && r.stationcount > 0)
+          .map((r) => r.name)
+          .sort((a, b) => a.localeCompare(b));
+        setCountries(["", ...names]);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLoading(true);
