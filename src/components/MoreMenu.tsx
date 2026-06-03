@@ -431,6 +431,23 @@ function AboutBody() {
   );
 }
 
+function InstallBody() {
+  return (
+    <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
+      <p>Use your browser install option if it appears. On Android, open the browser menu and choose <span className="font-bold text-foreground">Add to Home screen</span> or <span className="font-bold text-foreground">Install app</span>.</p>
+      <a
+        href="https://www.mediafire.com/file/q823khadatbqlol/LACZEK_STREAM.apk/file"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-3 font-bold text-primary-foreground"
+      >
+        Download APK mirror
+      </a>
+      <p className="text-xs">If the install prompt is not shown, the browser has not exposed install permission yet. The APK mirror still opens directly.</p>
+    </div>
+  );
+}
+
 function Kbd({ children }: { children: React.ReactNode }) {
   return <kbd className="mr-2 inline-block rounded-md border border-border bg-secondary px-2 py-0.5 text-xs font-bold">{children}</kbd>;
 }
