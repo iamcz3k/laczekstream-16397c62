@@ -131,6 +131,12 @@ export function PodcastsTab() {
 
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      ) : !debounced ? (
+        <div className="rounded-2xl border border-border bg-secondary/40 p-10 text-center">
+          <Headphones className="mx-auto h-10 w-10 text-muted-foreground" />
+          <p className="mt-3 text-sm font-bold">Search for any podcast</p>
+          <p className="mt-1 text-xs text-muted-foreground">Try a title, host or topic to get started.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {podcasts.map((p) => (
@@ -167,7 +173,7 @@ export function PodcastsTab() {
                 <p className="py-12 text-center text-sm text-muted-foreground">{feedError}</p>
               ) : (
                 <ul className="space-y-2">
-                  {episodes.map((ep) => {
+                  {episodes.slice(0, visibleCount).map((ep) => {
                     const isLoading = loadingId === ep.guid;
                     const isPlaying = playingId === ep.guid;
                     return (
@@ -187,6 +193,19 @@ export function PodcastsTab() {
                       </li>
                     );
                   })}
+                  {episodes.length > visibleCount && (
+                    <li>
+                      <button
+                        onClick={() => setVisibleCount((n) => n + 20)}
+                        className="w-full rounded-xl border border-border bg-secondary/40 py-3 text-xs font-bold text-muted-foreground transition hover:text-foreground"
+                      >
+                        Show more episodes ({episodes.length - visibleCount} left)
+                      </button>
+                    </li>
+                  )}
+                  {episodes.length > 0 && episodes.length <= visibleCount && (
+                    <li className="py-2 text-center text-[11px] text-muted-foreground">All {episodes.length} episodes loaded</li>
+                  )}
                 </ul>
               )}
             </div>
