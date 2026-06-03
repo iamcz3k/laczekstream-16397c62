@@ -126,19 +126,21 @@ export const Route = createFileRoute("/api/public/football-streams")({
         const params = new URL(request.url).searchParams;
         const mode = params.get("mode") === "detail" ? "detail" : "matches";
         const id = params.get("id") || "";
+        const sport = (params.get("sport") || "football").toLowerCase();
+        const category = CATEGORY_BY_SPORT[sport] || CATEGORY_BY_SPORT.football;
 
         try {
           if (mode === "detail") {
             if (!/^[a-z0-9-]{3,200}$/i.test(id)) {
               return Response.json({ success: false, data: null }, { status: 400, headers: CORS_HEADERS });
             }
-            const data = await fetchDetail(id);
+            const data = await fetchDetail(id, category);
             return Response.json(
               { success: !!data, data },
               { headers: { ...CORS_HEADERS, "cache-control": "public, max-age=20" } },
             );
           }
-          const matches = await fetchMatches();
+          const matches = await fetchMatches(category);
           return Response.json(
             { success: true, data: matches },
             { headers: { ...CORS_HEADERS, "cache-control": "public, max-age=30" } },
