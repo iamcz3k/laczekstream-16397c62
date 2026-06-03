@@ -49,7 +49,7 @@ function WatchPage() {
   const playerRef = useRef<HTMLDivElement>(null);
   const mediaKind = kind === "tv" ? "tv" : "movie";
   const mediaId = Number(id);
-  const [provider, setProvider] = useState<EmbedProvider>("vidsrcxyz");
+  const [provider, setProvider] = useState<EmbedProvider>("videasy");
   const [quality, setQuality] = useState<(typeof QUALITY_OPTIONS)[number]>("720p");
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);

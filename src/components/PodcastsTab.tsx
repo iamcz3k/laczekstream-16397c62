@@ -20,6 +20,7 @@ type Episode = {
 };
 
 const PROXIES = [
+  (u: string) => `/api/public/podcast-feed?url=${encodeURIComponent(u)}`,
   (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
   (u: string) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
   (u: string) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
@@ -74,13 +75,16 @@ export function PodcastsTab() {
     try {
       const xml = await fetchFeed(p.feedUrl);
       const doc = new DOMParser().parseFromString(xml, "text/xml");
-      const items = Array.from(doc.querySelectorAll("item")).slice(0, 50).map((item, i) => {
+      if (doc.querySelector("parsererror")) throw new Error("Invalid feed");
+      const items = Array.from(doc.querySelectorAll("item, entry")).slice(0, 50).map((item, i) => {
         const enclosure = item.querySelector("enclosure");
+        const media = item.querySelector("media\\:content, content");
+        const link = Array.from(item.querySelectorAll("link")).find((node) => /audio|mpeg|mp3|m4a|ogg/i.test(node.getAttribute("type") || ""));
         return {
           guid: item.querySelector("guid")?.textContent || String(i),
           title: item.querySelector("title")?.textContent || "Untitled",
           pubDate: item.querySelector("pubDate")?.textContent || "",
-          audio: enclosure?.getAttribute("url") || "",
+          audio: enclosure?.getAttribute("url") || media?.getAttribute("url") || link?.getAttribute("href") || "",
           duration: item.getElementsByTagNameNS("*", "duration")[0]?.textContent || "",
         };
       }).filter((e) => e.audio);
@@ -101,7 +105,7 @@ export function PodcastsTab() {
     audioRef.current = audio;
     audio.addEventListener("playing", () => { setLoadingId(null); setPlayingId(ep.guid); });
     audio.addEventListener("pause", () => setPlayingId((p) => (p === ep.guid ? null : p)));
-    audio.addEventListener("error", () => { setLoadingId(null); setFeedError("Couldn't play this episode."); });
+    audio.addEventListener("error", () => { setLoadingId(null); setFeedError("Couldn't play this episode — try another episode."); });
     audio.addEventListener("ended", () => setPlayingId(null));
     audio.play().catch(() => { setLoadingId(null); setFeedError("Tap play again — browser blocked autoplay."); });
   }, []);
@@ -126,7 +130,7 @@ export function PodcastsTab() {
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       ) : (
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {podcasts.map((p) => (
             <button key={p.collectionId} onClick={() => openPodcast(p)} className="glass-card group overflow-hidden rounded-2xl text-left transition hover:border-primary/50">
               <div className="aspect-square overflow-hidden bg-secondary">

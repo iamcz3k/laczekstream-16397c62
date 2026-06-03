@@ -35,6 +35,7 @@ function FootballStreamPage() {
   const { matchId } = Route.useParams();
   const navigate = useNavigate();
   const playerRef = useRef<HTMLDivElement>(null);
+  const sport = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("sport") || "football" : "football";
   const [detail, setDetail] = useState<FootballStreamDetail | null>(null);
   const [sourceIndex, setSourceIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -45,7 +46,7 @@ function FootballStreamPage() {
 
   useEffect(() => {
     setLoading(true);
-    footballStreamDetail(matchId)
+    footballStreamDetail(matchId, sport)
       .then((data) => {
         setDetail(data);
         setSourceIndex(Math.max((data?.sources?.length ?? 1) - 1, 0));
@@ -53,7 +54,7 @@ function FootballStreamPage() {
       })
       .catch(() => setDetail(null))
       .finally(() => setLoading(false));
-  }, [matchId]);
+  }, [matchId, sport]);
 
   const source = detail?.sources?.[sourceIndex];
   const playerSrc = useMemo(() => {
@@ -115,7 +116,7 @@ function FootballStreamPage() {
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6">
         <header className="mb-4 flex items-center justify-between gap-3">
           <button onClick={() => navigate({ to: "/" })} className="inline-flex h-10 items-center gap-2 rounded-full glass px-4 text-sm font-medium transition hover:bg-primary hover:text-primary-foreground">
-            <ArrowLeft className="h-4 w-4" /> Football
+            <ArrowLeft className="h-4 w-4" /> Sports
           </button>
           <BrandMark compact />
         </header>

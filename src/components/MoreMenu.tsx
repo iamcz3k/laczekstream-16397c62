@@ -43,6 +43,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   const [showQA, setShowQA] = useState(false);
   const [showLang, setShowLang] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
+  const [showInstallHelp, setShowInstallHelp] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">(() => getPrefs().theme || "dark");
   const navigate = useNavigate();
   const [canInstall, setCanInstall] = useState(false);
@@ -66,7 +67,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
       installPromptRef.current = null;
       setCanInstall(false);
     } else {
-      window.open("https://www.mediafire.com/file/q823khadatbqlol/LACZEK_STREAM.apk/file", "_blank", "noopener");
+      setShowInstallHelp(true);
     }
     setOpen(false);
   }
@@ -199,7 +200,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
             <Group label="More">
               <Row icon={ListChecks} onClick={() => { setOpen(false); setShowChangelog(true); }}>What's new</Row>
               <Row icon={Send} onClick={openUpdates}>Updates · Telegram</Row>
-              <Row icon={Smartphone} onClick={installApp}>{canInstall ? "Install app" : "Download APK"}</Row>
+              <Row icon={Smartphone} onClick={installApp}>{canInstall ? "Install app" : "Install app / APK"}</Row>
               <Row icon={Gauge} onClick={goSpeedTest}>Speed test</Row>
               <Row icon={Share2} onClick={shareSite}>Share LACZEK STREAM</Row>
               <Row icon={Download} onClick={exportData}>Export my library</Row>
@@ -249,6 +250,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
       )}
       {showLang && <LanguagePicker onClose={() => setShowLang(false)} />}
       {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
+      {showInstallHelp && (<Modal title="Install LACZEK STREAM" onClose={() => setShowInstallHelp(false)}><InstallBody /></Modal>)}
     </>
   );
 }
@@ -425,6 +427,23 @@ function AboutBody() {
       <p className="text-foreground font-bold">Our Mission</p>
       <p>Provide a seamless, free, and engaging entertainment experience for users worldwide.</p>
       <p className="text-center font-bold text-foreground">Start streaming. Stay connected. Enjoy more.</p>
+    </div>
+  );
+}
+
+function InstallBody() {
+  return (
+    <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
+      <p>Use your browser install option if it appears. On Android, open the browser menu and choose <span className="font-bold text-foreground">Add to Home screen</span> or <span className="font-bold text-foreground">Install app</span>.</p>
+      <a
+        href="https://www.mediafire.com/file/q823khadatbqlol/LACZEK_STREAM.apk/file"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-3 font-bold text-primary-foreground"
+      >
+        Download APK mirror
+      </a>
+      <p className="text-xs">If the install prompt is not shown, the browser has not exposed install permission yet. The APK mirror still opens directly.</p>
     </div>
   );
 }
