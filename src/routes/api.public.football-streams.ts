@@ -9,6 +9,19 @@ const CORS_HEADERS = {
 
 const STREAMED = "https://streamed.pk";
 const FETCH_OPTS = { headers: { "user-agent": "Mozilla/5.0", accept: "application/json" } };
+const CATEGORY_BY_SPORT: Record<string, string> = {
+  soccer: "football",
+  football: "football",
+  nba: "basketball",
+  basketball: "basketball",
+  nfl: "american-football",
+  mlb: "baseball",
+  nhl: "hockey",
+  ufc: "fight",
+  fighting: "fight",
+  tennis: "tennis",
+  f1: "motor-sports",
+};
 
 function badgeUrl(badge?: string) {
   if (!badge) return undefined;
@@ -23,16 +36,18 @@ function posterUrl(poster?: string) {
   return `${STREAMED}/api/images/poster/${poster}.webp`;
 }
 
-function leagueFromTitle(title: string) {
+function leagueFromTitle(title: string, category = "football") {
   // Just use category-fallback; streamed doesn't expose league per match.
-  return "Football";
+  return category.split("-").map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" ");
 }
 
 function normalizeMatch(m: any) {
+  const category = m.category || "football";
   return {
     id: m.id,
     title: m.title,
-    league: leagueFromTitle(m.title || ""),
+    league: leagueFromTitle(m.title || "", category),
+    category,
     poster: posterUrl(m.poster),
     date: m.date,
     viewers: typeof m.viewers === "number" ? m.viewers : undefined,
@@ -46,14 +61,14 @@ function normalizeMatch(m: any) {
   };
 }
 
-async function fetchMatches() {
-  // Combine football + live so user sees live games too
-  const [footRes, liveRes] = await Promise.all([
-    fetch(`${STREAMED}/api/matches/football`, FETCH_OPTS).then((r) => r.ok ? r.json() : []).catch(() => []),
+async function fetchMatches(category = "football") {
+  // Combine category + live so user sees live games too.
+  const [catRes, liveRes] = await Promise.all([
+    fetch(`${STREAMED}/api/matches/${category}`, FETCH_OPTS).then((r) => r.ok ? r.json() : []).catch(() => []),
     fetch(`${STREAMED}/api/matches/live`, FETCH_OPTS).then((r) => r.ok ? r.json() : []).catch(() => []),
   ]);
   const seen = new Set<string>();
-  const all = [...liveRes.filter((m: any) => m.category === "football"), ...footRes];
+  const all = [...liveRes.filter((m: any) => m.category === category), ...catRes.map((m: any) => ({ ...m, category }))];
   return all
     .filter((m: any) => {
       if (!m?.id || seen.has(m.id)) return false;
@@ -63,13 +78,14 @@ async function fetchMatches() {
     .map(normalizeMatch);
 }
 
-async function fetchDetail(id: string) {
-  // Find match across football + live to get its source list
-  const [footRes, liveRes] = await Promise.all([
-    fetch(`${STREAMED}/api/matches/football`, FETCH_OPTS).then((r) => r.ok ? r.json() : []).catch(() => []),
+async function fetchDetail(id: string, category?: string) {
+  // Find match across supported sports + live to get its source list.
+  const categories = category ? [category] : Array.from(new Set(Object.values(CATEGORY_BY_SPORT)));
+  const [liveRes, ...categoryResults] = await Promise.all([
     fetch(`${STREAMED}/api/matches/live`, FETCH_OPTS).then((r) => r.ok ? r.json() : []).catch(() => []),
+    ...categories.map((cat) => fetch(`${STREAMED}/api/matches/${cat}`, FETCH_OPTS).then((r) => r.ok ? r.json() : []).catch(() => []).then((items) => items.map((m: any) => ({ ...m, category: cat })))),
   ]);
-  const all = [...liveRes, ...footRes];
+  const all = [...liveRes, ...categoryResults.flat()];
   const match = all.find((m: any) => m?.id === id);
   if (!match) return null;
 
