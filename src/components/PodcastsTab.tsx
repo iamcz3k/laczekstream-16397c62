@@ -40,12 +40,13 @@ async function fetchFeed(url: string): Promise<string> {
 }
 
 export function PodcastsTab() {
-  const [q, setQ] = useState("daily news");
-  const [debounced, setDebounced] = useState(q);
+  const [q, setQ] = useState("");
+  const [debounced, setDebounced] = useState("");
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [active, setActive] = useState<Podcast | null>(null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [visibleCount, setVisibleCount] = useState(20);
   const [epLoading, setEpLoading] = useState(false);
   const [feedError, setFeedError] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -53,13 +54,14 @@ export function PodcastsTab() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(q.trim() || "podcasts"), 350);
+    const t = setTimeout(() => setDebounced(q.trim()), 350);
     return () => clearTimeout(t);
   }, [q]);
 
   useEffect(() => {
+    if (!debounced) { setPodcasts([]); return; }
     setLoading(true);
-    fetch(`https://itunes.apple.com/search?media=podcast&limit=40&term=${encodeURIComponent(debounced)}`)
+    fetch(`https://itunes.apple.com/search?media=podcast&limit=50&term=${encodeURIComponent(debounced)}`)
       .then((r) => r.json())
       .then((d) => setPodcasts(d.results || []))
       .catch(() => setPodcasts([]))
@@ -69,14 +71,14 @@ export function PodcastsTab() {
   useEffect(() => () => { audioRef.current?.pause(); audioRef.current = null; }, []);
 
   async function openPodcast(p: Podcast) {
-    setActive(p); setEpisodes([]); setFeedError(null);
+    setActive(p); setEpisodes([]); setFeedError(null); setVisibleCount(20);
     if (!p.feedUrl) { setFeedError("This podcast has no public feed."); return; }
     setEpLoading(true);
     try {
       const xml = await fetchFeed(p.feedUrl);
       const doc = new DOMParser().parseFromString(xml, "text/xml");
       if (doc.querySelector("parsererror")) throw new Error("Invalid feed");
-      const items = Array.from(doc.querySelectorAll("item, entry")).slice(0, 50).map((item, i) => {
+      const items = Array.from(doc.querySelectorAll("item, entry")).map((item, i) => {
         const enclosure = item.querySelector("enclosure");
         const media = item.querySelector("media\\:content, content");
         const link = Array.from(item.querySelectorAll("link")).find((node) => /audio|mpeg|mp3|m4a|ogg/i.test(node.getAttribute("type") || ""));
@@ -129,6 +131,12 @@ export function PodcastsTab() {
 
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      ) : !debounced ? (
+        <div className="rounded-2xl border border-border bg-secondary/40 p-10 text-center">
+          <Headphones className="mx-auto h-10 w-10 text-muted-foreground" />
+          <p className="mt-3 text-sm font-bold">Search for any podcast</p>
+          <p className="mt-1 text-xs text-muted-foreground">Try a title, host or topic to get started.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {podcasts.map((p) => (
@@ -165,7 +173,7 @@ export function PodcastsTab() {
                 <p className="py-12 text-center text-sm text-muted-foreground">{feedError}</p>
               ) : (
                 <ul className="space-y-2">
-                  {episodes.map((ep) => {
+                  {episodes.slice(0, visibleCount).map((ep) => {
                     const isLoading = loadingId === ep.guid;
                     const isPlaying = playingId === ep.guid;
                     return (
@@ -185,6 +193,19 @@ export function PodcastsTab() {
                       </li>
                     );
                   })}
+                  {episodes.length > visibleCount && (
+                    <li>
+                      <button
+                        onClick={() => setVisibleCount((n) => n + 20)}
+                        className="w-full rounded-xl border border-border bg-secondary/40 py-3 text-xs font-bold text-muted-foreground transition hover:text-foreground"
+                      >
+                        Show more episodes ({episodes.length - visibleCount} left)
+                      </button>
+                    </li>
+                  )}
+                  {episodes.length > 0 && episodes.length <= visibleCount && (
+                    <li className="py-2 text-center text-[11px] text-muted-foreground">All {episodes.length} episodes loaded</li>
+                  )}
                 </ul>
               )}
             </div>

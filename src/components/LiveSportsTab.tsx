@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Calendar, Loader2, MapPin, Play, Radio } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Calendar, Clock, Loader2, MapPin, Play, Radio, Users } from "lucide-react";
 import { FootballTab } from "@/components/FootballTab";
 import { footballStreamMatches, type FootballStreamMatch } from "@/lib/api";
 import { fetchSportScoreboard, SPORTS, type SportEvent, type SportKey } from "@/lib/sports-api";
@@ -51,6 +51,19 @@ function SportScoreboard({ sport }: { sport: SportKey }) {
   const upcoming = events.filter((e) => e.status.state === "pre");
   const finished = events.filter((e) => e.status.state === "post");
 
+  const { liveStreams, upcomingStreams } = useMemo(() => {
+    const now = Date.now();
+    const live: FootballStreamMatch[] = [];
+    const up: FootballStreamMatch[] = [];
+    for (const s of streams) {
+      const ts = s.date ? Number(s.date) : 0;
+      if (!ts || ts <= now + 5 * 60 * 1000) live.push(s);
+      else up.push(s);
+    }
+    up.sort((a, b) => (a.date || 0) - (b.date || 0));
+    return { liveStreams: live, upcomingStreams: up };
+  }, [streams]);
+
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
@@ -66,7 +79,8 @@ function SportScoreboard({ sport }: { sport: SportKey }) {
 
   return (
     <div className="space-y-6">
-      {streams.length > 0 && <StreamGroup sport={sport} streams={streams} />}
+      {liveStreams.length > 0 && <StreamGroup title="🔴 Watch live" tone="live" sport={sport} streams={liveStreams} />}
+      {upcomingStreams.length > 0 && <StreamGroup title="Upcoming streams" tone="upcoming" sport={sport} streams={upcomingStreams} />}
       {live.length > 0 && <EventGroup title="🔴 Live now" tone="live" events={live} streams={streams} sport={sport} />}
       {upcoming.length > 0 && <EventGroup title="Upcoming" tone="upcoming" events={upcoming} streams={streams} sport={sport} />}
       {finished.length > 0 && <EventGroup title="Final" tone="final" events={finished} streams={streams} sport={sport} />}
@@ -79,22 +93,64 @@ function findStreamForEvent(event: SportEvent, streams: FootballStreamMatch[]) {
   return streams.find((stream) => names.length >= 2 && names.every((name) => stream.title.toLowerCase().includes(name)));
 }
 
-function StreamGroup({ sport, streams }: { sport: SportKey; streams: FootballStreamMatch[] }) {
+function StreamGroup({ title, tone, sport, streams }: { title: string; tone: "live" | "upcoming"; sport: SportKey; streams: FootballStreamMatch[] }) {
   return (
     <section>
-      <h3 className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">Live streams</h3>
+      <h3 className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">{title}</h3>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {streams.map((stream) => (
-          <a key={stream.id} href={`/football-stream/${encodeURIComponent(stream.id)}?sport=${sport}`} className="glass-card block rounded-2xl p-4 transition active:scale-[0.98] hover:border-primary/50">
-            <p className="line-clamp-2 text-sm font-black leading-tight">{stream.title}</p>
-            <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
-              <span>{stream.viewers ? `${stream.viewers.toLocaleString()} viewers` : stream.league || "Stream"}</span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 font-bold text-primary-foreground"><Play className="h-3 w-3" fill="currentColor" /> Watch</span>
-            </div>
-          </a>
-        ))}
+        {streams.map((stream) => <StreamCard key={stream.id} stream={stream} sport={sport} tone={tone} />)}
       </div>
     </section>
+  );
+}
+
+function StreamCard({ stream, sport, tone }: { stream: FootballStreamMatch; sport: SportKey; tone: "live" | "upcoming" }) {
+  const home = stream.teams?.home;
+  const away = stream.teams?.away;
+  const hasTeams = !!(home?.name || away?.name);
+  const when = stream.date ? new Date(Number(stream.date)) : null;
+  return (
+    <a href={`/football-stream/${encodeURIComponent(stream.id)}?sport=${sport}`} className="glass-card block overflow-hidden rounded-2xl transition active:scale-[0.98] hover:border-primary/50">
+      {stream.poster && (
+        <div className="relative aspect-video bg-secondary">
+          <img src={stream.poster} alt="" className="h-full w-full object-cover" loading="lazy" onError={(e) => ((e.currentTarget.style.display = "none"))} />
+          <span className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-black ${tone === "live" ? "animate-pulse bg-red-600 text-white" : "bg-primary/90 text-primary-foreground"}`}>
+            {tone === "live" ? "LIVE" : "UPCOMING"}
+          </span>
+        </div>
+      )}
+      <div className="p-3">
+        {hasTeams ? (
+          <div className="flex items-center justify-between gap-2">
+            <TeamBadge team={home} align="left" />
+            <span className="text-[10px] font-black text-muted-foreground">VS</span>
+            <TeamBadge team={away} align="right" />
+          </div>
+        ) : (
+          <p className="line-clamp-2 text-sm font-black leading-tight">{stream.title}</p>
+        )}
+        <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1 truncate">
+            {when ? <><Clock className="h-3 w-3 shrink-0" />{when.toLocaleString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" })}</> : <span className="truncate">{stream.league || "Stream"}</span>}
+          </span>
+          {typeof stream.viewers === "number" && <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" />{stream.viewers.toLocaleString()}</span>}
+        </div>
+        <div className="mt-2 flex items-center justify-end">
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground"><Play className="h-3 w-3" fill="currentColor" /> Watch</span>
+        </div>
+      </div>
+    </a>
+  );
+}
+
+function TeamBadge({ team, align }: { team?: { name?: string; badge?: string }; align: "left" | "right" }) {
+  if (!team?.name && !team?.badge) return <div className="flex-1" />;
+  return (
+    <div className={`flex min-w-0 flex-1 items-center gap-2 ${align === "right" ? "justify-end text-right" : ""}`}>
+      {align === "left" && team.badge && <img src={team.badge} alt="" className="h-7 w-7 shrink-0 object-contain" loading="lazy" onError={(e) => ((e.currentTarget.style.display = "none"))} />}
+      <span className="truncate text-xs font-bold">{team.name}</span>
+      {align === "right" && team.badge && <img src={team.badge} alt="" className="h-7 w-7 shrink-0 object-contain" loading="lazy" onError={(e) => ((e.currentTarget.style.display = "none"))} />}
+    </div>
   );
 }
 
