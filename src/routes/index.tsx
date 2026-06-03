@@ -5,7 +5,7 @@ import { Header, type TabKey } from "@/components/Header";
 import { MoviesTab } from "@/components/MoviesTab";
 import { AnimeTab } from "@/components/AnimeTab";
 import { TVTab } from "@/components/TVTab";
-import { FootballTab } from "@/components/FootballTab";
+import { LiveSportsTab } from "@/components/LiveSportsTab";
 import { MusicTab } from "@/components/MusicTab";
 import { CctvTab } from "@/components/CctvTab";
 import { RadioTab } from "@/components/RadioTab";
@@ -159,7 +159,7 @@ function Index() {
                 <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Live Sports` : "Live Sports"}</h2>
                 <p className="text-sm text-muted-foreground mt-1">Live scores & today's fixtures</p>
             </div>
-            <FootballTab />
+            <LiveSportsTab />
           </section>
         )}
 
