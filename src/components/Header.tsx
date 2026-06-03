@@ -33,9 +33,22 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-border rounded-none supports-[backdrop-filter]:bg-card/55">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
-        <BrandMark />
-        <nav className="flex items-center gap-1 glass rounded-full p-1 shadow-[inset_0_1px_0_color-mix(in_oklab,white_8%,transparent)]">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-3 py-3 sm:px-4 sm:py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center justify-between gap-3 lg:contents">
+          <BrandMark />
+          <div className="flex items-center gap-2 lg:order-3">
+            <button
+              onClick={surprise}
+              disabled={busy}
+              className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition active:scale-95 disabled:opacity-60"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shuffle className="h-4 w-4" />}
+              Surprise me
+            </button>
+            <MoreMenu />
+          </div>
+        </div>
+        <nav className="-mx-3 flex max-w-full items-center gap-1 overflow-x-auto px-3 pb-1 lg:order-2 lg:mx-0 lg:rounded-full lg:glass lg:p-1 lg:shadow-[inset_0_1px_0_color-mix(in_oklab,white_8%,transparent)]">
           {TABS.map((t) => {
             const Icon = t.icon;
             const isActive = t.key === active;
@@ -43,29 +56,18 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
               <button
                 key={t.key}
                 onClick={() => onChange(t.key)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 active:scale-95 ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all duration-300 active:scale-95 sm:gap-2 sm:px-4 sm:text-sm ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-[var(--shadow-glow)]"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "bg-secondary/55 text-muted-foreground hover:text-foreground lg:bg-transparent"
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{t.label}</span>
+                <span>{t.label}</span>
               </button>
             );
           })}
         </nav>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={surprise}
-            disabled={busy}
-            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition active:scale-95 disabled:opacity-60"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shuffle className="h-4 w-4" />}
-            Surprise me
-          </button>
-          <MoreMenu />
-        </div>
       </div>
     </header>
   );
