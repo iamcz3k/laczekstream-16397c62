@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Bookmark, BookmarkCheck, Download, Expand, Loader2, Maximize2, Play, RefreshCw } from "lucide-react";
+import { ArrowLeft, Bookmark, BookmarkCheck, Download, Expand, Loader2, Maximize2, Play, RefreshCw, PictureInPicture2, SkipForward, FastForward } from "lucide-react";
 import {
   EMBED_PROVIDERS,
   QUALITY_OPTIONS,
@@ -61,6 +61,16 @@ function WatchPage() {
   const [saved, setSaved] = useState(false);
   const [fillMode, setFillMode] = useState(false);
   const [streamPlaying, setStreamPlaying] = useState(false);
+  const [autoplayNext, setAutoplayNext] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("lz_autoplay_next") !== "0";
+  });
+  const [recapSkipped, setRecapSkipped] = useState(false);
+  const [upNextCountdown, setUpNextCountdown] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("lz_autoplay_next", autoplayNext ? "1" : "0");
+  }, [autoplayNext]);
 
   useEffect(() => {
     if (!Number.isFinite(mediaId)) return;
@@ -116,7 +126,64 @@ function WatchPage() {
   // Reset playing-detection whenever the iframe source changes
   useEffect(() => {
     setStreamPlaying(false);
+    setRecapSkipped(false);
+    setUpNextCountdown(null);
   }, [src]);
+
+  // Up Next: for TV, after the iframe has been playing for ~episode runtime,
+  // surface a countdown to the next episode. Since iframe end-detection is
+  // cross-origin-blocked, fall back to runtime metadata (default 22 min).
+  const currentEpisodeMeta = episodes.find((e) => e.episodeNumber === episode);
+  const nextEpisodeNumber = useMemo(() => {
+    const idx = episodes.findIndex((e) => e.episodeNumber === episode);
+    return idx >= 0 ? episodes[idx + 1]?.episodeNumber : undefined;
+  }, [episodes, episode]);
+
+  useEffect(() => {
+    if (mediaKind !== "tv" || !autoplayNext || !nextEpisodeNumber || !streamPlaying) return;
+    const epAny = currentEpisodeMeta as unknown as { runtime?: number } | undefined;
+    const metaAny = meta as unknown as { runtime?: number } | null;
+    const runtimeMin = epAny?.runtime || metaAny?.runtime || 22;
+    const delayMs = Math.max(60_000, (runtimeMin - 1) * 60_000);
+    const t = window.setTimeout(() => setUpNextCountdown(10), delayMs);
+    return () => window.clearTimeout(t);
+  }, [mediaKind, autoplayNext, nextEpisodeNumber, streamPlaying, currentEpisodeMeta, meta]);
+
+  useEffect(() => {
+    if (upNextCountdown === null) return;
+    if (upNextCountdown <= 0) {
+      if (nextEpisodeNumber) setEpisode(nextEpisodeNumber);
+      setUpNextCountdown(null);
+      return;
+    }
+    const t = window.setTimeout(() => setUpNextCountdown((c) => (c ?? 0) - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [upNextCountdown, nextEpisodeNumber]);
+
+  async function requestPip() {
+    // Cross-origin iframe blocks programmatic PiP — best-effort: open a small
+    // popup window of the same embed URL so the user can keep watching while
+    // browsing elsewhere.
+    try {
+      const iframe = playerRef.current?.querySelector("iframe") as HTMLIFrameElement | null;
+      const anyIframe = iframe as unknown as { requestPictureInPicture?: () => Promise<unknown> } | null;
+      if (anyIframe?.requestPictureInPicture) {
+        await anyIframe.requestPictureInPicture();
+        return;
+      }
+    } catch {}
+    window.open(src, "lz_pip", "width=480,height=270,menubar=no,toolbar=no,location=no,status=no");
+  }
+
+  function skipRecap() {
+    // Most embed providers ignore custom timestamp params, but a couple of them
+    // (videasy, vidsrc.cc) honor `?t=` or `#t=`. Best-effort reload to +90s.
+    setRecapSkipped(true);
+    const iframe = playerRef.current?.querySelector("iframe") as HTMLIFrameElement | null;
+    if (!iframe) return;
+    const sep = src.includes("?") ? "&" : "?";
+    iframe.src = `${src}${sep}t=90#t=90`;
+  }
 
   // Detect when iframe takes focus = stream actually playing
   useEffect(() => {
@@ -213,6 +280,26 @@ function WatchPage() {
                 <p className="mt-1 text-xs text-muted-foreground">Movie player · unrestricted iframe · {EMBED_PROVIDERS.find((item) => item.id === provider)?.label}</p>
               </div>
               <div className="flex items-center gap-2">
+                {mediaKind === "tv" && nextEpisodeNumber && (
+                  <button
+                    onClick={() => setEpisode(nextEpisodeNumber)}
+                    className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground"
+                    title={`Next episode (E${nextEpisodeNumber})`}
+                  >
+                    <SkipForward className="h-4 w-4" /><span className="hidden sm:inline">Next Ep</span>
+                  </button>
+                )}
+                <button
+                  onClick={skipRecap}
+                  disabled={recapSkipped}
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
+                  title="Skip recap (+90s)"
+                >
+                  <FastForward className="h-4 w-4" /><span className="hidden sm:inline">Skip Recap</span>
+                </button>
+                <button onClick={requestPip} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground" title="Picture-in-Picture">
+                  <PictureInPicture2 className="h-4 w-4" /><span className="hidden sm:inline">PiP</span>
+                </button>
                 <button onClick={() => setFillMode((v) => !v)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
                   <Maximize2 className="h-4 w-4" /><span className="hidden sm:inline">{fillMode ? "Fit" : "Fill & Zoom"}</span>
                 </button>
@@ -221,20 +308,38 @@ function WatchPage() {
                 </button>
               </div>
             </div>
+            <div className="relative min-h-0 flex-1">
             <iframe
               key={`${src}-${quality}`}
               src={src}
               title={title}
-              className={`min-h-0 flex-1 border-0 ${fillMode ? "scale-110" : ""} origin-center transition-transform`}
+              className={`h-full w-full border-0 ${fillMode ? "scale-110" : ""} origin-center transition-transform`}
               allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
               allowFullScreen
               referrerPolicy="no-referrer"
             />
+            {upNextCountdown !== null && nextEpisodeNumber && (
+              <div className="absolute bottom-4 right-4 z-10 max-w-xs rounded-2xl border border-border bg-background/95 p-4 shadow-2xl backdrop-blur">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Up Next in {upNextCountdown}s</p>
+                <p className="mt-1 text-sm font-bold">Episode {nextEpisodeNumber}</p>
+                <div className="mt-3 flex gap-2">
+                  <button onClick={() => { setEpisode(nextEpisodeNumber); setUpNextCountdown(null); }} className="flex-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">Play now</button>
+                  <button onClick={() => setUpNextCountdown(null)} className="rounded-full bg-secondary px-3 py-1.5 text-xs font-bold">Cancel</button>
+                </div>
+              </div>
+            )}
+            </div>
           </section>
 
           <aside className="space-y-4 overflow-auto pb-4 lg:max-h-[calc(100vh-6rem)]">
             <section className="space-y-2">
               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Servers</h2>
+              {mediaKind === "tv" && (
+                <label className="flex items-center justify-between rounded-[18px] border border-border bg-secondary/50 px-3 py-2 text-xs">
+                  <span>Auto-play next episode</span>
+                  <input type="checkbox" checked={autoplayNext} onChange={(e) => setAutoplayNext(e.target.checked)} className="h-4 w-4 accent-primary" />
+                </label>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 {EMBED_PROVIDERS.map((item) => (
                   <button key={item.id} onClick={() => setProvider(item.id)} className={`rounded-[18px] border px-3 py-3 text-sm font-bold transition-all duration-300 ${provider === item.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>

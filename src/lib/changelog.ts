@@ -2,6 +2,7 @@ export type ChangeKind = "new" | "fix" | "improved" | "soon";
 export type ChangeEntry = { date: string; kind: ChangeKind; title: string; detail?: string };
 
 export const CHANGELOG: ChangeEntry[] = [
+  { date: "2026-06-03", kind: "new", title: "Auto-play next + Skip Recap + PiP", detail: "TV episodes now auto-advance with a 10s countdown, a Skip Recap (+90s) button is in the player header, and Picture-in-Picture is one tap away (falls back to a floating popup window)." },
   { date: "2026-06-03", kind: "new", title: "Watch Party rooms", detail: "Host a synced viewing room, share an invite link, chat live with friends while you watch." },
   { date: "2026-06-03", kind: "improved", title: "Live Sports cards", detail: "Team badges, posters and kickoff times; streams split into Live now vs Upcoming." },
   { date: "2026-06-03", kind: "improved", title: "Radio: every country", detail: "Country list now pulled live from Radio Browser — every country with stations is listed." },
