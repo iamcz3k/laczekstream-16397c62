@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User, Flag, Megaphone, Plus, Trash2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { adminFetchAnalytics, adminListConfig, adminSetFeatureFlag, adminUpsertFeaturedEvent, adminDeleteFeaturedEvent, adminAddFeatureFlag } from "@/lib/admin.functions";
+import { adminFetchAnalytics, adminListConfig, adminSetFeatureFlag, adminUpsertFeaturedEvent, adminDeleteFeaturedEvent, adminAddFeatureFlag, adminUploadEventPoster } from "@/lib/admin.functions";
+import { refreshFeatureFlags } from "@/lib/feature-flags";
 
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
@@ -366,12 +367,14 @@ function ConfigPanel({ password }: { password: string }) {
   const addFlag = useServerFn(adminAddFeatureFlag);
   const upsertEvent = useServerFn(adminUpsertFeaturedEvent);
   const deleteEvent = useServerFn(adminDeleteFeaturedEvent);
+  const uploadPoster = useServerFn(adminUploadEventPoster);
   const [flags, setFlags] = useState<CfgFlag[]>([]);
   const [events, setEvents] = useState<CfgEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [newFlagKey, setNewFlagKey] = useState("");
   const [newFlagDesc, setNewFlagDesc] = useState("");
   const [editing, setEditing] = useState<Partial<CfgEvent> | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -383,6 +386,7 @@ function ConfigPanel({ password }: { password: string }) {
   async function toggleFlag(key: string, enabled: boolean) {
     setFlags((arr) => arr.map((f) => f.key === key ? { ...f, enabled } : f));
     await setFlag({ data: { password, key, enabled } });
+    refreshFeatureFlags();
   }
   async function createFlag() {
     if (!newFlagKey.trim()) return;
@@ -409,6 +413,25 @@ function ConfigPanel({ password }: { password: string }) {
   async function removeEvent(id: string) {
     if (!confirm("Delete this featured event?")) return;
     await deleteEvent({ data: { password, id } }); refresh();
+  }
+
+  async function handlePosterFile(file: File) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () => reject(r.error);
+        r.readAsDataURL(file);
+      });
+      const { url } = await uploadPoster({ data: { password, filename: file.name, dataUrl } });
+      setEditing((e) => ({ ...(e || {}), image_url: url }));
+    } catch (err) {
+      alert((err as Error).message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
   }
 
   if (loading) return <p className="py-12 text-center text-sm text-muted-foreground">Loading…</p>;
@@ -463,7 +486,14 @@ function ConfigPanel({ password }: { password: string }) {
             <h3 className="text-base font-bold">{editing.id ? "Edit event" : "New event"}</h3>
             <input value={editing.title || ""} onChange={(ev) => setEditing({ ...editing, title: ev.target.value })} placeholder="Title *" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
             <input value={editing.subtitle || ""} onChange={(ev) => setEditing({ ...editing, subtitle: ev.target.value })} placeholder="Subtitle" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
-            <input value={editing.image_url || ""} onChange={(ev) => setEditing({ ...editing, image_url: ev.target.value })} placeholder="Image URL" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
+            <div className="space-y-2">
+              <input value={editing.image_url || ""} onChange={(ev) => setEditing({ ...editing, image_url: ev.target.value })} placeholder="Image URL (or upload below)" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-3 py-3 text-xs font-bold text-muted-foreground hover:border-primary hover:text-foreground">
+                {uploading ? "Uploading…" : (editing.image_url ? "Replace poster image" : "Upload poster image")}
+                <input type="file" accept="image/*" className="hidden" onChange={(ev) => { const f = ev.target.files?.[0]; if (f) handlePosterFile(f); }} />
+              </label>
+              {editing.image_url && <img src={editing.image_url} alt="" className="h-24 w-full rounded-lg object-cover" />}
+            </div>
             <input value={editing.link_url || ""} onChange={(ev) => setEditing({ ...editing, link_url: ev.target.value })} placeholder="Link (/watch/movie/123 or https://…) *" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
             <div className="grid grid-cols-2 gap-2">
               <input value={editing.kind || ""} onChange={(ev) => setEditing({ ...editing, kind: ev.target.value })} placeholder="Kind (match/premiere/…)" className="rounded-xl bg-background px-3 py-2 text-sm" />
