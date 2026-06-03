@@ -220,6 +220,10 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
             )}
           </Section>
         )}
+
+        {tab === "config" && (
+          <ConfigPanel password={password} />
+        )}
       </div>
     </div>
   );
