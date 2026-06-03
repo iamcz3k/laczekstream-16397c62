@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Calendar, ExternalLink, Loader2, MapPin, Radio } from "lucide-react";
+import { Calendar, Loader2, MapPin, Play, Radio } from "lucide-react";
 import { FootballTab } from "@/components/FootballTab";
+import { footballStreamMatches, type FootballStreamMatch } from "@/lib/api";
 import { fetchSportScoreboard, findStreamUrl, SPORTS, type SportEvent, type SportKey } from "@/lib/sports-api";
 
 export function LiveSportsTab() {
@@ -31,14 +32,17 @@ export function LiveSportsTab() {
 
 function SportScoreboard({ sport }: { sport: SportKey }) {
   const [events, setEvents] = useState<SportEvent[]>([]);
+  const [streams, setStreams] = useState<FootballStreamMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const meta = SPORTS.find((s) => s.key === sport)!;
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchSportScoreboard(sport).then((d) => {
-      if (!cancelled) { setEvents(d); setLoading(false); }
+    Promise.all([fetchSportScoreboard(sport), footballStreamMatches(sport)]).then(([scoreboard, streamList]) => {
+      if (!cancelled) { setEvents(scoreboard); setStreams(streamList); setLoading(false); }
+    }).catch(() => {
+      if (!cancelled) { setEvents([]); setStreams([]); setLoading(false); }
     });
     return () => { cancelled = true; };
   }, [sport]);
@@ -50,7 +54,7 @@ function SportScoreboard({ sport }: { sport: SportKey }) {
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
-  if (events.length === 0) {
+  if (events.length === 0 && streams.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-secondary/40 p-8 text-center">
         <p className="text-3xl">{meta.emoji}</p>
@@ -62,25 +66,50 @@ function SportScoreboard({ sport }: { sport: SportKey }) {
 
   return (
     <div className="space-y-6">
-      {live.length > 0 && <EventGroup title="🔴 Live now" tone="live" events={live} />}
-      {upcoming.length > 0 && <EventGroup title="Upcoming" tone="upcoming" events={upcoming} />}
-      {finished.length > 0 && <EventGroup title="Final" tone="final" events={finished} />}
+      {streams.length > 0 && <StreamGroup sport={sport} streams={streams} />}
+      {live.length > 0 && <EventGroup title="🔴 Live now" tone="live" events={live} streams={streams} sport={sport} />}
+      {upcoming.length > 0 && <EventGroup title="Upcoming" tone="upcoming" events={upcoming} streams={streams} sport={sport} />}
+      {finished.length > 0 && <EventGroup title="Final" tone="final" events={finished} streams={streams} sport={sport} />}
     </div>
   );
 }
 
-function EventGroup({ title, tone, events }: { title: string; tone: "live" | "upcoming" | "final"; events: SportEvent[] }) {
+function findStreamForEvent(event: SportEvent, streams: FootballStreamMatch[]) {
+  const names = event.competitors.map((c) => c.name.toLowerCase().split(/\s+/)[0]).filter(Boolean);
+  return streams.find((stream) => names.length >= 2 && names.every((name) => stream.title.toLowerCase().includes(name)));
+}
+
+function StreamGroup({ sport, streams }: { sport: SportKey; streams: FootballStreamMatch[] }) {
   return (
     <section>
-      <h3 className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">{title}</h3>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {events.map((e) => <EventCard key={e.id} event={e} tone={tone} />)}
+      <h3 className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">Live streams</h3>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {streams.map((stream) => (
+          <a key={stream.id} href={`/football-stream/${encodeURIComponent(stream.id)}?sport=${sport}`} className="glass-card block rounded-2xl p-4 transition active:scale-[0.98] hover:border-primary/50">
+            <p className="line-clamp-2 text-sm font-black leading-tight">{stream.title}</p>
+            <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
+              <span>{stream.viewers ? `${stream.viewers.toLocaleString()} viewers` : stream.league || "Stream"}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 font-bold text-primary-foreground"><Play className="h-3 w-3" fill="currentColor" /> Watch</span>
+            </div>
+          </a>
+        ))}
       </div>
     </section>
   );
 }
 
-function EventCard({ event, tone }: { event: SportEvent; tone: "live" | "upcoming" | "final" }) {
+function EventGroup({ title, tone, events, streams, sport }: { title: string; tone: "live" | "upcoming" | "final"; events: SportEvent[]; streams: FootballStreamMatch[]; sport: SportKey }) {
+  return (
+    <section>
+      <h3 className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">{title}</h3>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {events.map((e) => <EventCard key={e.id} event={e} tone={tone} stream={findStreamForEvent(e, streams)} sport={sport} />)}
+      </div>
+    </section>
+  );
+}
+
+function EventCard({ event, tone, stream, sport }: { event: SportEvent; tone: "live" | "upcoming" | "final"; stream?: FootballStreamMatch; sport: SportKey }) {
   const [a, b] = event.competitors;
   const kickoff = new Date(event.date);
   return (
@@ -110,14 +139,13 @@ function EventCard({ event, tone }: { event: SportEvent; tone: "live" | "upcomin
           {event.venue ? <><MapPin className="h-3 w-3 shrink-0" /><span className="truncate">{event.venue}</span></> :
            tone === "upcoming" ? <><Calendar className="h-3 w-3 shrink-0" /><span>{kickoff.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span></> : null}
         </div>
-        <a
-          href={findStreamUrl(event)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground transition active:scale-95"
-        >
-          {tone === "live" ? <><Radio className="h-3 w-3" /> Watch</> : <><ExternalLink className="h-3 w-3" /> Find stream</>}
-        </a>
+        {stream ? (
+          <a href={`/football-stream/${encodeURIComponent(stream.id)}?sport=${sport}`} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground transition active:scale-95">
+            <Radio className="h-3 w-3" /> Watch
+          </a>
+        ) : (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-bold text-muted-foreground">No stream yet</span>
+        )}
       </div>
     </article>
   );
