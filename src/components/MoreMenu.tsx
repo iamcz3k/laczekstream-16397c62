@@ -5,7 +5,6 @@ import {
   Code2,
   Download,
   Gauge,
-  Headphones,
   HelpCircle,
   History as HistoryIcon,
   Info,
@@ -14,7 +13,6 @@ import {
   ListChecks,
   Moon,
   MoreVertical,
-  Radio as RadioIcon,
   RefreshCcw,
   Search as SearchIcon,
   Send,
@@ -79,8 +77,6 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   }
 
   function goSpeedTest() { setOpen(false); navigate({ to: "/speedtest" }); }
-  function goRadio() { setOpen(false); navigate({ to: "/radio" }); }
-  function goPodcasts() { setOpen(false); navigate({ to: "/podcasts" }); }
 
   useEffect(() => {
     document.documentElement.classList.toggle("light", theme === "light");
