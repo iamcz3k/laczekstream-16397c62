@@ -8,6 +8,8 @@ import { TVTab } from "@/components/TVTab";
 import { FootballTab } from "@/components/FootballTab";
 import { MusicTab } from "@/components/MusicTab";
 import { CctvTab } from "@/components/CctvTab";
+import { RadioTab } from "@/components/RadioTab";
+import { PodcastsTab } from "@/components/PodcastsTab";
 import { GenresTab } from "@/components/GenresTab";
 import { LibraryTab } from "@/components/LibraryTab";
 import { MediaCard } from "@/components/MediaCard";
@@ -178,6 +180,26 @@ function Index() {
               <p className="text-sm text-muted-foreground mt-1">Free public camera streams worldwide</p>
             </div>
             <CctvTab />
+          </section>
+        )}
+
+        {tab === "radio" && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Radio` : "Radio Worldwide"}</h2>
+              <p className="text-sm text-muted-foreground mt-1">Thousands of free stations, anywhere</p>
+            </div>
+            <RadioTab />
+          </section>
+        )}
+
+        {tab === "podcasts" && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Podcasts` : "Podcasts"}</h2>
+              <p className="text-sm text-muted-foreground mt-1">Search, browse and play</p>
+            </div>
+            <PodcastsTab />
           </section>
         )}
 
