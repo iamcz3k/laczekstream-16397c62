@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Calendar, Loader2, MapPin, Play, Radio } from "lucide-react";
 import { FootballTab } from "@/components/FootballTab";
 import { footballStreamMatches, type FootballStreamMatch } from "@/lib/api";
-import { fetchSportScoreboard, findStreamUrl, SPORTS, type SportEvent, type SportKey } from "@/lib/sports-api";
+import { fetchSportScoreboard, SPORTS, type SportEvent, type SportKey } from "@/lib/sports-api";
 
 export function LiveSportsTab() {
   const [sport, setSport] = useState<SportKey>("soccer");
