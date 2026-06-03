@@ -2,6 +2,8 @@ export type ChangeKind = "new" | "fix" | "improved" | "soon";
 export type ChangeEntry = { date: string; kind: ChangeKind; title: string; detail?: string };
 
 export const CHANGELOG: ChangeEntry[] = [
+  { date: "2026-06-03", kind: "new", title: "Admin: feature flags + featured events", detail: "DEV OPTIONS now has a Flags & Events tab — toggle major features ON/OFF instantly for every visitor and publish promotional banners (matches, premieres) to the home page with schedule + priority." },
+  { date: "2026-06-03", kind: "fix", title: "Podcasts: featured by default", detail: "Podcasts page now loads a fresh random pool of trending shows instead of an empty 'search any podcast' state." },
   { date: "2026-06-03", kind: "fix", title: "Permanent matte-black + orange theme", detail: "Removed the light/dark toggle and stripped the blue fallback palette — the original LACZEK matte-black design is now the single source of truth and can't auto-switch on any device." },
   { date: "2026-06-03", kind: "new", title: "Advanced search & filters", detail: "Live suggestions as you type (movies, shows and people), plus genre, year, rating and sort filters. Click an actor to discover everything they're in." },
   { date: "2026-06-03", kind: "new", title: "Auto-play next + Skip Recap + PiP", detail: "TV episodes now auto-advance with a 10s countdown, a Skip Recap (+90s) button is in the player header, and Picture-in-Picture is one tap away (falls back to a floating popup window)." },
