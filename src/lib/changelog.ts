@@ -2,13 +2,15 @@ export type ChangeKind = "new" | "fix" | "improved" | "soon";
 export type ChangeEntry = { date: string; kind: ChangeKind; title: string; detail?: string };
 
 export const CHANGELOG: ChangeEntry[] = [
+  { date: "2026-06-03", kind: "new", title: "Live Sports expansion", detail: "NBA, NFL, MLB, NHL, F1, UFC and Tennis tabs with live scores, upcoming fixtures and final results — powered by ESPN's public feed." },
+  { date: "2026-06-03", kind: "improved", title: "Radio & Podcasts moved to Home tabs", detail: "Find them alongside CCTV — sticky players, mobile-first layout, and a more reliable podcast feed loader." },
+  { date: "2026-06-03", kind: "fix", title: "Podcasts playback", detail: "Rewrote the episode player with proper Audio lifecycle, multi-proxy RSS fallback and per-episode play/pause." },
   { date: "2026-06-02", kind: "new", title: "Radio worldwide", detail: "Stream thousands of free radio stations from anywhere — sticky player keeps playing while you browse." },
   { date: "2026-06-02", kind: "new", title: "Podcasts", detail: "Search, browse and play podcasts. Episodes pulled from public iTunes / RSS feeds." },
   { date: "2026-06-02", kind: "new", title: "Speed test in menu", detail: "Quick built-in internet speed test using Cloudflare's public endpoint." },
   { date: "2026-06-02", kind: "new", title: "Download the app", detail: "Install LaCzek Stream as a PWA or grab the Android APK from the menu." },
   { date: "2026-06-02", kind: "new", title: "Updates channel", detail: "Quick link to the LaCzek Telegram channel for live announcements." },
   { date: "2026-06-02", kind: "improved", title: "Renamed Football tab → Live Sports", detail: "Groundwork for upcoming NBA, NFL, F1, UFC, tennis and more." },
-  { date: "—", kind: "soon", title: "Live Sports expansion", detail: "NBA, NFL, MLB, NHL, Formula 1, WNBA, NCAA, tennis and UFC tabs with live scores & streams." },
   { date: "—", kind: "soon", title: "Actors & Cast system", detail: "Full /actor/:id pages, cast carousels, actor search, trending actors via TMDB." },
   { date: "—", kind: "soon", title: "AI Developer Agent", detail: "Hidden admin dashboard with log scanner, AI chat and patch previews." },
   { date: "—", kind: "soon", title: "Play-by-play stadium view", detail: "Real-time pitch visualization with events, attack direction & momentum." },
