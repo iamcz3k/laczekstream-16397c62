@@ -254,7 +254,7 @@ function WatchPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6">
+      <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-0 py-0 sm:px-6 sm:py-4">
         <header className="mb-4 flex items-center justify-between gap-3">
           <button onClick={() => navigate({ to: "/" })} className="inline-flex h-10 items-center gap-2 rounded-full glass px-4 text-sm font-medium transition hover:bg-primary hover:text-primary-foreground">
             <ArrowLeft className="h-4 w-4" /> Back
@@ -272,8 +272,8 @@ function WatchPage() {
           </div>
         </header>
 
-        <div className="grid flex-1 gap-4 lg:grid-cols-[1fr_340px]">
-          <section ref={playerRef} className="flex min-h-[58vh] flex-col overflow-hidden rounded-[28px] border border-border bg-black lg:min-h-0">
+        <div className="grid flex-1 gap-4 px-0 sm:px-0 lg:grid-cols-[1fr_340px]">
+          <section ref={playerRef} className="flex aspect-video w-full flex-col overflow-hidden border-border bg-black sm:rounded-[28px] sm:border lg:aspect-auto lg:min-h-0">
             <div className="glass flex items-center justify-between gap-3 border-b border-border px-4 py-3">
               <div className="min-w-0">
                 <h1 className="truncate text-base font-bold">{title}</h1>
@@ -308,12 +308,12 @@ function WatchPage() {
                 </button>
               </div>
             </div>
-            <div className="relative min-h-0 flex-1">
+            <div className="relative aspect-video min-h-0 w-full flex-1 lg:aspect-auto">
             <iframe
               key={`${src}-${quality}`}
               src={src}
               title={title}
-              className={`h-full w-full border-0 ${fillMode ? "scale-110" : ""} origin-center transition-transform`}
+              className={`absolute inset-0 h-full w-full border-0 ${fillMode ? "scale-110" : ""} origin-center transition-transform`}
               allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
               allowFullScreen
               referrerPolicy="no-referrer"
@@ -331,7 +331,7 @@ function WatchPage() {
             </div>
           </section>
 
-          <aside className="space-y-4 overflow-auto pb-4 lg:max-h-[calc(100vh-6rem)]">
+          <aside className="space-y-4 overflow-auto px-4 pb-4 sm:px-0 lg:max-h-[calc(100vh-6rem)]">
             <section className="space-y-2">
               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Servers</h2>
               {mediaKind === "tv" && (
