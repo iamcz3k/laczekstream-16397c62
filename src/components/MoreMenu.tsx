@@ -45,7 +45,6 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   const [showLang, setShowLang] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
-  const [theme, setTheme] = useState<"dark" | "light">(() => getPrefs().theme || "dark");
   const navigate = useNavigate();
   const [canInstall, setCanInstall] = useState(false);
   const installPromptRef = useRef<unknown>(null);
@@ -81,11 +80,6 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   function goSpeedTest() { setOpen(false); navigate({ to: "/speedtest" }); }
   function goParty() { setOpen(false); navigate({ to: "/party" }); }
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("light", theme === "light");
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
-
   // Lock body scroll when drawer open
   useEffect(() => {
     if (!open) return;
@@ -93,12 +87,6 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
   }, [open]);
-
-  function toggleTheme() {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    setPrefs({ theme: next });
-  }
 
   async function surpriseMe() {
     setBusy(true);
@@ -193,9 +181,6 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
             </Group>
 
             <Group label="Settings">
-              <Row icon={theme === "dark" ? Sun : Moon} onClick={toggleTheme}>
-                {theme === "dark" ? "Light mode" : "Dark mode"}
-              </Row>
               <Row icon={Languages} onClick={() => setShowLang(true)} value={`${currentLang.native}`}>Language</Row>
             </Group>
 
