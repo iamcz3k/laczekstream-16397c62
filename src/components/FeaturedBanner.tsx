@@ -10,7 +10,12 @@ export function FeaturedBanner() {
 
   useEffect(() => {
     if (!enabled) return;
-    loadActiveEvents().then(setEvents).catch(() => setEvents([]));
+    let cancelled = false;
+    const load = () => loadActiveEvents().then((e) => { if (!cancelled) setEvents(e); }).catch(() => { if (!cancelled) setEvents([]); });
+    load();
+    // Re-poll every 30s so newly-added events surface for already-open visitors.
+    const t = window.setInterval(load, 30_000);
+    return () => { cancelled = true; window.clearInterval(t); };
   }, [enabled]);
 
   useEffect(() => {

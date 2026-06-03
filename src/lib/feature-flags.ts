@@ -15,30 +15,47 @@ export type FeaturedEvent = {
   active: boolean;
 };
 
-let flagsCache: Record<string, boolean> | null = null;
+// Short TTL cache so flags propagate to all users within ~30s of an admin toggle.
+const TTL_MS = 30_000;
+let flagsCache: { at: number; map: Record<string, boolean> } | null = null;
 let flagsPromise: Promise<Record<string, boolean>> | null = null;
+const listeners = new Set<() => void>();
 
-async function loadFlags(): Promise<Record<string, boolean>> {
-  if (flagsCache) return flagsCache;
+async function loadFlags(force = false): Promise<Record<string, boolean>> {
+  if (!force && flagsCache && Date.now() - flagsCache.at < TTL_MS) return flagsCache.map;
   if (flagsPromise) return flagsPromise;
   flagsPromise = (async () => {
     const { data, error } = await supabase.from("feature_flags").select("key,enabled");
-    if (error || !data) return {};
     const map: Record<string, boolean> = {};
-    for (const f of data) map[f.key] = !!f.enabled;
-    flagsCache = map;
+    if (!error && data) for (const f of data) map[f.key] = !!f.enabled;
+    flagsCache = { at: Date.now(), map };
+    flagsPromise = null;
     return map;
   })();
   return flagsPromise;
+}
+
+export function refreshFeatureFlags() {
+  flagsCache = null;
+  loadFlags(true).then(() => listeners.forEach((l) => l()));
 }
 
 export function useFeatureFlag(key: string, fallback = true): boolean {
   const [enabled, setEnabled] = useState<boolean>(fallback);
   useEffect(() => {
     let cancelled = false;
-    loadFlags().then((m) => { if (!cancelled && key in m) setEnabled(m[key]); });
-    return () => { cancelled = true; };
-  }, [key]);
+    const apply = () => {
+      loadFlags().then((m) => {
+        if (cancelled) return;
+        if (key in m) setEnabled(m[key]); else setEnabled(fallback);
+      });
+    };
+    apply();
+    listeners.add(apply);
+    // Re-check periodically so public visitors pick up admin toggles without reload.
+    const t = window.setInterval(apply, TTL_MS);
+    return () => { cancelled = true; listeners.delete(apply); window.clearInterval(t); };
+  }, [key, fallback]);
   return enabled;
 }
 
