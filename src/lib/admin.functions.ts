@@ -3,6 +3,110 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ADMIN_PASSWORD = "czek2991";
 
+// ===== Feature flags =====
+
+export const adminSetFeatureFlag = createServerFn({ method: "POST" })
+  .inputValidator((input: { password: string; key: string; enabled: boolean }) => {
+    if (typeof input?.password !== "string" || typeof input?.key !== "string" || typeof input?.enabled !== "boolean") throw new Error("Invalid input");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { error } = await supabaseAdmin
+      .from("feature_flags")
+      .update({ enabled: data.enabled, updated_at: new Date().toISOString() })
+      .eq("key", data.key);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminAddFeatureFlag = createServerFn({ method: "POST" })
+  .inputValidator((input: { password: string; key: string; description?: string }) => {
+    if (typeof input?.password !== "string" || !input?.key) throw new Error("Invalid input");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { error } = await supabaseAdmin
+      .from("feature_flags")
+      .insert({ key: data.key, description: data.description ?? null, enabled: true });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ===== Featured events =====
+
+export type FeaturedEventInput = {
+  password: string;
+  id?: string;
+  title: string;
+  subtitle?: string;
+  image_url?: string;
+  link_url: string;
+  kind?: string;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  priority?: number;
+  active?: boolean;
+};
+
+export const adminUpsertFeaturedEvent = createServerFn({ method: "POST" })
+  .inputValidator((input: FeaturedEventInput) => {
+    if (typeof input?.password !== "string" || !input?.title || !input?.link_url) throw new Error("Invalid input");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const row = {
+      title: data.title,
+      subtitle: data.subtitle ?? null,
+      image_url: data.image_url ?? null,
+      link_url: data.link_url,
+      kind: data.kind ?? "general",
+      starts_at: data.starts_at ?? null,
+      ends_at: data.ends_at ?? null,
+      priority: data.priority ?? 0,
+      active: data.active ?? true,
+      updated_at: new Date().toISOString(),
+    };
+    if (data.id) {
+      const { error } = await supabaseAdmin.from("featured_events").update(row).eq("id", data.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin.from("featured_events").insert(row);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const adminDeleteFeaturedEvent = createServerFn({ method: "POST" })
+  .inputValidator((input: { password: string; id: string }) => {
+    if (typeof input?.password !== "string" || !input?.id) throw new Error("Invalid input");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { error } = await supabaseAdmin.from("featured_events").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminListConfig = createServerFn({ method: "POST" })
+  .inputValidator((input: { password: string }) => {
+    if (typeof input?.password !== "string") throw new Error("Invalid input");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const [flagsRes, eventsRes] = await Promise.all([
+      supabaseAdmin.from("feature_flags").select("*").order("key"),
+      supabaseAdmin.from("featured_events").select("*").order("priority", { ascending: false }),
+    ]);
+    if (flagsRes.error) throw new Error(flagsRes.error.message);
+    if (eventsRes.error) throw new Error(eventsRes.error.message);
+    return { flags: flagsRes.data || [], events: eventsRes.data || [] };
+  });
+
 export const adminFetchAnalytics = createServerFn({ method: "POST" })
   .inputValidator((input: { password: string }) => {
     if (typeof input?.password !== "string") throw new Error("Invalid input");
