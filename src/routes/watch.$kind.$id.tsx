@@ -141,7 +141,9 @@ function WatchPage() {
 
   useEffect(() => {
     if (mediaKind !== "tv" || !autoplayNext || !nextEpisodeNumber || !streamPlaying) return;
-    const runtimeMin = currentEpisodeMeta?.runtime || meta?.runtime || 22;
+    const epAny = currentEpisodeMeta as unknown as { runtime?: number } | undefined;
+    const metaAny = meta as unknown as { runtime?: number } | null;
+    const runtimeMin = epAny?.runtime || metaAny?.runtime || 22;
     const delayMs = Math.max(60_000, (runtimeMin - 1) * 60_000);
     const t = window.setTimeout(() => setUpNextCountdown(10), delayMs);
     return () => window.clearTimeout(t);
