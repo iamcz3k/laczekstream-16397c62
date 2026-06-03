@@ -16,6 +16,7 @@ import {
 import { BrandMark } from "@/components/BrandMark";
 import { isInWatchlist, recordWatch, toggleWatchlist } from "@/lib/library";
 import { trackWatch } from "@/lib/tracker";
+import { TitleDetails } from "@/components/TitleDetails";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
@@ -300,6 +301,8 @@ function WatchPage() {
             </button>
           </aside>
         </div>
+
+        {Number.isFinite(mediaId) && <TitleDetails kind={mediaKind} id={mediaId} />}
       </div>
     </main>
   );

@@ -153,6 +153,63 @@ export async function tmdbDetail(kind: "movie" | "tv", id: number): Promise<Medi
   return mapTmdb(j, kind);
 }
 
+export type CastMember = { id: number; name: string; character: string; profile?: string };
+export type CrewMember = { id: number; name: string; job: string; department: string };
+export type TitleFullDetail = MediaItem & {
+  runtime?: number;
+  genres: string[];
+  tagline?: string;
+  status?: string;
+  releaseDate?: string;
+  voteCount?: number;
+  cast: CastMember[];
+  crew: CrewMember[];
+  similar: MediaItem[];
+  directors: string[];
+  producers: string[];
+  writers: string[];
+  numberOfSeasons?: number;
+  numberOfEpisodes?: number;
+  homepage?: string;
+};
+
+export async function tmdbTitleFull(kind: "movie" | "tv", id: number): Promise<TitleFullDetail | null> {
+  const r = await fetch(`${TMDB}/${kind}/${id}?api_key=${TMDB_KEY}&append_to_response=credits,similar,recommendations`);
+  if (!r.ok) return null;
+  const j = await r.json();
+  const base = mapTmdb(j, kind);
+  const credits = j.credits || {};
+  const cast = (credits.cast || []).slice(0, 20).map((c: any): CastMember => ({
+    id: c.id, name: c.name, character: c.character || "",
+    profile: c.profile_path ? `${IMG}${c.profile_path}` : undefined,
+  }));
+  const crew = (credits.crew || []).map((c: any): CrewMember => ({
+    id: c.id, name: c.name, job: c.job, department: c.department,
+  }));
+  const directors = crew.filter((c: CrewMember) => c.job === "Director" || c.department === "Directing" && c.job?.includes("Director")).map((c: CrewMember) => c.name);
+  const producers = crew.filter((c: CrewMember) => c.job === "Producer" || c.job === "Executive Producer").map((c: CrewMember) => c.name);
+  const writers = crew.filter((c: CrewMember) => c.department === "Writing" || c.job === "Writer" || c.job === "Screenplay").map((c: CrewMember) => c.name);
+  const similarRaw = (j.similar?.results || j.recommendations?.results || []).slice(0, 12);
+  const similar = similarRaw.map((x: any) => mapTmdb(x, kind));
+  return {
+    ...base,
+    runtime: j.runtime ?? (j.episode_run_time?.[0]),
+    genres: (j.genres || []).map((g: any) => g.name),
+    tagline: j.tagline || undefined,
+    status: j.status,
+    releaseDate: j.release_date || j.first_air_date,
+    voteCount: j.vote_count,
+    cast, crew,
+    directors: Array.from(new Set(directors)).slice(0, 4),
+    producers: Array.from(new Set(producers)).slice(0, 4),
+    writers: Array.from(new Set(writers)).slice(0, 4),
+    similar,
+    numberOfSeasons: j.number_of_seasons,
+    numberOfEpisodes: j.number_of_episodes,
+    homepage: j.homepage || undefined,
+  };
+}
+
 export async function tmdbRandomMovie(): Promise<MediaItem | null> {
   const page = Math.floor(Math.random() * 20) + 1;
   const r = await fetch(`${TMDB}/movie/popular?api_key=${TMDB_KEY}&page=${page}`);
