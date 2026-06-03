@@ -2,6 +2,12 @@ export type ChangeKind = "new" | "fix" | "improved" | "soon";
 export type ChangeEntry = { date: string; kind: ChangeKind; title: string; detail?: string };
 
 export const CHANGELOG: ChangeEntry[] = [
+  { date: "2026-06-03", kind: "fix", title: "Feature flags now apply for everyone", detail: "Toggles in DEV OPTIONS propagate to every visitor within ~30s instead of being stuck behind a permanent client cache." },
+  { date: "2026-06-03", kind: "fix", title: "Featured event poster upload", detail: "Admin can now upload an image file directly (Lovable Cloud storage bucket) instead of pasting an image URL — banners refresh for live visitors every 30s." },
+  { date: "2026-06-03", kind: "fix", title: "Live TV: all countries by default", detail: "Opening Live TV no longer locks to India. Default is a shuffled mix from every country, and the country picker has been redesigned as a branded matte-black searchable sheet." },
+  { date: "2026-06-03", kind: "fix", title: "Mobile player full-bleed", detail: "Phone players now fill the screen edge-to-edge in a true 16:9 frame — no more side margins or black letterboxing." },
+  { date: "2026-06-03", kind: "improved", title: "Auto-play next: runtime fallback", detail: "If the embed never reports focus, the Up Next countdown still fires after the episode runtime so autoplay always triggers." },
+  { date: "2026-06-03", kind: "fix", title: "Watch Party: clearer errors", detail: "Create / Join buttons now show an inline hint when the URL or room code is missing instead of silently doing nothing." },
   { date: "2026-06-03", kind: "new", title: "Admin: feature flags + featured events", detail: "DEV OPTIONS now has a Flags & Events tab — toggle major features ON/OFF instantly for every visitor and publish promotional banners (matches, premieres) to the home page with schedule + priority." },
   { date: "2026-06-03", kind: "fix", title: "Podcasts: featured by default", detail: "Podcasts page now loads a fresh random pool of trending shows instead of an empty 'search any podcast' state." },
   { date: "2026-06-03", kind: "fix", title: "Permanent matte-black + orange theme", detail: "Removed the light/dark toggle and stripped the blue fallback palette — the original LACZEK matte-black design is now the single source of truth and can't auto-switch on any device." },

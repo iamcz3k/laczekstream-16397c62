@@ -107,6 +107,34 @@ export const adminListConfig = createServerFn({ method: "POST" })
     return { flags: flagsRes.data || [], events: eventsRes.data || [] };
   });
 
+// ===== Upload event poster image (data URL → storage bucket) =====
+
+export const adminUploadEventPoster = createServerFn({ method: "POST" })
+  .inputValidator((input: { password: string; filename: string; dataUrl: string }) => {
+    if (typeof input?.password !== "string" || typeof input?.dataUrl !== "string" || !input.dataUrl.startsWith("data:")) {
+      throw new Error("Invalid input");
+    }
+    return input;
+  })
+  .handler(async ({ data }) => {
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(data.dataUrl);
+    if (!match) throw new Error("Expected base64 image data URL");
+    const mime = match[1];
+    const ext = mime.split("/")[1].replace("+xml", "").replace("jpeg", "jpg");
+    const bytes = Uint8Array.from(atob(match[2]), (c) => c.charCodeAt(0));
+    if (bytes.byteLength > 5 * 1024 * 1024) throw new Error("Image too large (max 5MB)");
+    const safe = (data.filename || "poster").replace(/[^a-z0-9._-]/gi, "_").slice(0, 60);
+    const path = `${Date.now()}-${safe}.${ext}`;
+    const { error } = await supabaseAdmin.storage.from("event-posters").upload(path, bytes, {
+      contentType: mime,
+      upsert: false,
+    });
+    if (error) throw new Error(error.message);
+    const { data: pub } = supabaseAdmin.storage.from("event-posters").getPublicUrl(path);
+    return { url: pub.publicUrl };
+  });
+
 export const adminFetchAnalytics = createServerFn({ method: "POST" })
   .inputValidator((input: { password: string }) => {
     if (typeof input?.password !== "string") throw new Error("Invalid input");

@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { BrandMark } from "@/components/BrandMark";
 import { MoreMenu } from "@/components/MoreMenu";
 import { tmdbRandomMovie } from "@/lib/api";
+import { useFeatureFlag } from "@/lib/feature-flags";
 
 export type TabKey = "movies" | "tv" | "football" | "youtube" | "cctv" | "radio" | "podcasts" | "genres" | "library";
 
@@ -20,6 +21,19 @@ const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?
 export function Header({ active, onChange }: { active: TabKey; onChange: (k: TabKey) => void }) {
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  // Each tab keys off a feature flag. Flags default ON so removing the row
+  // from the DB never hides a tab; admin must explicitly disable it.
+  const flags: Record<TabKey, boolean> = {
+    movies: useFeatureFlag("tab_movies", true),
+    tv: useFeatureFlag("tab_tv", true),
+    football: useFeatureFlag("tab_football", true),
+    youtube: useFeatureFlag("tab_youtube", true),
+    cctv: useFeatureFlag("tab_cctv", true),
+    radio: useFeatureFlag("tab_radio", true),
+    podcasts: useFeatureFlag("tab_podcasts", true),
+    genres: useFeatureFlag("tab_genres", true),
+    library: useFeatureFlag("tab_library", true),
+  };
 
   async function surprise() {
     setBusy(true);
@@ -49,7 +63,7 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
           </div>
         </div>
         <nav className="-mx-3 flex max-w-full items-center gap-1 overflow-x-auto px-3 pb-1 lg:order-2 lg:mx-0 lg:rounded-full lg:glass lg:p-1 lg:shadow-[inset_0_1px_0_color-mix(in_oklab,white_8%,transparent)]">
-          {TABS.map((t) => {
+          {TABS.filter((t) => flags[t.key] !== false).map((t) => {
             const Icon = t.icon;
             const isActive = t.key === active;
             return (
