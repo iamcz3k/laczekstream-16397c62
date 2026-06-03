@@ -25,10 +25,12 @@ function PartyLanding() {
   const [src, setSrc] = useState("");
   const [title, setTitle] = useState("");
   const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   function host() {
     const url = src.trim();
-    if (!url) return;
+    if (!url) { setError("Paste a movie link first — e.g. /watch/movie/603"); return; }
+    setError(null);
     const id = randomId();
     navigate({
       to: "/party/$roomId",
@@ -39,7 +41,8 @@ function PartyLanding() {
 
   function join() {
     const id = code.trim().toLowerCase();
-    if (!id) return;
+    if (!id) { setError("Enter the room code your friend shared"); return; }
+    setError(null);
     navigate({ to: "/party/$roomId", params: { roomId: id } });
   }
 
@@ -71,9 +74,10 @@ function PartyLanding() {
             placeholder="Friday Movie Night"
             className="mt-1 w-full rounded-full border border-border bg-background py-3 px-4 text-sm outline-none focus:border-primary"
           />
-          <button onClick={host} disabled={!src.trim()} className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-black text-primary-foreground disabled:opacity-50">
+          <button onClick={host} className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-black text-primary-foreground">
             <Users className="h-4 w-4" /> Create party <ArrowRight className="h-4 w-4" />
           </button>
+          <p className="mt-2 text-[11px] text-muted-foreground">Tip: open any movie or show, copy the URL path (e.g. <code>/watch/movie/603</code>) and paste it above.</p>
         </section>
 
         <section className="mt-6 rounded-2xl border border-border bg-secondary/40 p-5">
@@ -85,12 +89,13 @@ function PartyLanding() {
               placeholder="Room code (e.g. ab2x9k)"
               className="flex-1 rounded-full border border-border bg-background py-3 px-4 text-sm outline-none focus:border-primary"
             />
-            <button onClick={join} disabled={!code.trim()} className="rounded-full bg-secondary px-5 py-2.5 text-sm font-black disabled:opacity-50">
+            <button onClick={join} className="rounded-full bg-secondary px-5 py-2.5 text-sm font-black">
               <Link2 className="inline h-4 w-4" /> Join
             </button>
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">Or open the link the host shared with you.</p>
         </section>
+        {error && <p className="mt-4 rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</p>}
       </main>
     </div>
   );

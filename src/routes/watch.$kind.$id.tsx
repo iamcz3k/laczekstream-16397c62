@@ -149,6 +149,19 @@ function WatchPage() {
     return () => window.clearTimeout(t);
   }, [mediaKind, autoplayNext, nextEpisodeNumber, streamPlaying, currentEpisodeMeta, meta]);
 
+  // Fallback: if the iframe never reports a blur event (some providers swallow
+  // focus changes), still arm a runtime-based countdown so autoplay isn't
+  // permanently silent. Triggers ~runtime minutes after the episode is opened.
+  useEffect(() => {
+    if (mediaKind !== "tv" || !autoplayNext || !nextEpisodeNumber) return;
+    const epAny = currentEpisodeMeta as unknown as { runtime?: number } | undefined;
+    const metaAny = meta as unknown as { runtime?: number } | null;
+    const runtimeMin = epAny?.runtime || metaAny?.runtime || 22;
+    const fallbackMs = Math.max(120_000, runtimeMin * 60_000);
+    const t = window.setTimeout(() => setUpNextCountdown((c) => c ?? 10), fallbackMs);
+    return () => window.clearTimeout(t);
+  }, [mediaKind, autoplayNext, nextEpisodeNumber, currentEpisodeMeta, meta, src]);
+
   useEffect(() => {
     if (upNextCountdown === null) return;
     if (upNextCountdown <= 0) {
@@ -255,7 +268,7 @@ function WatchPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-0 py-0 sm:px-6 sm:py-4">
-        <header className="mb-4 flex items-center justify-between gap-3">
+        <header className="mb-4 flex items-center justify-between gap-3 px-4 pt-4 sm:px-0 sm:pt-0">
           <button onClick={() => navigate({ to: "/" })} className="inline-flex h-10 items-center gap-2 rounded-full glass px-4 text-sm font-medium transition hover:bg-primary hover:text-primary-foreground">
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
