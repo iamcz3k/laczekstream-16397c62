@@ -186,9 +186,9 @@ export async function tmdbTitleFull(kind: "movie" | "tv", id: number): Promise<T
   const crew = (credits.crew || []).map((c: any): CrewMember => ({
     id: c.id, name: c.name, job: c.job, department: c.department,
   }));
-  const directors = crew.filter((c: CrewMember) => c.job === "Director" || c.department === "Directing" && c.job?.includes("Director")).map((c: CrewMember) => c.name);
-  const producers = crew.filter((c: CrewMember) => c.job === "Producer" || c.job === "Executive Producer").map((c: CrewMember) => c.name);
-  const writers = crew.filter((c: CrewMember) => c.department === "Writing" || c.job === "Writer" || c.job === "Screenplay").map((c: CrewMember) => c.name);
+  const directors: string[] = crew.filter((c: CrewMember) => c.job === "Director").map((c: CrewMember) => c.name);
+  const producers: string[] = crew.filter((c: CrewMember) => c.job === "Producer" || c.job === "Executive Producer").map((c: CrewMember) => c.name);
+  const writers: string[] = crew.filter((c: CrewMember) => c.department === "Writing" || c.job === "Writer" || c.job === "Screenplay").map((c: CrewMember) => c.name);
   const similarRaw = (j.similar?.results || j.recommendations?.results || []).slice(0, 12);
   const similar = similarRaw.map((x: any) => mapTmdb(x, kind));
   return {
