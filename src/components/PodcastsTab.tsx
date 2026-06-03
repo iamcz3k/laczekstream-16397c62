@@ -58,12 +58,36 @@ export function PodcastsTab() {
     return () => clearTimeout(t);
   }, [q]);
 
+  // Default: rotate a random pool of popular podcasts so the page never feels
+  // empty. When the user types, switch to a real search.
   useEffect(() => {
-    if (!debounced) { setPodcasts([]); return; }
     setLoading(true);
-    fetch(`https://itunes.apple.com/search?media=podcast&limit=50&term=${encodeURIComponent(debounced)}`)
+    if (debounced) {
+      fetch(`https://itunes.apple.com/search?media=podcast&limit=50&term=${encodeURIComponent(debounced)}`)
+        .then((r) => r.json())
+        .then((d) => setPodcasts(d.results || []))
+        .catch(() => setPodcasts([]))
+        .finally(() => setLoading(false));
+      return;
+    }
+    // Featured pool — pick one random seed term per visit for variety.
+    const seeds = [
+      "true crime", "comedy", "news", "technology", "business", "sports",
+      "history", "science", "interview", "society", "music", "fiction",
+      "health", "education", "politics", "movies",
+    ];
+    const seed = seeds[Math.floor(Math.random() * seeds.length)];
+    fetch(`https://itunes.apple.com/search?media=podcast&limit=50&term=${encodeURIComponent(seed)}`)
       .then((r) => r.json())
-      .then((d) => setPodcasts(d.results || []))
+      .then((d) => {
+        const list: Podcast[] = (d.results || []).filter((p: Podcast) => p.feedUrl);
+        // Shuffle for a fresh feel.
+        for (let i = list.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [list[i], list[j]] = [list[j], list[i]];
+        }
+        setPodcasts(list);
+      })
       .catch(() => setPodcasts([]))
       .finally(() => setLoading(false));
   }, [debounced]);
