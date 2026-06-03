@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Search, Radio, Globe } from "lucide-react";
+import { Loader2, Search, Radio, Globe, X, Check } from "lucide-react";
 import { iptvChannels, countryName, countryFlag, CURATED_TV_CHANNELS, type Channel } from "@/lib/api";
 import { HlsPlayer } from "./HlsPlayer";
+
+const ALL = "__all__";
 
 export function TVTab() {
   const [channels, setChannels] = useState<Channel[]>(CURATED_TV_CHANNELS);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
-  const [country, setCountry] = useState<string>(CURATED_TV_CHANNELS[0]?.country ?? "IN");
+  const [country, setCountry] = useState<string>(ALL);
   const [cat, setCat] = useState<string>("all");
   const [playing, setPlaying] = useState<Channel | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerQ, setPickerQ] = useState("");
 
   useEffect(() => {
     iptvChannels()
@@ -17,12 +21,6 @@ export function TVTab() {
       .catch(() => setChannels([]))
       .finally(() => setLoading(false));
   }, []);
-
-  useEffect(() => {
-    if (!channels.some((c) => c.country === country) && channels[0]?.country) {
-      setCountry(channels[0].country);
-    }
-  }, [channels, country]);
 
   const countries = useMemo(() => {
     const counts = new Map<string, number>();
@@ -32,10 +30,21 @@ export function TVTab() {
       .sort((a, b) => b[1] - a[1]);
   }, [channels]);
 
-  const inCountry = useMemo(
-    () => channels.filter((c) => c.country === country),
-    [channels, country],
-  );
+  const inCountry = useMemo(() => {
+    if (country === ALL) {
+      // Random popular mix: top countries first, shuffled per render-session.
+      const arr = [...channels];
+      // Deterministic-ish shuffle so the order stays stable within a session.
+      let s = 1;
+      const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    return channels.filter((c) => c.country === country);
+  }, [channels, country]);
 
   const categories = useMemo(() => {
     const s = new Set<string>();
@@ -69,23 +78,15 @@ export function TVTab() {
             className="w-full pl-11 pr-4 py-3 rounded-full glass border-border focus:border-primary focus:outline-none"
           />
         </div>
-        <div className="flex items-center gap-2 glass rounded-full pl-4 pr-1 py-1">
+        <button
+          onClick={() => { setPickerOpen(true); setPickerQ(""); }}
+          className="flex items-center gap-2 glass rounded-full pl-4 pr-4 py-2 text-sm font-medium hover:border-primary"
+        >
           <Globe className="w-4 h-4 text-muted-foreground" />
-          <select
-            value={country}
-            onChange={(e) => {
-              setCountry(e.target.value);
-              setCat("all");
-            }}
-            className="bg-transparent py-2 pr-3 text-sm font-medium focus:outline-none cursor-pointer"
-          >
-            {countries.map(([c, n]) => (
-              <option key={c} value={c} className="bg-background">
-                {countryFlag(c)} {countryName(c)} ({n})
-              </option>
-            ))}
-          </select>
-        </div>
+          <span>
+            {country === ALL ? "🌍 All countries" : `${countryFlag(country)} ${countryName(country)}`}
+          </span>
+        </button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
@@ -140,6 +141,53 @@ export function TVTab() {
           title={playing.name}
           onClose={() => setPlaying(null)}
         />
+      )}
+
+      {pickerOpen && (
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center" onClick={() => setPickerOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-border bg-popover text-popover-foreground shadow-2xl sm:rounded-3xl">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <h3 className="text-base font-black">Pick a country</h3>
+              <button onClick={() => setPickerOpen(false)} className="rounded-full bg-secondary p-2"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="border-b border-border p-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  autoFocus
+                  value={pickerQ}
+                  onChange={(e) => setPickerQ(e.target.value)}
+                  placeholder="Search countries…"
+                  className="w-full rounded-full border border-border bg-background py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+            <ul className="flex-1 overflow-y-auto p-2">
+              <li>
+                <button onClick={() => { setCountry(ALL); setCat("all"); setPickerOpen(false); }}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-bold transition ${country === ALL ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}>
+                  <span>🌍 All countries · popular mix</span>
+                  {country === ALL && <Check className="h-4 w-4" />}
+                </button>
+              </li>
+              {countries
+                .filter(([c]) => {
+                  if (!pickerQ.trim()) return true;
+                  const q = pickerQ.toLowerCase();
+                  return countryName(c).toLowerCase().includes(q) || c.toLowerCase().includes(q);
+                })
+                .map(([c, n]) => (
+                  <li key={c}>
+                    <button onClick={() => { setCountry(c); setCat("all"); setPickerOpen(false); }}
+                      className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition ${country === c ? "bg-primary text-primary-foreground font-bold" : "hover:bg-secondary"}`}>
+                      <span className="truncate">{countryFlag(c)} {countryName(c)} <span className="text-xs opacity-70">({n})</span></span>
+                      {country === c && <Check className="h-4 w-4 shrink-0" />}
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        </div>
       )}
     </div>
   );
