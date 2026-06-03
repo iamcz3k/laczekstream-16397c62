@@ -22,6 +22,7 @@ import {
   Sparkles,
   Sun,
   Trash2,
+  Users,
   X,
 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
@@ -78,6 +79,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   }
 
   function goSpeedTest() { setOpen(false); navigate({ to: "/speedtest" }); }
+  function goParty() { setOpen(false); navigate({ to: "/party" }); }
 
   useEffect(() => {
     document.documentElement.classList.toggle("light", theme === "light");
@@ -201,6 +203,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
               <Row icon={ListChecks} onClick={() => { setOpen(false); setShowChangelog(true); }}>What's new</Row>
               <Row icon={Send} onClick={openUpdates}>Updates · Telegram</Row>
               <Row icon={Smartphone} onClick={installApp}>{canInstall ? "Install app" : "Install app / APK"}</Row>
+              <Row icon={Users} onClick={goParty}>Watch Party</Row>
               <Row icon={Gauge} onClick={goSpeedTest}>Speed test</Row>
               <Row icon={Share2} onClick={shareSite}>Share LACZEK STREAM</Row>
               <Row icon={Download} onClick={exportData}>Export my library</Row>
