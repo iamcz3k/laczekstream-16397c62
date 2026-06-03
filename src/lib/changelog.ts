@@ -2,6 +2,10 @@ export type ChangeKind = "new" | "fix" | "improved" | "soon";
 export type ChangeEntry = { date: string; kind: ChangeKind; title: string; detail?: string };
 
 export const CHANGELOG: ChangeEntry[] = [
+  { date: "2026-06-03", kind: "new", title: "Watch Party rooms", detail: "Host a synced viewing room, share an invite link, chat live with friends while you watch." },
+  { date: "2026-06-03", kind: "improved", title: "Live Sports cards", detail: "Team badges, posters and kickoff times; streams split into Live now vs Upcoming." },
+  { date: "2026-06-03", kind: "improved", title: "Radio: every country", detail: "Country list now pulled live from Radio Browser — every country with stations is listed." },
+  { date: "2026-06-03", kind: "fix", title: "Podcasts UX", detail: "Search starts empty (no auto 'daily news') and each show can load more episodes beyond the first 20." },
   { date: "2026-06-03", kind: "new", title: "Live Sports expansion", detail: "NBA, NFL, MLB, NHL, F1, UFC and Tennis tabs with live scores, upcoming fixtures and final results — powered by ESPN's public feed." },
   { date: "2026-06-03", kind: "improved", title: "Radio & Podcasts moved to Home tabs", detail: "Find them alongside CCTV — sticky players, mobile-first layout, and a more reliable podcast feed loader." },
   { date: "2026-06-03", kind: "fix", title: "Podcasts playback", detail: "Rewrote the episode player with proper Audio lifecycle, multi-proxy RSS fallback and per-episode play/pause." },
