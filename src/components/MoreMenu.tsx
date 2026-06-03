@@ -204,8 +204,6 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
               <Row icon={ListChecks} onClick={() => { setOpen(false); setShowChangelog(true); }}>What's new</Row>
               <Row icon={Send} onClick={openUpdates}>Updates · Telegram</Row>
               <Row icon={Smartphone} onClick={installApp}>{canInstall ? "Install app" : "Download APK"}</Row>
-              <Row icon={RadioIcon} onClick={goRadio}>Radio worldwide</Row>
-              <Row icon={Headphones} onClick={goPodcasts}>Podcasts</Row>
               <Row icon={Gauge} onClick={goSpeedTest}>Speed test</Row>
               <Row icon={Share2} onClick={shareSite}>Share LACZEK STREAM</Row>
               <Row icon={Download} onClick={exportData}>Export my library</Row>
