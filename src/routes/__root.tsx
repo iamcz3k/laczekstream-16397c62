@@ -64,7 +64,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <HeadContent />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var r=localStorage.getItem('laczek:prefs');var t=r?JSON.parse(r).theme:null;document.documentElement.classList.remove('dark');if(t==='light')document.documentElement.classList.add('light');}catch(e){document.documentElement.classList.remove('dark');}})();`,
+            __html: `(function(){try{document.documentElement.classList.remove('dark');document.documentElement.classList.remove('light');}catch(e){}})();`,
           }}
         />
       </head>
@@ -83,14 +83,13 @@ function RootComponent() {
     try {
       const raw = localStorage.getItem("laczek:prefs");
       const parsed = raw ? JSON.parse(raw) : {};
-      const theme = parsed?.theme;
       const lang = parsed?.language;
       if (lang) document.documentElement.lang = lang;
       document.documentElement.classList.remove("dark");
-      if (theme === "light") document.documentElement.classList.add("light");
-      else document.documentElement.classList.remove("light");
+      document.documentElement.classList.remove("light");
     } catch {
       document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove("light");
     }
     import("@/lib/notifications").then((m) => m.ensureSW()).catch(() => {});
     // Silent ad / direct-link blocker
