@@ -575,6 +575,7 @@ export type FootballStreamMatch = {
   id: string;
   title: string;
   league?: string;
+  category?: string;
   poster?: string;
   date?: number;
   viewers?: number;
@@ -599,15 +600,15 @@ export type FootballStreamDetail = FootballStreamMatch & {
 
 const SPORTSRC = "https://api.sportsrc.org";
 
-export async function footballStreamMatches(): Promise<FootballStreamMatch[]> {
-  const res = await fetch(`/api/public/football-streams?mode=matches`);
+export async function footballStreamMatches(sport = "football"): Promise<FootballStreamMatch[]> {
+  const res = await fetch(`/api/public/football-streams?mode=matches&sport=${encodeURIComponent(sport)}`);
   if (!res.ok) throw new Error("football streams failed");
   const json = await res.json();
   return json?.success ? (json.data ?? []) : [];
 }
 
-export async function footballStreamDetail(id: string): Promise<FootballStreamDetail | null> {
-  const res = await fetch(`/api/public/football-streams?mode=detail&id=${encodeURIComponent(id)}`);
+export async function footballStreamDetail(id: string, sport = "football"): Promise<FootballStreamDetail | null> {
+  const res = await fetch(`/api/public/football-streams?mode=detail&id=${encodeURIComponent(id)}&sport=${encodeURIComponent(sport)}`);
   if (!res.ok) throw new Error("football stream detail failed");
   const json = await res.json();
   if (!json?.success || !json.data?.sources?.length) return null;
