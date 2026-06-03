@@ -155,13 +155,11 @@ export function PodcastsTab() {
 
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-      ) : !debounced ? (
-        <div className="rounded-2xl border border-border bg-secondary/40 p-10 text-center">
-          <Headphones className="mx-auto h-10 w-10 text-muted-foreground" />
-          <p className="mt-3 text-sm font-bold">Search for any podcast</p>
-          <p className="mt-1 text-xs text-muted-foreground">Try a title, host or topic to get started.</p>
-        </div>
       ) : (
+        <>
+        {!debounced && (
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Featured for you</p>
+        )}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {podcasts.map((p) => (
             <button key={p.collectionId} onClick={() => openPodcast(p)} className="glass-card group overflow-hidden rounded-2xl text-left transition hover:border-primary/50">
@@ -177,6 +175,7 @@ export function PodcastsTab() {
             </button>
           ))}
         </div>
+        </>
       )}
 
       {active && (
