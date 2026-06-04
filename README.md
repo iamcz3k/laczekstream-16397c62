@@ -218,7 +218,7 @@ As long as proper credit is given.
 
 ## 👨‍💻 Author
 
-Developed and maintained by **La Czek**
+Developed and maintained by **La Czek❤️**
 
 ---
 
