@@ -286,7 +286,7 @@ function WatchPage() {
         </header>
 
         <div className="grid flex-1 gap-4 px-0 sm:px-0 lg:grid-cols-[1fr_340px]">
-          <section ref={playerRef} className="flex aspect-video w-full flex-col overflow-hidden border-border bg-black sm:rounded-[28px] sm:border lg:aspect-auto lg:min-h-0">
+          <section ref={playerRef} className="flex w-full flex-col overflow-hidden border-border bg-black sm:rounded-[28px] sm:border lg:min-h-0">
             <div className="glass flex items-center justify-between gap-3 border-b border-border px-4 py-3">
               <div className="min-w-0">
                 <h1 className="truncate text-base font-bold">{title}</h1>
@@ -321,12 +321,12 @@ function WatchPage() {
                 </button>
               </div>
             </div>
-            <div className="relative aspect-video min-h-0 w-full flex-1 lg:aspect-auto">
+            <div className="relative aspect-video w-full flex-1 lg:aspect-auto lg:min-h-0">
             <iframe
               key={`${src}-${quality}`}
               src={src}
               title={title}
-              className={`absolute inset-0 h-full w-full border-0 ${fillMode ? "scale-110" : ""} origin-center transition-transform`}
+              className={`absolute inset-0 h-full w-full border-0 ${fillMode ? "scale-[1.06]" : ""} origin-center transition-transform`}
               allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
               allowFullScreen
               referrerPolicy="no-referrer"
