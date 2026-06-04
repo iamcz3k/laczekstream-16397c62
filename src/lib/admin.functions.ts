@@ -131,8 +131,13 @@ export const adminUploadEventPoster = createServerFn({ method: "POST" })
       upsert: false,
     });
     if (error) throw new Error(error.message);
-    const { data: pub } = supabaseAdmin.storage.from("event-posters").getPublicUrl(path);
-    return { url: pub.publicUrl };
+    // Bucket is private (workspace blocks public buckets). Issue a long-lived
+    // signed URL so the public site can render the poster image.
+    const TEN_YEARS = 60 * 60 * 24 * 365 * 10;
+    const { data: signed, error: signErr } = await supabaseAdmin
+      .storage.from("event-posters").createSignedUrl(path, TEN_YEARS);
+    if (signErr || !signed?.signedUrl) throw new Error(signErr?.message || "Could not sign URL");
+    return { url: signed.signedUrl };
   });
 
 export const adminFetchAnalytics = createServerFn({ method: "POST" })
