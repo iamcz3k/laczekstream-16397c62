@@ -2,6 +2,14 @@ export type ChangeKind = "new" | "fix" | "improved" | "soon";
 export type ChangeEntry = { date: string; kind: ChangeKind; title: string; detail?: string };
 
 export const CHANGELOG: ChangeEntry[] = [
+  { date: "2026-06-04", kind: "fix", title: "Featured event posters load publicly", detail: "Uploaded poster images are now served via a long-lived signed URL so they appear on the banner for every visitor." },
+  { date: "2026-06-04", kind: "new", title: "Featured banner countdown", detail: "If a featured event has a start time, the banner shows a live countdown (days/hours/minutes/seconds) until the stream goes live." },
+  { date: "2026-06-04", kind: "fix", title: "Feature flags actually hide tabs", detail: "Toggling Podcasts / Radio / Live Sports / Watch Party in the admin now hides them on the public home immediately." },
+  { date: "2026-06-04", kind: "fix", title: "Player no longer squished on mobile", detail: "Removed the outer aspect-video wrapper that was shrinking the stream behind the toolbar. The player is back to a clean full-width 16:9 frame." },
+  { date: "2026-06-04", kind: "fix", title: "Radio country picker redesigned", detail: "Replaced the native browser picker with a branded matte-black searchable sheet, sorted A-Z." },
+  { date: "2026-06-04", kind: "improved", title: "Watch Party — clearer flow", detail: "Inline errors when a URL or code is missing and a 'Try with a sample movie' shortcut so hosting a room always works on the first click." },
+  { date: "2026-06-04", kind: "new", title: "Capacitor scaffold + native downloads", detail: "Added capacitor.config.ts and a downloadToDevice helper. Inside the Android APK shell, downloads write straight to the device's Downloads folder; web users keep the existing mirror flow." },
+  { date: "2026-06-04", kind: "new", title: "Multi-host deployment configs", detail: "Added _redirects, netlify.toml and DEPLOYMENT.md so the static bundle deploys cleanly to Cloudflare Pages, Netlify, Vercel, Render and GitHub Pages." },
   { date: "2026-06-03", kind: "fix", title: "Feature flags now apply for everyone", detail: "Toggles in DEV OPTIONS propagate to every visitor within ~30s instead of being stuck behind a permanent client cache." },
   { date: "2026-06-03", kind: "fix", title: "Featured event poster upload", detail: "Admin can now upload an image file directly (Lovable Cloud storage bucket) instead of pasting an image URL — banners refresh for live visitors every 30s." },
   { date: "2026-06-03", kind: "fix", title: "Live TV: all countries by default", detail: "Opening Live TV no longer locks to India. Default is a shuffled mix from every country, and the country picker has been redesigned as a branded matte-black searchable sheet." },
