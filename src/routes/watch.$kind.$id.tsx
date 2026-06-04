@@ -17,6 +17,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { isInWatchlist, recordWatch, toggleWatchlist } from "@/lib/library";
 import { trackWatch } from "@/lib/tracker";
 import { TitleDetails } from "@/components/TitleDetails";
+import { downloadToDevice } from "@/lib/native-download";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
@@ -259,10 +260,11 @@ function WatchPage() {
   }, [mediaKind, mediaId, season, episode]);
 
   function openDownload(url: string) {
-    // Open in a new tab — most ad-blockers / browsers will trigger the save
-    // dialog when the mirror responds with a Content-Disposition header. If the
-    // mirror returns a page, the user just clicks the download button there.
-    window.open(url, "_blank", "noopener,noreferrer");
+    // Inside the Capacitor APK shell this writes straight to the device's
+    // Downloads folder; on the web it falls back to opening the mirror in a
+    // new tab so the browser's Save dialog can handle it.
+    const safe = `${(meta?.title || "video").replace(/[^a-z0-9._-]/gi, "_")}.mp4`;
+    void downloadToDevice(url, safe);
   }
 
   return (
