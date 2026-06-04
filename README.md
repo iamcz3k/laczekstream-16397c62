@@ -1,108 +1,121 @@
 # 🌐 LaCzek Stream
 
-LaCzek Stream is a modern, all-in-one entertainment streaming platform built for fast, lightweight, and responsive access to a wide range of online media content.
+LaCzek Stream is a modern multi-source entertainment streaming platform built with TypeScript, Vite, and Supabase.
 
-It brings together multiple entertainment sources into a single unified interface, allowing users to browse and stream movies, TV shows, anime, live sports, radio stations, podcasts, YouTube content, and public live streams.
+It is designed as a unified media hub that aggregates different types of content into a single fast and responsive web interface, allowing users to access movies, TV series, anime, live sports, radio, podcasts, YouTube content, and publicly available live streams.
 
-The platform is designed to work seamlessly across mobile devices, desktops, and web browsers without requiring installation.
+The project focuses on performance, simplicity, and cross-device usability, providing a smooth streaming experience on mobile, desktop, and tablet devices.
 
 ---
 
-## 🚀 Overview
+## 🚀 Project Overview
 
-LaCzek Stream is built as a web-based streaming hub that aggregates and organizes different types of media content into a simple and user-friendly interface.
+LaCzek Stream is not a traditional streaming service—it is a **media aggregation and streaming interface**.
 
-Instead of switching between multiple apps and platforms, users can access different categories of entertainment in one place.
+Instead of hosting content directly, the platform organizes and presents multiple external media sources in one structured UI.
 
-The system focuses on:
-- Speed
-- Responsiveness
-- Simplicity
+The goal is to reduce fragmentation across entertainment platforms by offering a centralized viewing experience.
+
+Key focus areas:
+- Fast navigation between content categories
+- Lightweight and responsive UI
+- Modular architecture
+- API-driven content rendering
 - Cross-platform compatibility
 
 ---
 
-## 🎯 Features
+## 🎯 Core Features
 
 ### 🎬 Movies Streaming
-Browse and stream a wide selection of movie content through integrated sources.
+Browse and access movie content through integrated external sources and APIs.
 
 ### 📺 TV Shows & Series
-Access ongoing and completed TV series organized by seasons and episodes.
+Structured TV series browsing with seasons and episodes support.
 
 ### 🎌 Anime Section
-Dedicated anime browsing experience with categorized content.
+Dedicated anime category with organized listings and categorization.
 
 ### ⚽ Live Sports Streaming
-Watch live sports events through integrated streaming sources.
+Access sports-related live streams and embedded sources where available.
 
 ### 📡 Live TV Channels
-Access online live television streams from various sources.
+View publicly available live TV streams from supported providers.
 
 ### 📻 Radio Streaming
-Listen to live radio stations across different genres and regions.
+Listen to online radio stations across different regions and genres.
 
 ### 🎙️ Podcasts
-Stream audio podcast content directly inside the platform.
+Stream podcast content directly inside the platform interface.
 
 ### 📺 YouTube Integration
-Watch YouTube videos directly inside the platform interface.
+Embedded YouTube playback support for videos and channels.
 
-### 📷 Public Live Cameras (YouTube CCTV Streams)
-View publicly available live camera feeds and CCTV-style streams hosted on platforms like YouTube.
+### 📷 Public Live Cameras (YouTube Streams)
+Displays publicly available live camera feeds and CCTV-style streams from YouTube and similar platforms.
 
-### 📱 Responsive Design
-Fully optimized for:
-- Mobile phones
+### 📱 Responsive UI
+Fully optimized layout for:
+- Mobile devices
 - Tablets
-- Desktop browsers
+- Desktop screens
 
-### ⚡ Fast Performance
-Optimized for quick loading and smooth navigation between categories.
+### ⚡ Performance Optimized
+- Fast initial load times
+- Lazy-loaded media sections
+- Optimized routing and rendering
 
-### 🌐 Web-Based Access
-No installation required — runs directly in modern web browsers.
+### 🌐 Web-Based Platform
+Runs entirely in the browser with no installation required.
 
 ---
 
 ## 🧱 Tech Stack
 
-LaCzek Stream is built using modern web technologies:
-
-- TypeScript — Main programming language
-- Vite — Frontend build tool for fast development
-- Supabase — Backend services (authentication/database if used)
-- Capacitor — Mobile app integration support
-- JavaScript — Core logic support
-- CSS — UI styling and design system
+- **TypeScript** — Core language for type-safe development
+- **Vite** — Fast frontend build tooling and development server
+- **Supabase** — Backend services (auth, database, realtime features if used)
+- **Capacitor** — Mobile app wrapper support
+- **JavaScript** — Runtime logic
+- **CSS** — UI styling system
 
 ---
 
-## 📂 Project Structure (Typical)
+## 🗂️ Architecture Overview
+
+The project follows a modular frontend structure:
+
+- Each media category is separated into independent UI modules
+- Data is fetched dynamically from external APIs or Supabase-backed services
+- Routing system handles navigation between content sections
+- Components are reusable and optimized for performance
+- Designed with a mobile-first approach
+
+---
+
+## 📁 Project Structure
 
 ```text
 src/
- ├── components/     UI components
- ├── pages/          Application pages (Movies, TV, etc.)
- ├── services/       API and data handling
- ├── hooks/          Custom React hooks (if used)
+ ├── components/     Reusable UI components
+ ├── pages/          Main views (Movies, TV, Sports, etc.)
+ ├── services/       API / Supabase data layer
+ ├── hooks/          Custom React hooks (if applicable)
  ├── utils/          Helper functions
- ├── assets/         Images, icons, media
- └── main.ts         Entry point
+ ├── assets/         Static assets (icons, images)
+ └── main.ts         Application entry point
 ```
 
 ---
 
 ## ⚙️ Installation
 
-To run the project locally, follow these steps:
-
 ### 1. Clone the repository
 ```bash
 git clone https://github.com/iamcz3k/laczekstream-16397c62.git
 ```
 
-### 2. Navigate into the project folder
+### 2. Navigate into project
 ```bash
 cd laczekstream-16397c62
 ```
@@ -119,15 +132,13 @@ npm run dev
 
 ---
 
-## 🏗️ Build for Production
-
-To generate a production-ready build:
+## 🏗️ Production Build
 
 ```bash
 npm run build
 ```
 
-To preview the production build:
+Preview production build:
 
 ```bash
 npm run preview
@@ -137,14 +148,14 @@ npm run preview
 
 ## ☁️ Deployment
 
-LaCzek Stream can be deployed on modern hosting platforms such as:
+This project is compatible with modern frontend hosting platforms:
 
 - Vercel
 - Netlify
 - Cloudflare Pages
 - Firebase Hosting
 
-Simply connect the repository and deploy using the build command:
+Build command:
 ```bash
 npm run build
 ```
@@ -153,37 +164,37 @@ npm run build
 
 ## 🔐 Environment Variables
 
-If the project uses Supabase or external APIs, create a `.env` file in the root directory:
+Create a `.env` file in the root directory:
 
 ```env
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-> ⚠️ Never expose private keys such as service role keys in frontend code.
+⚠️ Never expose sensitive service keys in frontend code.
 
 ---
 
-## 🧠 Architecture Notes
+## 🧠 Design Philosophy
 
-The platform is designed as a modular streaming interface:
+LaCzek Stream is built around the idea of **media convergence**—bringing different entertainment formats into a single interface.
 
-- Each content category is separated into its own module/page
-- Data is fetched dynamically from external sources/APIs
-- UI is built for fast navigation and low latency browsing
-- Mobile-first responsive layout ensures cross-device usability
+Instead of building a traditional streaming service, the system acts as:
+- A content aggregator
+- A unified media dashboard
+- A lightweight streaming interface
 
 ---
 
 ## ⚠️ Disclaimer
 
-LaCzek Stream is a media aggregation interface that may rely on third-party content sources.
+LaCzek Stream does not host or store copyrighted media files on its own servers.
 
-The developer does not host or store any media files on internal servers unless explicitly stated.
+The platform may integrate third-party sources and publicly available streams.
 
-Users are responsible for how they access and use external content sources.
+Users are responsible for how they access and use external content.
 
-This project is intended for educational and personal use only.
+This project is intended for **educational and development purposes only**.
 
 ---
 
@@ -191,14 +202,11 @@ This project is intended for educational and personal use only.
 
 Contributions are welcome.
 
-If you would like to improve this project:
-
+To contribute:
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Open a pull request
-
-All suggestions, improvements, and bug fixes are appreciated.
+2. Create a new feature branch
+3. Make your changes
+4. Submit a pull request
 
 ---
 
@@ -210,32 +218,32 @@ You are free to:
 - Use
 - Modify
 - Distribute
-- Include in private or commercial projects
+- Build upon the project
 
-As long as proper credit is given.
+With proper attribution.
 
 ---
 
 ## 👨‍💻 Author
 
-Developed and maintained by **La Czek❤️**
+Built and maintained by **La Czek❤️**
 
 ---
 
-## 🌟 Project Goal
+## 🌍 Vision
 
-The goal of LaCzek Stream is to simplify access to entertainment content by combining multiple media types into one unified, fast, and responsive platform — reducing the need for multiple apps and services.
+The goal of LaCzek Stream is to simplify digital entertainment access by unifying multiple media sources into a single fast, clean, and responsive interface.
 
 ---
 
-## 🔮 Future Improvements (Planned)
+## 🔮 Future Improvements
 
-- Improved recommendation system
-- User profiles and personalization
-- Better search and filtering system
-- Offline caching support (PWA enhancements)
-- Improved UI animations and transitions
+- Personalized recommendations system
+- User accounts & watch history
+- Advanced search and filtering
+- Offline/PWA improvements
+- Performance optimizations for low-end devices
 - Multi-language support
-- Faster streaming optimizations
+- Better streaming source management
 
 ---
