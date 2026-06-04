@@ -68,7 +68,7 @@ export async function loadActiveEvents(): Promise<FeaturedEvent[]> {
     .order("priority", { ascending: false });
   if (error || !data) return [];
   return (data as FeaturedEvent[]).filter((e) => {
-    if (e.starts_at && e.starts_at > nowIso) return false;
+    // Include events that haven't started yet so the banner can show a countdown.
     if (e.ends_at && e.ends_at < nowIso) return false;
     return true;
   });

@@ -1,7 +1,33 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Calendar, ChevronRight } from "lucide-react";
+import { Calendar, ChevronRight, Clock } from "lucide-react";
 import { loadActiveEvents, useFeatureFlag, type FeaturedEvent } from "@/lib/feature-flags";
+
+function diffParts(ms: number) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return { d, h, m, sec };
+}
+
+function Countdown({ target }: { target: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, []);
+  const ms = new Date(target).getTime() - now;
+  if (ms <= 0) return <span className="font-black text-primary">LIVE NOW</span>;
+  const { d, h, m, sec } = diffParts(ms);
+  return (
+    <span className="inline-flex items-center gap-1 font-black tabular-nums text-primary">
+      <Clock className="h-3 w-3" />
+      {d > 0 && `${d}d `}{String(h).padStart(2, "0")}:{String(m).padStart(2, "0")}:{String(sec).padStart(2, "0")}
+    </span>
+  );
+}
 
 export function FeaturedBanner() {
   const enabled = useFeatureFlag("featured_banner", true);
@@ -38,6 +64,11 @@ export function FeaturedBanner() {
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary">{e.kind} · Featured</p>
           <h3 className="mt-1 truncate text-base font-black sm:text-xl">{e.title}</h3>
           {e.subtitle && <p className="mt-1 truncate text-xs text-muted-foreground sm:text-sm">{e.subtitle}</p>}
+          {e.starts_at && (
+            <p className="mt-1 truncate text-[11px] text-muted-foreground sm:text-xs">
+              Starts in <Countdown target={e.starts_at} />
+            </p>
+          )}
         </div>
         <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-primary" />
       </div>
