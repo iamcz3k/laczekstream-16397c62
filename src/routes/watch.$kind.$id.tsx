@@ -17,6 +17,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { isInWatchlist, recordWatch, toggleWatchlist } from "@/lib/library";
 import { trackWatch } from "@/lib/tracker";
 import { TitleDetails } from "@/components/TitleDetails";
+import { downloadToDevice } from "@/lib/native-download";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
@@ -259,10 +260,11 @@ function WatchPage() {
   }, [mediaKind, mediaId, season, episode]);
 
   function openDownload(url: string) {
-    // Open in a new tab — most ad-blockers / browsers will trigger the save
-    // dialog when the mirror responds with a Content-Disposition header. If the
-    // mirror returns a page, the user just clicks the download button there.
-    window.open(url, "_blank", "noopener,noreferrer");
+    // Inside the Capacitor APK shell this writes straight to the device's
+    // Downloads folder; on the web it falls back to opening the mirror in a
+    // new tab so the browser's Save dialog can handle it.
+    const safe = `${(meta?.title || "video").replace(/[^a-z0-9._-]/gi, "_")}.mp4`;
+    void downloadToDevice(url, safe);
   }
 
   return (
@@ -286,7 +288,7 @@ function WatchPage() {
         </header>
 
         <div className="grid flex-1 gap-4 px-0 sm:px-0 lg:grid-cols-[1fr_340px]">
-          <section ref={playerRef} className="flex aspect-video w-full flex-col overflow-hidden border-border bg-black sm:rounded-[28px] sm:border lg:aspect-auto lg:min-h-0">
+          <section ref={playerRef} className="flex w-full flex-col overflow-hidden border-border bg-black sm:rounded-[28px] sm:border lg:min-h-0">
             <div className="glass flex items-center justify-between gap-3 border-b border-border px-4 py-3">
               <div className="min-w-0">
                 <h1 className="truncate text-base font-bold">{title}</h1>
@@ -321,12 +323,12 @@ function WatchPage() {
                 </button>
               </div>
             </div>
-            <div className="relative aspect-video min-h-0 w-full flex-1 lg:aspect-auto">
+            <div className="relative aspect-video w-full flex-1 lg:aspect-auto lg:min-h-0">
             <iframe
               key={`${src}-${quality}`}
               src={src}
               title={title}
-              className={`absolute inset-0 h-full w-full border-0 ${fillMode ? "scale-110" : ""} origin-center transition-transform`}
+              className={`absolute inset-0 h-full w-full border-0 ${fillMode ? "scale-[1.06]" : ""} origin-center transition-transform`}
               allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
               allowFullScreen
               referrerPolicy="no-referrer"

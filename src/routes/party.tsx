@@ -29,21 +29,35 @@ function PartyLanding() {
 
   function host() {
     const url = src.trim();
-    if (!url) { setError("Paste a movie link first — e.g. /watch/movie/603"); return; }
+    if (!url) { setError("Paste a movie link first — e.g. /watch/movie/603 (The Matrix)"); return; }
     setError(null);
     const id = randomId();
-    navigate({
-      to: "/party/$roomId",
-      params: { roomId: id },
-      search: { src: url, title: title.trim() || "Watch Party" } as any,
-    });
+    try {
+      navigate({
+        to: "/party/$roomId",
+        params: { roomId: id },
+        search: { src: url, title: title.trim() || "Watch Party" },
+      });
+    } catch (e) {
+      setError("Could not create the room. Please try again.");
+    }
   }
 
   function join() {
     const id = code.trim().toLowerCase();
     if (!id) { setError("Enter the room code your friend shared"); return; }
     setError(null);
-    navigate({ to: "/party/$roomId", params: { roomId: id } });
+    try {
+      navigate({ to: "/party/$roomId", params: { roomId: id } });
+    } catch (e) {
+      setError("Invalid room code. Try again.");
+    }
+  }
+
+  function quickHost() {
+    setSrc("/watch/movie/603");
+    setTitle("Movie Night — The Matrix");
+    setTimeout(() => host(), 50);
   }
 
   return (
@@ -76,6 +90,9 @@ function PartyLanding() {
           />
           <button onClick={host} className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-black text-primary-foreground">
             <Users className="h-4 w-4" /> Create party <ArrowRight className="h-4 w-4" />
+          </button>
+          <button onClick={quickHost} className="mt-2 ml-2 inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-xs font-bold">
+            Try with a sample movie
           </button>
           <p className="mt-2 text-[11px] text-muted-foreground">Tip: open any movie or show, copy the URL path (e.g. <code>/watch/movie/603</code>) and paste it above.</p>
         </section>

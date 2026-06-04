@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Pause, Play, Radio as RadioIcon, Search, Volume2 } from "lucide-react";
+import { Check, Globe, Loader2, Pause, Play, Radio as RadioIcon, Search, Volume2, X } from "lucide-react";
 
 type Station = {
   stationuuid: string;
@@ -26,10 +26,12 @@ export function RadioTab() {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.85);
   const [countries, setCountries] = useState<string[]>([""]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerQ, setPickerQ] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    fetch(`${API}/countries?hidebroken=true&order=stationcount&reverse=true`)
+    fetch(`${API}/countries?hidebroken=true`)
       .then((r) => r.json())
       .then((rows: CountryRow[]) => {
         const names = rows
@@ -94,13 +96,13 @@ export function RadioTab() {
             className="w-full rounded-full border border-border bg-secondary/50 py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
           />
         </div>
-        <select
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          className="rounded-full border border-border bg-secondary/50 px-4 py-3 text-sm outline-none focus:border-primary"
+        <button
+          onClick={() => { setPickerOpen(true); setPickerQ(""); }}
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-4 py-3 text-sm font-medium hover:border-primary"
         >
-          {countries.map((c) => <option key={c} value={c}>{c || "All countries"}</option>)}
-        </select>
+          <Globe className="h-4 w-4 text-muted-foreground" />
+          <span>{country || "🌍 All countries"}</span>
+        </button>
       </div>
 
       {loading ? (
@@ -141,6 +143,45 @@ export function RadioTab() {
               <Volume2 className="h-4 w-4 text-muted-foreground" />
               <input type="range" min={0} max={1} step={0.05} value={volume} onChange={(e) => setVolume(+e.target.value)} className="w-24 accent-primary" />
             </div>
+          </div>
+        </div>
+      )}
+
+      {pickerOpen && (
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center" onClick={() => setPickerOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-border bg-popover text-popover-foreground shadow-2xl sm:rounded-3xl">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <h3 className="text-base font-black">Pick a country</h3>
+              <button onClick={() => setPickerOpen(false)} className="rounded-full bg-secondary p-2"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="border-b border-border p-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input autoFocus value={pickerQ} onChange={(e) => setPickerQ(e.target.value)} placeholder="Search countries…"
+                  className="w-full rounded-full border border-border bg-background py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary" />
+              </div>
+            </div>
+            <ul className="flex-1 overflow-y-auto p-2">
+              <li>
+                <button onClick={() => { setCountry(""); setPickerOpen(false); }}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-bold transition ${country === "" ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}>
+                  <span>🌍 All countries</span>
+                  {country === "" && <Check className="h-4 w-4" />}
+                </button>
+              </li>
+              {countries
+                .filter((c) => !!c)
+                .filter((c) => !pickerQ.trim() || c.toLowerCase().includes(pickerQ.toLowerCase()))
+                .map((c) => (
+                  <li key={c}>
+                    <button onClick={() => { setCountry(c); setPickerOpen(false); }}
+                      className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition ${country === c ? "bg-primary text-primary-foreground font-bold" : "hover:bg-secondary"}`}>
+                      <span className="truncate">{c}</span>
+                      {country === c && <Check className="h-4 w-4 shrink-0" />}
+                    </button>
+                  </li>
+                ))}
+            </ul>
           </div>
         </div>
       )}

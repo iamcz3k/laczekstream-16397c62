@@ -26,11 +26,11 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
   const flags: Record<TabKey, boolean> = {
     movies: useFeatureFlag("tab_movies", true),
     tv: useFeatureFlag("tab_tv", true),
-    football: useFeatureFlag("tab_football", true),
+    football: useFeatureFlag("live_sports", true),
     youtube: useFeatureFlag("tab_youtube", true),
     cctv: useFeatureFlag("tab_cctv", true),
-    radio: useFeatureFlag("tab_radio", true),
-    podcasts: useFeatureFlag("tab_podcasts", true),
+    radio: useFeatureFlag("radio", true),
+    podcasts: useFeatureFlag("podcasts", true),
     genres: useFeatureFlag("tab_genres", true),
     library: useFeatureFlag("tab_library", true),
   };
