@@ -1,5 +1,3 @@
-import type { CapacitorConfig } from "@capacitor/cli";
-
 // Capacitor scaffold for wrapping LACZEK STREAM as a native Android/iOS app.
 //
 // Build steps (run locally, NOT in this preview sandbox):
@@ -10,7 +8,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 //
 // The web app stays fully functional without Capacitor — native code paths
 // are dynamically imported and only activate inside the wrapped shell.
-const config: CapacitorConfig = {
+const config = {
   appId: "com.laczek.stream",
   appName: "LACZEK STREAM",
   webDir: "dist",
@@ -21,6 +19,6 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
   },
-};
+} as const;
 
 export default config;
