@@ -38,9 +38,13 @@ export type Database = {
       featured_events: {
         Row: {
           active: boolean
+          bg_color: string | null
           click_count: number
           created_at: string
+          display_mode: string
           ends_at: string | null
+          flag_left: string | null
+          flag_right: string | null
           id: string
           image_url: string | null
           kind: string
@@ -48,15 +52,21 @@ export type Database = {
           priority: number
           starts_at: string | null
           subtitle: string | null
+          team_left: string | null
+          team_right: string | null
           title: string
           updated_at: string
           view_count: number
         }
         Insert: {
           active?: boolean
+          bg_color?: string | null
           click_count?: number
           created_at?: string
+          display_mode?: string
           ends_at?: string | null
+          flag_left?: string | null
+          flag_right?: string | null
           id?: string
           image_url?: string | null
           kind?: string
@@ -64,15 +74,21 @@ export type Database = {
           priority?: number
           starts_at?: string | null
           subtitle?: string | null
+          team_left?: string | null
+          team_right?: string | null
           title: string
           updated_at?: string
           view_count?: number
         }
         Update: {
           active?: boolean
+          bg_color?: string | null
           click_count?: number
           created_at?: string
+          display_mode?: string
           ends_at?: string | null
+          flag_left?: string | null
+          flag_right?: string | null
           id?: string
           image_url?: string | null
           kind?: string
@@ -80,6 +96,8 @@ export type Database = {
           priority?: number
           starts_at?: string | null
           subtitle?: string | null
+          team_left?: string | null
+          team_right?: string | null
           title?: string
           updated_at?: string
           view_count?: number
@@ -107,6 +125,60 @@ export type Database = {
           match_id?: string
           message?: string
           name?: string
+        }
+        Relationships: []
+      }
+      review_requests: {
+        Row: {
+          created_at: string
+          fulfilled: boolean
+          id: string
+          session_key: string
+        }
+        Insert: {
+          created_at?: string
+          fulfilled?: boolean
+          id?: string
+          session_key: string
+        }
+        Update: {
+          created_at?: string
+          fulfilled?: boolean
+          id?: string
+          session_key?: string
+        }
+        Relationships: []
+      }
+      site_reviews: {
+        Row: {
+          country: string | null
+          created_at: string
+          id: string
+          message: string
+          rating: number
+          session_key: string
+          user_agent: string | null
+          user_name: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          rating: number
+          session_key: string
+          user_agent?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          rating?: number
+          session_key?: string
+          user_agent?: string | null
+          user_name?: string | null
         }
         Relationships: []
       }
