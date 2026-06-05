@@ -4,11 +4,7 @@
   "framework": null,
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://api.example.com/:path*"
-    },
-    {
-      "source": "/((?!.*\\.).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
