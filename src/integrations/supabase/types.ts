@@ -38,9 +38,13 @@ export type Database = {
       featured_events: {
         Row: {
           active: boolean
+          bg_color: string | null
           click_count: number
           created_at: string
+          display_mode: string
           ends_at: string | null
+          flag_left: string | null
+          flag_right: string | null
           id: string
           image_url: string | null
           kind: string
@@ -48,15 +52,21 @@ export type Database = {
           priority: number
           starts_at: string | null
           subtitle: string | null
+          team_left: string | null
+          team_right: string | null
           title: string
           updated_at: string
           view_count: number
         }
         Insert: {
           active?: boolean
+          bg_color?: string | null
           click_count?: number
           created_at?: string
+          display_mode?: string
           ends_at?: string | null
+          flag_left?: string | null
+          flag_right?: string | null
           id?: string
           image_url?: string | null
           kind?: string
@@ -64,15 +74,21 @@ export type Database = {
           priority?: number
           starts_at?: string | null
           subtitle?: string | null
+          team_left?: string | null
+          team_right?: string | null
           title: string
           updated_at?: string
           view_count?: number
         }
         Update: {
           active?: boolean
+          bg_color?: string | null
           click_count?: number
           created_at?: string
+          display_mode?: string
           ends_at?: string | null
+          flag_left?: string | null
+          flag_right?: string | null
           id?: string
           image_url?: string | null
           kind?: string
@@ -80,6 +96,8 @@ export type Database = {
           priority?: number
           starts_at?: string | null
           subtitle?: string | null
+          team_left?: string | null
+          team_right?: string | null
           title?: string
           updated_at?: string
           view_count?: number
