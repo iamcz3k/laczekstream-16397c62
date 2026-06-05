@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User, Flag, Megaphone, Plus, Trash2 } from "lucide-react";
+import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User, Flag, Megaphone, Plus, Trash2, Star, Send } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { adminFetchAnalytics, adminListConfig, adminSetFeatureFlag, adminUpsertFeaturedEvent, adminDeleteFeaturedEvent, adminAddFeatureFlag, adminUploadEventPoster } from "@/lib/admin.functions";
+import { adminListReviews, adminRequestReview } from "@/lib/reviews.functions";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
 
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
 
-type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config";
+type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "reviews";
 
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60);
@@ -110,6 +111,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
           ["accounts", "Accounts"],
           ["daily", "Daily"],
           ["config", "Flags & Events"],
+          ["reviews", "Reviews"],
         ] as Array<[Tab, string]>).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${tab === k ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>{l}</button>
         ))}
@@ -188,7 +190,12 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
                     <span className="text-muted-foreground">{fmtDur(s.duration_seconds || 0)}</span>
                   </div>
                   <p className="text-muted-foreground">{s.device} · {s.page_views} views{link ? <> · watching <span className="text-primary">{link.label}</span></> : null}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
+                  <div className="mt-1 flex items-center justify-between">
+                    <p className="text-[11px] text-muted-foreground">Tap for full activity →</p>
+                    {online && (
+                      <RequestReviewButton password={password} sessionKey={s.session_key} />
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -224,6 +231,10 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
 
         {tab === "config" && (
           <ConfigPanel password={password} />
+        )}
+
+        {tab === "reviews" && (
+          <ReviewsPanel password={password} />
         )}
       </div>
     </div>
@@ -516,3 +527,61 @@ function ConfigPanel({ password }: { password: string }) {
 }
 
 function Empty() { return <p className="py-3 text-center text-xs text-muted-foreground">No data yet</p>; }
+
+function RequestReviewButton({ password, sessionKey }: { password: string; sessionKey: string }) {
+  const req = useServerFn(adminRequestReview);
+  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  async function send(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (busy || sent) return;
+    setBusy(true);
+    try { await req({ data: { password, session_key: sessionKey } }); setSent(true); }
+    catch (err) { alert((err as Error).message || "Failed"); }
+    finally { setBusy(false); }
+  }
+  return (
+    <button onClick={send} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${sent ? "bg-secondary text-muted-foreground" : "bg-primary text-primary-foreground"}`}>
+      <Send className="h-3 w-3" /> {sent ? "Sent" : "Request review"}
+    </button>
+  );
+}
+
+type ReviewRow = { id: string; user_name: string | null; rating: number; message: string; created_at: string; session_key: string; country: string | null };
+
+function ReviewsPanel({ password }: { password: string }) {
+  const list = useServerFn(adminListReviews);
+  const [rows, setRows] = useState<ReviewRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    list({ data: { password } }).then((r) => { if (!cancelled) { setRows(r.reviews as ReviewRow[]); setLoading(false); } }).catch(() => setLoading(false));
+    return () => { cancelled = true; };
+  }, [list, password]);
+  if (loading) return <p className="py-12 text-center text-sm text-muted-foreground">Loading…</p>;
+  if (!rows.length) return <Empty />;
+  const avg = rows.reduce((a, r) => a + r.rating, 0) / rows.length;
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl border border-primary/40 bg-primary/10 p-4 text-center">
+        <p className="text-xs uppercase tracking-wider text-muted-foreground">Average rating</p>
+        <p className="mt-1 text-3xl font-black text-primary">{avg.toFixed(2)} <span className="text-base">/ 5</span></p>
+        <p className="text-[11px] text-muted-foreground">{rows.length} review{rows.length !== 1 ? "s" : ""}</p>
+      </div>
+      <ul className="space-y-2">
+        {rows.map((r) => (
+          <li key={r.id} className="rounded-2xl border border-border bg-secondary/40 p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold">{r.user_name || "Anonymous"}</span>
+              <span className="flex items-center gap-0.5">
+                {[1,2,3,4,5].map((n) => <Star key={n} className={`h-3.5 w-3.5 ${n <= r.rating ? "fill-primary text-primary" : "text-muted-foreground/40"}`} />)}
+              </span>
+            </div>
+            <p className="mt-1 whitespace-pre-wrap text-xs text-foreground">{r.message}</p>
+            <p className="mt-2 text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleString()} · {r.country || "?"} · key {r.session_key.slice(0, 8)}…</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
