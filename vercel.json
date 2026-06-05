@@ -1,11 +1,20 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": null,
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/:path*",
-      "destination": "/index.html"
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*\\.(?:js|css|png|jpg|jpeg|gif|svg|ico|map|json))$",
+      "dest": "/$1"
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html"
     }
   ]
 }
