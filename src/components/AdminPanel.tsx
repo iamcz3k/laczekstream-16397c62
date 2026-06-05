@@ -190,7 +190,12 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
                     <span className="text-muted-foreground">{fmtDur(s.duration_seconds || 0)}</span>
                   </div>
                   <p className="text-muted-foreground">{s.device} · {s.page_views} views{link ? <> · watching <span className="text-primary">{link.label}</span></> : null}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
+                  <div className="mt-1 flex items-center justify-between">
+                    <p className="text-[11px] text-muted-foreground">Tap for full activity →</p>
+                    {online && (
+                      <RequestReviewButton password={password} sessionKey={s.session_key} />
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -226,6 +231,10 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
 
         {tab === "config" && (
           <ConfigPanel password={password} />
+        )}
+
+        {tab === "reviews" && (
+          <ReviewsPanel password={password} />
         )}
       </div>
     </div>
