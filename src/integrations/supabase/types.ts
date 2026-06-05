@@ -110,6 +110,60 @@ export type Database = {
         }
         Relationships: []
       }
+      review_requests: {
+        Row: {
+          created_at: string
+          fulfilled: boolean
+          id: string
+          session_key: string
+        }
+        Insert: {
+          created_at?: string
+          fulfilled?: boolean
+          id?: string
+          session_key: string
+        }
+        Update: {
+          created_at?: string
+          fulfilled?: boolean
+          id?: string
+          session_key?: string
+        }
+        Relationships: []
+      }
+      site_reviews: {
+        Row: {
+          country: string | null
+          created_at: string
+          id: string
+          message: string
+          rating: number
+          session_key: string
+          user_agent: string | null
+          user_name: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          rating: number
+          session_key: string
+          user_agent?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          rating?: number
+          session_key?: string
+          user_agent?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       visitor_sessions: {
         Row: {
           city: string | null
