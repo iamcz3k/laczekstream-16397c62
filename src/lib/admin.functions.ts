@@ -174,8 +174,6 @@ export const adminUploadEventPoster = createServerFn({ method: "POST" })
       upsert: false,
     });
     if (error) throw new Error(error.message);
-    // Bucket is private (workspace blocks public buckets). Issue a long-lived
-    // signed URL so the public site can render the poster image.
     const TEN_YEARS = 60 * 60 * 24 * 365 * 10;
     const { data: signed, error: signErr } = await supabaseAdmin
       .storage.from("event-posters").createSignedUrl(path, TEN_YEARS);
@@ -220,7 +218,9 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
     } satisfies VisitorSessionRow));
 
     const now = Date.now();
-    const onlineWindowMs = 60_000; // active in last 60s
+    // FIX: widened from 60s to 5 minutes — heartbeat is every 10s but network
+    // delays, tab backgrounding and deploy reloads can cause gaps much longer than 60s.
+    const onlineWindowMs = 5 * 60_000;
     const onlineNow = sessionRows.filter(
       (s) => now - new Date(s.last_seen_at).getTime() < onlineWindowMs,
     ).length;
@@ -232,7 +232,7 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
     };
     const searchCount = new Map<string, number>();
     const countryCount = new Map<string, number>();
-    const dayCount = new Map<string, number>(); // YYYY-MM-DD => visits
+    const dayCount = new Map<string, number>();
     const dayMinutes = new Map<string, number>();
     const accounts = new Map<string, { name: string; sessions: number; lastSeen: string; totalSeconds: number }>();
 
