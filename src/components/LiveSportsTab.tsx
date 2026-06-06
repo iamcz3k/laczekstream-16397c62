@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Clock, Loader2, MapPin, Play, Radio, Users } from "lucide-react";
+import { Calendar, Clock, MapPin, Play, Radio, Users } from "lucide-react";
+import { LoadingSpinner } from "@/components/shared";
 import { FootballTab } from "@/components/FootballTab";
 import { footballStreamMatches, type FootballStreamMatch } from "@/lib/api";
 import { fetchSportScoreboard, SPORTS, type SportEvent, type SportKey } from "@/lib/sports-api";
@@ -39,12 +40,24 @@ function SportScoreboard({ sport }: { sport: SportKey }) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([fetchSportScoreboard(sport), footballStreamMatches(sport)]).then(([scoreboard, streamList]) => {
-      if (!cancelled) { setEvents(scoreboard); setStreams(streamList); setLoading(false); }
-    }).catch(() => {
-      if (!cancelled) { setEvents([]); setStreams([]); setLoading(false); }
-    });
-    return () => { cancelled = true; };
+    Promise.all([fetchSportScoreboard(sport), footballStreamMatches(sport)])
+      .then(([scoreboard, streamList]) => {
+        if (!cancelled) {
+          setEvents(scoreboard);
+          setStreams(streamList);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEvents([]);
+          setStreams([]);
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [sport]);
 
   const live = events.filter((e) => e.status.state === "in");
@@ -65,7 +78,7 @@ function SportScoreboard({ sport }: { sport: SportKey }) {
   }, [streams]);
 
   if (loading) {
-    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <LoadingSpinner />;
   }
   if (events.length === 0 && streams.length === 0) {
     return (
@@ -79,42 +92,99 @@ function SportScoreboard({ sport }: { sport: SportKey }) {
 
   return (
     <div className="space-y-6">
-      {liveStreams.length > 0 && <StreamGroup title="🔴 Watch live" tone="live" sport={sport} streams={liveStreams} />}
-      {upcomingStreams.length > 0 && <StreamGroup title="Upcoming streams" tone="upcoming" sport={sport} streams={upcomingStreams} />}
-      {live.length > 0 && <EventGroup title="🔴 Live now" tone="live" events={live} streams={streams} sport={sport} />}
-      {upcoming.length > 0 && <EventGroup title="Upcoming" tone="upcoming" events={upcoming} streams={streams} sport={sport} />}
-      {finished.length > 0 && <EventGroup title="Final" tone="final" events={finished} streams={streams} sport={sport} />}
+      {liveStreams.length > 0 && (
+        <StreamGroup title="🔴 Watch live" tone="live" sport={sport} streams={liveStreams} />
+      )}
+      {upcomingStreams.length > 0 && (
+        <StreamGroup
+          title="Upcoming streams"
+          tone="upcoming"
+          sport={sport}
+          streams={upcomingStreams}
+        />
+      )}
+      {live.length > 0 && (
+        <EventGroup title="🔴 Live now" tone="live" events={live} streams={streams} sport={sport} />
+      )}
+      {upcoming.length > 0 && (
+        <EventGroup
+          title="Upcoming"
+          tone="upcoming"
+          events={upcoming}
+          streams={streams}
+          sport={sport}
+        />
+      )}
+      {finished.length > 0 && (
+        <EventGroup title="Final" tone="final" events={finished} streams={streams} sport={sport} />
+      )}
     </div>
   );
 }
 
 function findStreamForEvent(event: SportEvent, streams: FootballStreamMatch[]) {
   const names = event.competitors.map((c) => c.name.toLowerCase().split(/\s+/)[0]).filter(Boolean);
-  return streams.find((stream) => names.length >= 2 && names.every((name) => stream.title.toLowerCase().includes(name)));
+  return streams.find(
+    (stream) =>
+      names.length >= 2 && names.every((name) => stream.title.toLowerCase().includes(name)),
+  );
 }
 
-function StreamGroup({ title, tone, sport, streams }: { title: string; tone: "live" | "upcoming"; sport: SportKey; streams: FootballStreamMatch[] }) {
+function StreamGroup({
+  title,
+  tone,
+  sport,
+  streams,
+}: {
+  title: string;
+  tone: "live" | "upcoming";
+  sport: SportKey;
+  streams: FootballStreamMatch[];
+}) {
   return (
     <section>
-      <h3 className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">{title}</h3>
+      <h3 className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">
+        {title}
+      </h3>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {streams.map((stream) => <StreamCard key={stream.id} stream={stream} sport={sport} tone={tone} />)}
+        {streams.map((stream) => (
+          <StreamCard key={stream.id} stream={stream} sport={sport} tone={tone} />
+        ))}
       </div>
     </section>
   );
 }
 
-function StreamCard({ stream, sport, tone }: { stream: FootballStreamMatch; sport: SportKey; tone: "live" | "upcoming" }) {
+function StreamCard({
+  stream,
+  sport,
+  tone,
+}: {
+  stream: FootballStreamMatch;
+  sport: SportKey;
+  tone: "live" | "upcoming";
+}) {
   const home = stream.teams?.home;
   const away = stream.teams?.away;
   const hasTeams = !!(home?.name || away?.name);
   const when = stream.date ? new Date(Number(stream.date)) : null;
   return (
-    <a href={`/football-stream/${encodeURIComponent(stream.id)}?sport=${sport}`} className="glass-card block overflow-hidden rounded-2xl transition active:scale-[0.98] hover:border-primary/50">
+    <a
+      href={`/football-stream/${encodeURIComponent(stream.id)}?sport=${sport}`}
+      className="glass-card block overflow-hidden rounded-2xl transition active:scale-[0.98] hover:border-primary/50"
+    >
       {stream.poster && (
         <div className="relative aspect-video bg-secondary">
-          <img src={stream.poster} alt="" className="h-full w-full object-cover" loading="lazy" onError={(e) => ((e.currentTarget.style.display = "none"))} />
-          <span className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-black ${tone === "live" ? "animate-pulse bg-red-600 text-white" : "bg-primary/90 text-primary-foreground"}`}>
+          <img
+            src={stream.poster}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
+          <span
+            className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-black ${tone === "live" ? "animate-pulse bg-red-600 text-white" : "bg-primary/90 text-primary-foreground"}`}
+          >
             {tone === "live" ? "LIVE" : "UPCOMING"}
           </span>
         </div>
@@ -131,55 +201,137 @@ function StreamCard({ stream, sport, tone }: { stream: FootballStreamMatch; spor
         )}
         <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
           <span className="inline-flex items-center gap-1 truncate">
-            {when ? <><Clock className="h-3 w-3 shrink-0" />{when.toLocaleString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" })}</> : <span className="truncate">{stream.league || "Stream"}</span>}
+            {when ? (
+              <>
+                <Clock className="h-3 w-3 shrink-0" />
+                {when.toLocaleString(undefined, {
+                  weekday: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </>
+            ) : (
+              <span className="truncate">{stream.league || "Stream"}</span>
+            )}
           </span>
-          {typeof stream.viewers === "number" && <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" />{stream.viewers.toLocaleString()}</span>}
+          {typeof stream.viewers === "number" && (
+            <span className="inline-flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              {stream.viewers.toLocaleString()}
+            </span>
+          )}
         </div>
         <div className="mt-2 flex items-center justify-end">
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground"><Play className="h-3 w-3" fill="currentColor" /> Watch</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground">
+            <Play className="h-3 w-3" fill="currentColor" /> Watch
+          </span>
         </div>
       </div>
     </a>
   );
 }
 
-function TeamBadge({ team, align }: { team?: { name?: string; badge?: string }; align: "left" | "right" }) {
+function TeamBadge({
+  team,
+  align,
+}: {
+  team?: { name?: string; badge?: string };
+  align: "left" | "right";
+}) {
   if (!team?.name && !team?.badge) return <div className="flex-1" />;
   return (
-    <div className={`flex min-w-0 flex-1 items-center gap-2 ${align === "right" ? "justify-end text-right" : ""}`}>
-      {align === "left" && team.badge && <img src={team.badge} alt="" className="h-7 w-7 shrink-0 object-contain" loading="lazy" onError={(e) => ((e.currentTarget.style.display = "none"))} />}
+    <div
+      className={`flex min-w-0 flex-1 items-center gap-2 ${align === "right" ? "justify-end text-right" : ""}`}
+    >
+      {align === "left" && team.badge && (
+        <img
+          src={team.badge}
+          alt=""
+          className="h-7 w-7 shrink-0 object-contain"
+          loading="lazy"
+          onError={(e) => (e.currentTarget.style.display = "none")}
+        />
+      )}
       <span className="truncate text-xs font-bold">{team.name}</span>
-      {align === "right" && team.badge && <img src={team.badge} alt="" className="h-7 w-7 shrink-0 object-contain" loading="lazy" onError={(e) => ((e.currentTarget.style.display = "none"))} />}
+      {align === "right" && team.badge && (
+        <img
+          src={team.badge}
+          alt=""
+          className="h-7 w-7 shrink-0 object-contain"
+          loading="lazy"
+          onError={(e) => (e.currentTarget.style.display = "none")}
+        />
+      )}
     </div>
   );
 }
 
-function EventGroup({ title, tone, events, streams, sport }: { title: string; tone: "live" | "upcoming" | "final"; events: SportEvent[]; streams: FootballStreamMatch[]; sport: SportKey }) {
+function EventGroup({
+  title,
+  tone,
+  events,
+  streams,
+  sport,
+}: {
+  title: string;
+  tone: "live" | "upcoming" | "final";
+  events: SportEvent[];
+  streams: FootballStreamMatch[];
+  sport: SportKey;
+}) {
   return (
     <section>
-      <h3 className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">{title}</h3>
+      <h3 className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">
+        {title}
+      </h3>
       <div className="grid gap-3 sm:grid-cols-2">
-        {events.map((e) => <EventCard key={e.id} event={e} tone={tone} stream={findStreamForEvent(e, streams)} sport={sport} />)}
+        {events.map((e) => (
+          <EventCard
+            key={e.id}
+            event={e}
+            tone={tone}
+            stream={findStreamForEvent(e, streams)}
+            sport={sport}
+          />
+        ))}
       </div>
     </section>
   );
 }
 
-function EventCard({ event, tone, stream, sport }: { event: SportEvent; tone: "live" | "upcoming" | "final"; stream?: FootballStreamMatch; sport: SportKey }) {
+function EventCard({
+  event,
+  tone,
+  stream,
+  sport,
+}: {
+  event: SportEvent;
+  tone: "live" | "upcoming" | "final";
+  stream?: FootballStreamMatch;
+  sport: SportKey;
+}) {
   const [a, b] = event.competitors;
   const kickoff = new Date(event.date);
   return (
     <article className="glass-card rounded-2xl p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="truncate text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{event.league || ""}</p>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${
-          tone === "live" ? "animate-pulse bg-red-600 text-white" :
-          tone === "final" ? "bg-secondary text-muted-foreground" :
-          "bg-primary/15 text-primary"
-        }`}>
-          {tone === "live" ? `LIVE · ${event.status.clock || event.status.detail}` :
-           tone === "final" ? "FINAL" :
-           kickoff.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+        <p className="truncate text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          {event.league || ""}
+        </p>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${
+            tone === "live"
+              ? "animate-pulse bg-red-600 text-white"
+              : tone === "final"
+                ? "bg-secondary text-muted-foreground"
+                : "bg-primary/15 text-primary"
+          }`}
+        >
+          {tone === "live"
+            ? `LIVE · ${event.status.clock || event.status.detail}`
+            : tone === "final"
+              ? "FINAL"
+              : kickoff.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
         </span>
       </div>
       {a && b ? (
@@ -192,15 +344,35 @@ function EventCard({ event, tone, stream, sport }: { event: SportEvent; tone: "l
       )}
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3 text-[11px] text-muted-foreground">
         <div className="flex min-w-0 items-center gap-2">
-          {event.venue ? <><MapPin className="h-3 w-3 shrink-0" /><span className="truncate">{event.venue}</span></> :
-           tone === "upcoming" ? <><Calendar className="h-3 w-3 shrink-0" /><span>{kickoff.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span></> : null}
+          {event.venue ? (
+            <>
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">{event.venue}</span>
+            </>
+          ) : tone === "upcoming" ? (
+            <>
+              <Calendar className="h-3 w-3 shrink-0" />
+              <span>
+                {kickoff.toLocaleDateString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
+            </>
+          ) : null}
         </div>
         {stream ? (
-          <a href={`/football-stream/${encodeURIComponent(stream.id)}?sport=${sport}`} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground transition active:scale-95">
+          <a
+            href={`/football-stream/${encodeURIComponent(stream.id)}?sport=${sport}`}
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground transition active:scale-95"
+          >
             <Radio className="h-3 w-3" /> Watch
           </a>
         ) : (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-bold text-muted-foreground">No stream yet</span>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-bold text-muted-foreground">
+            No stream yet
+          </span>
         )}
       </div>
     </article>
@@ -209,8 +381,14 @@ function EventCard({ event, tone, stream, sport }: { event: SportEvent; tone: "l
 
 function Competitor({ c, live }: { c: SportEvent["competitors"][number]; live: boolean }) {
   return (
-    <div className={`flex items-center gap-3 ${c.winner ? "" : live && !c.winner ? "opacity-70" : ""}`}>
-      {c.logo ? <img src={c.logo} alt="" className="h-7 w-7 shrink-0 object-contain" loading="lazy" /> : <span className="h-7 w-7 shrink-0 rounded-full bg-secondary" />}
+    <div
+      className={`flex items-center gap-3 ${c.winner ? "" : live && !c.winner ? "opacity-70" : ""}`}
+    >
+      {c.logo ? (
+        <img src={c.logo} alt="" className="h-7 w-7 shrink-0 object-contain" loading="lazy" />
+      ) : (
+        <span className="h-7 w-7 shrink-0 rounded-full bg-secondary" />
+      )}
       <p className="min-w-0 flex-1 truncate text-sm font-bold">{c.name}</p>
       {live && <p className="shrink-0 text-lg font-black tabular-nums">{c.score}</p>}
     </div>

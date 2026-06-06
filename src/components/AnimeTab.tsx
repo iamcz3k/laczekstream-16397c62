@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Loader2, Play, Search, Star } from "lucide-react";
+import { Play, Star } from "lucide-react";
+import { LoadingSpinner, EmptyState, SearchInput } from "@/components/shared";
 import { animeHome, animePosterFallback, animeSearch, type AnimeItem } from "@/lib/api";
 
 function AnimePoster({ anime }: { anime: AnimeItem }) {
@@ -19,8 +20,21 @@ function AnimePoster({ anime }: { anime: AnimeItem }) {
     };
   }, [anime.poster, anime.title]);
 
-  if (!src) return <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">Loading cover…</div>;
-  return <img src={src} alt={anime.title} loading="lazy" onError={() => animePosterFallback(anime.title).then(setSrc)} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />;
+  if (!src)
+    return (
+      <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+        Loading cover…
+      </div>
+    );
+  return (
+    <img
+      src={src}
+      alt={anime.title}
+      loading="lazy"
+      onError={() => animePosterFallback(anime.title).then(setSrc)}
+      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+    />
+  );
 }
 
 export function AnimeTab() {
@@ -49,22 +63,21 @@ export function AnimeTab() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={search} className="relative max-w-xl">
-        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search anime…"
-          className="w-full rounded-full border-border glass py-3 pl-11 pr-4 transition focus:border-primary focus:outline-none"
-        />
-      </form>
+      <div className="max-w-xl">
+        <SearchInput value={q} onChange={setQ} onSubmit={search} placeholder="Search anime…" />
+      </div>
 
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        <LoadingSpinner />
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {items.map((anime) => (
-            <Link key={anime.id} to="/anime/$animeId" params={{ animeId: anime.id }} className="group overflow-hidden rounded-[22px] glass-card text-left transition-all duration-300 hover:-translate-y-1 hover:border-primary hover:shadow-[var(--shadow-glow)]">
+            <Link
+              key={anime.id}
+              to="/anime/$animeId"
+              params={{ animeId: anime.id }}
+              className="group overflow-hidden rounded-[22px] glass-card text-left transition-all duration-300 hover:-translate-y-1 hover:border-primary hover:shadow-[var(--shadow-glow)]"
+            >
               <div className="relative aspect-[2/3] overflow-hidden bg-muted">
                 <AnimePoster anime={anime} />
                 {anime.score ? (
@@ -80,11 +93,13 @@ export function AnimeTab() {
               </div>
               <div className="p-3">
                 <p className="truncate text-sm font-medium">{anime.title}</p>
-                <p className="text-xs text-muted-foreground">{anime.status || `${anime.episodes ?? ""} episodes`}</p>
+                <p className="text-xs text-muted-foreground">
+                  {anime.status || `${anime.episodes ?? ""} episodes`}
+                </p>
               </div>
             </Link>
           ))}
-          {items.length === 0 && <p className="col-span-full py-20 text-center text-muted-foreground">No anime found.</p>}
+          {items.length === 0 && <EmptyState message="No anime found." />}
         </div>
       )}
     </div>
