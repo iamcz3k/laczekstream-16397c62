@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ADMIN_PASSWORD = "czek2991";
 
@@ -12,6 +11,8 @@ export const adminSetFeatureFlag = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { error } = await supabaseAdmin
       .from("feature_flags")
       .update({ enabled: data.enabled, updated_at: new Date().toISOString() })
@@ -27,6 +28,8 @@ export const adminAddFeatureFlag = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { error } = await supabaseAdmin
       .from("feature_flags")
       .insert({ key: data.key, description: data.description ?? null, enabled: true });
@@ -57,6 +60,8 @@ export const adminUpsertFeaturedEvent = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const row = {
       title: data.title,
       subtitle: data.subtitle ?? null,
