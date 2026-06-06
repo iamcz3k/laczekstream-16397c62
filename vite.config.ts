@@ -6,4 +6,16 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-export default defineConfig();
+export default defineConfig({
+  // Vercel must receive Nitro's Vercel build output, not the default
+  // Cloudflare/Lovable worker output. Inside Lovable this is ignored and the
+  // platform still uses its managed Cloudflare-compatible build.
+  nitro: {
+    preset: "vercel",
+    output: {
+      dir: ".vercel/output",
+      publicDir: ".vercel/output/static",
+      serverDir: ".vercel/output/functions/__server.func",
+    },
+  },
+});
