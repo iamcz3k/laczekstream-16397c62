@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Star, Send } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
-import { submitReview, checkReviewRequest } from "@/lib/reviews.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { useFeatureFlag } from "@/lib/feature-flags";
 import { getPrefs } from "@/lib/preferences";
 
@@ -34,8 +33,6 @@ export function ReviewPopup() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const submit = useServerFn(submitReview);
-  const check = useServerFn(checkReviewRequest);
 
   useEffect(() => {
     if (!enabled) return;
@@ -50,8 +47,13 @@ export function ReviewPopup() {
       if (cancelled) return;
       if (manualMode) {
         try {
-          const r = await check({ data: { session_key: sessionKey } });
-          if (r.requested) setOpen(true);
+          const { data } = await supabase
+            .from("review_requests")
+            .select("id")
+            .eq("session_key", sessionKey)
+            .eq("fulfilled", false)
+            .limit(1);
+          if (data?.length) setOpen(true);
         } catch {}
       } else {
         if (Date.now() - startedAt >= MIN_AGE_MS) setOpen(true);
@@ -61,7 +63,7 @@ export function ReviewPopup() {
     const t1 = window.setTimeout(tryShow, 5000);
     const t2 = window.setInterval(tryShow, 60_000);
     return () => { cancelled = true; window.clearTimeout(t1); window.clearInterval(t2); };
-  }, [enabled, manualMode, check]);
+  }, [enabled, manualMode]);
 
   if (!open) return null;
 
@@ -72,13 +74,16 @@ export function ReviewPopup() {
     setSubmitting(true);
     try {
       const prefs = getPrefs();
-      await submit({ data: {
+      const sessionKey = getSessionKey();
+      const { error: insertError } = await supabase.from("site_reviews").insert({
         session_key: getSessionKey(),
         user_name: prefs.name || null,
         rating,
         message: message.trim(),
         user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-      }});
+      });
+      if (insertError) throw insertError;
+      await supabase.from("review_requests").update({ fulfilled: true }).eq("session_key", sessionKey).eq("fulfilled", false);
       try { localStorage.setItem(DONE_KEY, "1"); } catch {}
       setOpen(false);
     } catch (e) {

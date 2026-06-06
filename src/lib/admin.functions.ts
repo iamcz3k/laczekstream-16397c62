@@ -1,7 +1,38 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ADMIN_PASSWORD = "czek2991";
+
+export type AdminJson = string | number | boolean | null | { [key: string]: AdminJson } | AdminJson[];
+
+export type VisitorSessionRow = {
+  id: string;
+  session_key: string;
+  name: string | null;
+  country: string | null;
+  city: string | null;
+  device: string | null;
+  current_path: string | null;
+  started_at: string;
+  last_seen_at: string;
+  duration_seconds: number | null;
+  page_views: number | null;
+  watched: AdminJson;
+  searches: AdminJson;
+  path_log: AdminJson;
+};
+
+export type AdminAnalytics = {
+  sessions: VisitorSessionRow[];
+  onlineNow: number;
+  totalVisits: number;
+  avgDuration: number;
+  topWatched: Array<{ title: string; kind: string; count: number }>;
+  topByKind: Record<string, Array<{ id: string; title: string; count: number }>>;
+  topSearches: Array<{ q: string; count: number }>;
+  topCountries: Array<{ country: string; count: number }>;
+  dailyVisits: Array<{ day: string; visits: number; minutes: number }>;
+  accounts: Array<{ name: string; sessions: number; lastSeen: string; totalSeconds: number }>;
+};
 
 // ===== Feature flags =====
 
@@ -12,6 +43,8 @@ export const adminSetFeatureFlag = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { error } = await supabaseAdmin
       .from("feature_flags")
       .update({ enabled: data.enabled, updated_at: new Date().toISOString() })
@@ -27,6 +60,8 @@ export const adminAddFeatureFlag = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { error } = await supabaseAdmin
       .from("feature_flags")
       .insert({ key: data.key, description: data.description ?? null, enabled: true });
@@ -57,6 +92,8 @@ export const adminUpsertFeaturedEvent = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const row = {
       title: data.title,
       subtitle: data.subtitle ?? null,
@@ -86,6 +123,8 @@ export const adminDeleteFeaturedEvent = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { error } = await supabaseAdmin.from("featured_events").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -98,6 +137,8 @@ export const adminListConfig = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const [flagsRes, eventsRes] = await Promise.all([
       supabaseAdmin.from("feature_flags").select("*").order("key"),
       supabaseAdmin.from("featured_events").select("*").order("priority", { ascending: false }),
@@ -118,6 +159,8 @@ export const adminUploadEventPoster = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(data.dataUrl);
     if (!match) throw new Error("Expected base64 image data URL");
     const mime = match[1];
@@ -150,6 +193,8 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       throw new Error("Invalid admin password");
     }
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { data: sessions, error } = await supabaseAdmin
       .from("visitor_sessions")
       .select("*")
@@ -157,10 +202,26 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       .limit(2000);
 
     if (error) throw new Error(error.message);
+    const sessionRows = ((sessions || []) as Array<Record<string, unknown>>).map((s) => ({
+      id: String(s.id || ""),
+      session_key: String(s.session_key || ""),
+      name: typeof s.name === "string" ? s.name : null,
+      country: typeof s.country === "string" ? s.country : null,
+      city: typeof s.city === "string" ? s.city : null,
+      device: typeof s.device === "string" ? s.device : null,
+      current_path: typeof s.current_path === "string" ? s.current_path : null,
+      started_at: String(s.started_at || new Date().toISOString()),
+      last_seen_at: String(s.last_seen_at || new Date().toISOString()),
+      duration_seconds: typeof s.duration_seconds === "number" ? s.duration_seconds : 0,
+      page_views: typeof s.page_views === "number" ? s.page_views : 0,
+      watched: (Array.isArray(s.watched) ? s.watched : []) as AdminJson,
+      searches: (Array.isArray(s.searches) ? s.searches : []) as AdminJson,
+      path_log: (Array.isArray(s.path_log) ? s.path_log : []) as AdminJson,
+    } satisfies VisitorSessionRow));
 
     const now = Date.now();
     const onlineWindowMs = 60_000; // active in last 60s
-    const onlineNow = (sessions || []).filter(
+    const onlineNow = sessionRows.filter(
       (s) => now - new Date(s.last_seen_at).getTime() < onlineWindowMs,
     ).length;
 
@@ -175,7 +236,7 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
     const dayMinutes = new Map<string, number>();
     const accounts = new Map<string, { name: string; sessions: number; lastSeen: string; totalSeconds: number }>();
 
-    for (const s of sessions || []) {
+    for (const s of sessionRows) {
       if (s.country) countryCount.set(s.country, (countryCount.get(s.country) || 0) + 1);
       const day = new Date(s.started_at).toISOString().slice(0, 10);
       dayCount.set(day, (dayCount.get(day) || 0) + 1);
@@ -225,13 +286,13 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       .slice(0, 14);
     const accountsList = Array.from(accounts.values()).sort((a, b) => a.name.localeCompare(b.name));
 
-    const totalVisits = (sessions || []).length;
+    const totalVisits = sessionRows.length;
     const avgDuration = totalVisits > 0
-      ? Math.round((sessions || []).reduce((acc, s) => acc + (s.duration_seconds || 0), 0) / totalVisits)
+      ? Math.round(sessionRows.reduce((acc, s) => acc + (s.duration_seconds || 0), 0) / totalVisits)
       : 0;
 
-    return {
-      sessions: sessions || [],
+    const result: AdminAnalytics = {
+      sessions: sessionRows,
       onlineNow,
       totalVisits,
       avgDuration,
@@ -242,4 +303,5 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       dailyVisits,
       accounts: accountsList,
     };
+    return result;
   });

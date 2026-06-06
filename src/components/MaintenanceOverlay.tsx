@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
-import { getMaintenanceStatus } from "@/lib/maintenance.functions";
-import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
+
+type MaintenanceSettings = {
+  enabled?: boolean;
+  message?: string;
+};
 
 export function MaintenanceOverlay() {
-  const getStatus = useServerFn(getMaintenanceStatus);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -14,10 +17,16 @@ export function MaintenanceOverlay() {
 
     const checkStatus = async () => {
       try {
-        const status = await getStatus();
+        const client = supabase as any;
+        const { data } = await client
+          .from("site_settings")
+          .select("value")
+          .eq("key", "maintenance_mode")
+          .maybeSingle();
+        const status = (data?.value || {}) as MaintenanceSettings;
         if (!cancelled) {
-          setIsMaintenanceMode(status.enabled);
-          setMessage(status.message);
+          setIsMaintenanceMode(status.enabled ?? false);
+          setMessage(status.message ?? "The site is under maintenance. Please try again later.");
           setLoading(false);
         }
       } catch (err) {
@@ -35,10 +44,12 @@ export function MaintenanceOverlay() {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [getStatus]);
+  }, []);
 
   // Check if we're on the admin panel bypass route
-  const isAdminPath = window.location.pathname.includes("/adminv3") || window.location.pathname === "/adminv3";
+  const isAdminPath =
+    typeof window !== "undefined" &&
+    (window.location.pathname.includes("/adminv3") || window.location.pathname === "/adminv3");
 
   if (loading || !isMaintenanceMode || isAdminPath) return null;
 

@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const startSchema = z.object({
   session_key: z.string().min(4),
@@ -16,6 +15,8 @@ const startSchema = z.object({
 export const startVisit = createServerFn({ method: "POST" })
   .inputValidator((d) => startSchema.parse(d))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { data: row, error } = await supabaseAdmin
       .from("visitor_sessions")
       .upsert(
@@ -41,6 +42,8 @@ const beatSchema = z.object({
 export const heartbeat = createServerFn({ method: "POST" })
   .inputValidator((d) => beatSchema.parse(d))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     await supabaseAdmin
       .from("visitor_sessions")
       .update({
@@ -57,6 +60,8 @@ const pathSchema = z.object({ session_key: z.string(), current_path: z.string(),
 export const trackPath = createServerFn({ method: "POST" })
   .inputValidator((d) => pathSchema.parse(d))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { data: row } = await supabaseAdmin
       .from("visitor_sessions")
       .select("page_views, path_log")
@@ -83,6 +88,8 @@ const watchSchema = z.object({
 export const trackWatchFn = createServerFn({ method: "POST" })
   .inputValidator((d) => watchSchema.parse(d))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { data: row } = await supabaseAdmin
       .from("visitor_sessions")
       .select("watched")
@@ -101,6 +108,8 @@ const searchSchema = z.object({ session_key: z.string(), q: z.string().min(1) })
 export const trackSearchFn = createServerFn({ method: "POST" })
   .inputValidator((d) => searchSchema.parse(d))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { data: row } = await supabaseAdmin
       .from("visitor_sessions")
       .select("searches")
