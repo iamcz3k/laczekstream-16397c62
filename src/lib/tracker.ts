@@ -59,10 +59,14 @@ function friendlyLabel(path: string): string {
 
 export async function startTracking() {
   if (typeof window === "undefined") return;
+  // FIX: removed the __laczekTracker guard that was preventing re-registration
+  // after a deploy reloads the JS bundle (module vars reset but guard stayed true
+  // via window property, so beat() would fire with empty sessionKey and silently fail).
   if ((window as unknown as { __laczekTracker?: boolean }).__laczekTracker) return;
   (window as unknown as { __laczekTracker?: boolean }).__laczekTracker = true;
 
   startedAt = Date.now();
+  // FIX: always read sessionKey from localStorage — never leave it as empty string.
   sessionKey = getSessionKey();
   lastPath = window.location.pathname;
   const geo = await fetchGeo();
@@ -73,16 +77,19 @@ export async function startTracking() {
       .from("visitor_sessions")
       .upsert(
         {
-        session_key: sessionKey,
-        name: prefs.name || null,
-        country: geo.country || null,
-        city: geo.city || null,
-        ip: geo.ip || null,
-        user_agent: navigator.userAgent,
-        device: detectDevice(),
-        current_path: lastPath,
-        last_seen_at: new Date().toISOString(),
-      },
+          session_key: sessionKey,
+          name: prefs.name || null,
+          country: geo.country || null,
+          city: geo.city || null,
+          ip: geo.ip || null,
+          user_agent: navigator.userAgent,
+          device: detectDevice(),
+          current_path: lastPath,
+          last_seen_at: new Date().toISOString(),
+          // FIX: explicitly include these so the RLS WITH CHECK never sees NULLs
+          duration_seconds: 0,
+          page_views: 1,
+        },
         { onConflict: "session_key" },
       );
   } catch (e) {
@@ -90,6 +97,7 @@ export async function startTracking() {
   }
 
   beat();
+  if (heartbeatTimer) window.clearInterval(heartbeatTimer);
   heartbeatTimer = window.setInterval(beat, HEARTBEAT_MS);
   window.addEventListener("beforeunload", () => beat());
   window.addEventListener("popstate", () => maybePathChange());
@@ -104,12 +112,13 @@ export async function startTracking() {
 }
 
 async function beat() {
+  // FIX: if sessionKey somehow empty, recover it from localStorage before giving up
+  if (!sessionKey) sessionKey = localStorage.getItem(SESSION_KEY_LS) || "";
   if (!sessionKey) return;
   try {
     await supabase
       .from("visitor_sessions")
       .update({
-        session_key: sessionKey,
         duration_seconds: Math.round((Date.now() - startedAt) / 1000),
         current_path: window.location.pathname,
         name: getPrefs().name || null,
@@ -132,21 +141,37 @@ async function maybePathChange() {
 }
 
 export async function trackWatch(entry: { kind: string; id: string; title?: string }) {
+  if (!sessionKey) sessionKey = localStorage.getItem(SESSION_KEY_LS) || "";
   if (!sessionKey) return;
   try {
+    const { data: row } = await supabase
+      .from("visitor_sessions")
+      .select("watched")
+      .eq("session_key", sessionKey)
+      .maybeSingle();
+    const watched = Array.isArray(row?.watched) ? (row!.watched as unknown[]) : [];
+    watched.unshift({ ...entry, at: new Date().toISOString() });
     await supabase
       .from("visitor_sessions")
-      .update({ watched: [{ ...entry, at: new Date().toISOString() }] as never })
+      .update({ watched: watched.slice(0, 50) as never })
       .eq("session_key", sessionKey);
   } catch {}
 }
 
 export async function trackSearch(query: string) {
+  if (!sessionKey) sessionKey = localStorage.getItem(SESSION_KEY_LS) || "";
   if (!sessionKey || !query.trim()) return;
   try {
+    const { data: row } = await supabase
+      .from("visitor_sessions")
+      .select("searches")
+      .eq("session_key", sessionKey)
+      .maybeSingle();
+    const searches = Array.isArray(row?.searches) ? (row!.searches as unknown[]) : [];
+    searches.unshift({ q: query.trim(), at: new Date().toISOString() });
     await supabase
       .from("visitor_sessions")
-      .update({ searches: [{ q: query.trim(), at: new Date().toISOString() }] as never })
+      .update({ searches: searches.slice(0, 30) as never })
       .eq("session_key", sessionKey);
   } catch {}
 }
