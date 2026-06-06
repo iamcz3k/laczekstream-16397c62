@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User, Flag, Megaphone, Plus, Trash2, Star, Send } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { adminFetchAnalytics, adminListConfig, adminSetFeatureFlag, adminUpsertFeaturedEvent, adminDeleteFeaturedEvent, adminAddFeatureFlag, adminUploadEventPoster } from "@/lib/admin.functions";
+import type { AdminAnalytics, VisitorSessionRow } from "@/lib/admin.functions";
 import { adminListReviews, adminRequestReview } from "@/lib/reviews.functions";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
 
-type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
-type Session = Analytics["sessions"][number];
+type Analytics = AdminAnalytics;
+type Session = VisitorSessionRow;
 
 type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "reviews";
 
