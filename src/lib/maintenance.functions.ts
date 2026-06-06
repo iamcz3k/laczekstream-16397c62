@@ -10,8 +10,9 @@ export type MaintenanceSettings = {
 export const getMaintenanceStatus = createServerFn({ method: "GET" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await admin
       .from("site_settings")
       .select("value")
       .eq("key", "maintenance_mode")
@@ -37,8 +38,9 @@ export const adminSetMaintenanceMode = createServerFn({ method: "POST" })
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
     
-    const { error } = await supabaseAdmin
+    const { error } = await admin
       .from("site_settings")
       .update({
         value: {
