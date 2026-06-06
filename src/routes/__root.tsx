@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import appCss from "../styles.css?url";
 import { ReviewPopup } from "@/components/ReviewPopup";
 import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
+import { MaintenanceOverlay } from "@/components/MaintenanceOverlay";
 
 function NotFoundComponent() {
   return (
@@ -42,8 +43,8 @@ export const Route = createRootRoute({
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "LACZEK STREAM — Free Movies, TV, Football & Music" },
       { name: "twitter:description", content: "LACZEK STREAM: stream free movies, live TV, football and music — sleek, clean, no ads." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ff1d4406-0346-47ec-9265-4c87ecf2d141/id-preview-1615ea0b--aa00440a-8748-4fa2-aefa-2305913f75e2.lovable.app-1777046110384.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ff1d4406-0346-47ec-9265-4c87ecf2d141/id-preview-1615ea0b--aa00440a-8748-4fa2-aefa-2305913f75e2.lovable.app-1777046110384.png" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ff1d4406-0346-47ec-9265-4c87ecf2d141/id-preview-1615ea0b--aa00440a-8748-4fa2-aefa-2305913f75e2.lovable.app" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ff1d4406-0346-47ec-9265-4c87ecf2d141/id-preview-1615ea0b--aa00440a-8748-4fa2-aefa-2305913f75e2.lovable.app" },
     ],
     links: [
       {
@@ -122,6 +123,7 @@ function RootComponent() {
   }, []);
   return (
     <>
+      <MaintenanceOverlay />
       <Outlet />
       <ReviewPopup />
       <PwaInstallPrompt />
