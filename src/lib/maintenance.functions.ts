@@ -1,7 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/server";
-
-const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD || "admin";
 
 // ===== Maintenance Mode =====
 
@@ -12,6 +9,8 @@ export type MaintenanceSettings = {
 
 export const getMaintenanceStatus = createServerFn({ method: "GET" })
   .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { data, error } = await supabaseAdmin
       .from("site_settings")
       .select("value")
@@ -34,7 +33,10 @@ export const adminSetMaintenanceMode = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
+    const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD || "admin";
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
     const { error } = await supabaseAdmin
       .from("site_settings")
