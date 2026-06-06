@@ -4,7 +4,7 @@ LACZEK STREAM is built with TanStack Start. The Lovable cloud build deploys
 everything (SSR + server functions) automatically. If you want to host it
 yourself on another platform, here is what works and what does not.
 
-## Static-only hosts (Cloudflare Pages, Netlify, Vercel, Render, GitHub Pages)
+## Static-only hosts (Cloudflare Pages, Netlify, Render, GitHub Pages)
 
 These hosts can serve the compiled web bundle, but they cannot run the
 TanStack server functions used for analytics, the admin panel, and the
@@ -21,9 +21,22 @@ Steps (any host):
    `public/_redirects` and `netlify.toml`; Vercel/Cloudflare Pages auto-
    detect it; for GitHub Pages copy `dist/index.html` to `dist/404.html`).
 
-Cloudflare Pages, Netlify and Vercel will all build from a connected GitHub
-repo using the default settings. Render uses "Static Site" with build
-command `npm run build` and publish directory `dist`.
+Cloudflare Pages and Netlify will build from a connected GitHub repo using the
+default settings. Render uses "Static Site" with build command `npm run build`
+and publish directory `dist`.
+
+## Vercel
+
+Vercel must run the server build, not a static `dist/` or `dist/client/` site.
+The included `vite.config.ts` forces Nitro's Vercel preset outside Lovable, and
+`vercel.json` publishes `.vercel/output`.
+
+Use these Vercel settings:
+
+1. Framework preset: **Other**
+2. Build command: `npm run build`
+3. Output directory: `.vercel/output`
+4. Do not add custom rewrites/routes to `dist/server/server.js`
 
 ## Full-stack hosts (recommended)
 
