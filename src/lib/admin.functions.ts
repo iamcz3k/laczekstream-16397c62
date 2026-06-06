@@ -2,6 +2,23 @@ import { createServerFn } from "@tanstack/react-start";
 
 const ADMIN_PASSWORD = "czek2991";
 
+type VisitorSessionRow = {
+  id: string;
+  session_key: string;
+  name: string | null;
+  country: string | null;
+  city: string | null;
+  device: string | null;
+  current_path: string | null;
+  started_at: string;
+  last_seen_at: string;
+  duration_seconds: number | null;
+  page_views: number | null;
+  watched: unknown;
+  searches: unknown;
+  path_log: unknown;
+};
+
 // ===== Feature flags =====
 
 export const adminSetFeatureFlag = createServerFn({ method: "POST" })
@@ -91,6 +108,8 @@ export const adminDeleteFeaturedEvent = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { error } = await supabaseAdmin.from("featured_events").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -103,6 +122,8 @@ export const adminListConfig = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const [flagsRes, eventsRes] = await Promise.all([
       supabaseAdmin.from("feature_flags").select("*").order("key"),
       supabaseAdmin.from("featured_events").select("*").order("priority", { ascending: false }),
@@ -123,6 +144,8 @@ export const adminUploadEventPoster = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(data.dataUrl);
     if (!match) throw new Error("Expected base64 image data URL");
     const mime = match[1];
@@ -155,6 +178,8 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       throw new Error("Invalid admin password");
     }
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { data: sessions, error } = await supabaseAdmin
       .from("visitor_sessions")
       .select("*")
@@ -162,10 +187,11 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       .limit(2000);
 
     if (error) throw new Error(error.message);
+    const sessionRows = (sessions || []) as VisitorSessionRow[];
 
     const now = Date.now();
     const onlineWindowMs = 60_000; // active in last 60s
-    const onlineNow = (sessions || []).filter(
+    const onlineNow = sessionRows.filter(
       (s) => now - new Date(s.last_seen_at).getTime() < onlineWindowMs,
     ).length;
 
@@ -180,7 +206,7 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
     const dayMinutes = new Map<string, number>();
     const accounts = new Map<string, { name: string; sessions: number; lastSeen: string; totalSeconds: number }>();
 
-    for (const s of sessions || []) {
+    for (const s of sessionRows) {
       if (s.country) countryCount.set(s.country, (countryCount.get(s.country) || 0) + 1);
       const day = new Date(s.started_at).toISOString().slice(0, 10);
       dayCount.set(day, (dayCount.get(day) || 0) + 1);
@@ -230,13 +256,13 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       .slice(0, 14);
     const accountsList = Array.from(accounts.values()).sort((a, b) => a.name.localeCompare(b.name));
 
-    const totalVisits = (sessions || []).length;
+    const totalVisits = sessionRows.length;
     const avgDuration = totalVisits > 0
-      ? Math.round((sessions || []).reduce((acc, s) => acc + (s.duration_seconds || 0), 0) / totalVisits)
+      ? Math.round(sessionRows.reduce((acc, s) => acc + (s.duration_seconds || 0), 0) / totalVisits)
       : 0;
 
     return {
-      sessions: sessions || [],
+      sessions: sessionRows,
       onlineNow,
       totalVisits,
       avgDuration,
