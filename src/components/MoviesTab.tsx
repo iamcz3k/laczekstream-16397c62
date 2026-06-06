@@ -56,7 +56,7 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     if (!q.trim()) { setSuggestions({ movies: [], tv: [], people: [] }); return; }
     debounceRef.current = window.setTimeout(() => {
-      tmdbMultiSearch(q).then(setSuggestions).catch(() => {});
+      tmdbMultiSearch(q).then(setSuggestions).catch((e) => console.warn("[movies] search suggestions failed", e));
     }, 250);
     return () => { if (debounceRef.current) window.clearTimeout(debounceRef.current); };
   }, [q]);

@@ -17,18 +17,23 @@ export const Route = createFileRoute("/api/public/anime-image")({
           return new Response("Blocked", { status: 400, headers: CORS_HEADERS });
         }
 
-        const upstream = await fetch(url, {
-          headers: {
-            "user-agent": "Mozilla/5.0",
-            referer: "https://otakudesu.blog/",
-            accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-          },
-        });
+        try {
+          const upstream = await fetch(url, {
+            headers: {
+              "user-agent": "Mozilla/5.0",
+              referer: "https://otakudesu.blog/",
+              accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+            },
+          });
 
-        const headers = new Headers(CORS_HEADERS);
-        headers.set("content-type", upstream.headers.get("content-type") || "image/jpeg");
-        headers.set("cache-control", "public, max-age=86400");
-        return new Response(upstream.body, { status: upstream.status, headers });
+          const headers = new Headers(CORS_HEADERS);
+          headers.set("content-type", upstream.headers.get("content-type") || "image/jpeg");
+          headers.set("cache-control", "public, max-age=86400");
+          return new Response(upstream.body, { status: upstream.status, headers });
+        } catch (err) {
+          console.error("[anime-image] upstream fetch failed", err);
+          return new Response("Image unavailable", { status: 502, headers: CORS_HEADERS });
+        }
       },
     },
   },

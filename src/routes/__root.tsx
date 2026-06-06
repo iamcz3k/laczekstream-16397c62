@@ -94,11 +94,11 @@ function RootComponent() {
       document.documentElement.classList.remove("dark");
       document.documentElement.classList.remove("light");
     }
-    import("@/lib/notifications").then((m) => m.ensureSW()).catch(() => {});
+    import("@/lib/notifications").then((m) => m.ensureSW()).catch((e) => console.warn("[root] SW registration failed", e));
     // Silent ad / direct-link blocker
-    import("@/lib/adblock").then((m) => m.installSilentAdBlock()).catch(() => {});
+    import("@/lib/adblock").then((m) => m.installSilentAdBlock()).catch((e) => console.warn("[root] adblock init failed", e));
     // Visitor analytics tracker (V3 admin panel)
-    import("@/lib/tracker").then((m) => m.startTracking()).catch(() => {});
+    import("@/lib/tracker").then((m) => m.startTracking()).catch((e) => console.warn("[root] tracker init failed", e));
 
     function onAlert(e: Event) {
       const detail = (e as CustomEvent<{ title: string; url: string }>).detail;

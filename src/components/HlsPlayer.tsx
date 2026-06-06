@@ -58,7 +58,7 @@ export function HlsPlayer({
       hls.loadSource(current);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(() => {});
+        video.play().catch((e) => console.warn("[hls] autoplay blocked", e));
       });
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (!data.fatal) return;

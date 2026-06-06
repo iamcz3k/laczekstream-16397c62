@@ -61,7 +61,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
     const p = installPromptRef.current as { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> } | null;
     if (p) {
       await p.prompt();
-      await p.userChoice.catch(() => {});
+      await p.userChoice.catch((e) => console.warn("[install] user choice failed", e));
       installPromptRef.current = null;
       setCanInstall(false);
     } else {
@@ -113,7 +113,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   function shareSite() {
     setOpen(false);
     const data = { title: "LACZEK STREAM", text: "Free movies, TV, football, anime & live CCTV.", url: window.location.origin };
-    if (navigator.share) navigator.share(data).catch(() => {});
+    if (navigator.share) navigator.share(data).catch((e) => console.warn("[share] share API failed", e));
     else { navigator.clipboard?.writeText(data.url); alert("Link copied to clipboard"); }
   }
 

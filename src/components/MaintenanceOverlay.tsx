@@ -30,6 +30,7 @@ export function MaintenanceOverlay() {
           setLoading(false);
         }
       } catch (err) {
+        console.warn("[maintenance] status check failed", err);
         if (!cancelled) {
           setLoading(false);
         }

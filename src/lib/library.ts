@@ -47,7 +47,9 @@ function write(key: StoreKey, list: LibraryEntry[]) {
   try {
     window.localStorage.setItem(KEYS[key], JSON.stringify(list.slice(0, 200)));
     window.dispatchEvent(new CustomEvent("laczek:library-changed", { detail: { key } }));
-  } catch {}
+  } catch (e) {
+    console.warn("[library] write failed for", key, e);
+  }
 }
 
 function entryKey(e: { id: number; kind: string; season?: number; episode?: number }) {

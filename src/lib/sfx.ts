@@ -9,7 +9,7 @@ function ac(): AudioContext | null {
     if (!Ctor) return null;
     ctx = new Ctor();
   }
-  if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  if (ctx.state === "suspended") ctx.resume().catch((e) => console.warn("[sfx] AudioContext resume failed", e));
   return ctx;
 }
 
