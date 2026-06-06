@@ -2,7 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 
 const ADMIN_PASSWORD = "czek2991";
 
-type VisitorSessionRow = {
+export type AdminJson = string | number | boolean | null | { [key: string]: AdminJson } | AdminJson[];
+
+export type VisitorSessionRow = {
   id: string;
   session_key: string;
   name: string | null;
@@ -14,9 +16,22 @@ type VisitorSessionRow = {
   last_seen_at: string;
   duration_seconds: number | null;
   page_views: number | null;
-  watched: unknown;
-  searches: unknown;
-  path_log: unknown;
+  watched: AdminJson;
+  searches: AdminJson;
+  path_log: AdminJson;
+};
+
+export type AdminAnalytics = {
+  sessions: VisitorSessionRow[];
+  onlineNow: number;
+  totalVisits: number;
+  avgDuration: number;
+  topWatched: Array<{ title: string; kind: string; count: number }>;
+  topByKind: Record<string, Array<{ id: string; title: string; count: number }>>;
+  topSearches: Array<{ q: string; count: number }>;
+  topCountries: Array<{ country: string; count: number }>;
+  dailyVisits: Array<{ day: string; visits: number; minutes: number }>;
+  accounts: Array<{ name: string; sessions: number; lastSeen: string; totalSeconds: number }>;
 };
 
 // ===== Feature flags =====
