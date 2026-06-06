@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ADMIN_PASSWORD = "czek2991";
 
@@ -11,6 +10,8 @@ export const submitReview = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { error } = await supabaseAdmin.from("site_reviews").insert({
       session_key: data.session_key,
       user_name: data.user_name || null,
@@ -31,6 +32,8 @@ export const checkReviewRequest = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { data: rows } = await supabaseAdmin
       .from("review_requests")
       .select("id")
@@ -46,6 +49,8 @@ export const adminListReviews = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { data, error } = await supabaseAdmin
       .from("site_reviews")
       .select("*")
@@ -62,6 +67,8 @@ export const adminRequestReview = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { error } = await supabaseAdmin.from("review_requests").insert({ session_key: data.session_key, fulfilled: false });
     if (error) throw new Error(error.message);
     return { ok: true };

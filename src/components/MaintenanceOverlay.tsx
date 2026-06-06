@@ -38,7 +38,9 @@ export function MaintenanceOverlay() {
   }, [getStatus]);
 
   // Check if we're on the admin panel bypass route
-  const isAdminPath = window.location.pathname.includes("/adminv3") || window.location.pathname === "/adminv3";
+  const isAdminPath =
+    typeof window !== "undefined" &&
+    (window.location.pathname.includes("/adminv3") || window.location.pathname === "/adminv3");
 
   if (loading || !isMaintenanceMode || isAdminPath) return null;
 
