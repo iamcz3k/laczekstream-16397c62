@@ -1,8 +1,8 @@
 // LACZEK STREAM — API helpers
 
-export const YOUTUBE_API_KEY = "AIzaSyCKNCOT1lywT1oFav6uRFW2jkYUNKDlnDI";
+export const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY ?? "";
 
-const TMDB_KEY = "8265bd1679663a7ea12ac168da84d2e8";
+const TMDB_KEY = import.meta.env.VITE_TMDB_API_KEY ?? "";
 const TMDB = "https://api.themoviedb.org/3";
 const IMG = "https://image.tmdb.org/t/p/w500";
 
@@ -55,7 +55,11 @@ export type AnimeStreamSource = {
 const animePosterCache = new Map<string, string>();
 
 function cleanAnimeTitle(title: string) {
-  return title.replace(/subtitle\s+indonesia/gi, "").replace(/sub\s+indo/gi, "").replace(/\s+/g, " ").trim();
+  return title
+    .replace(/subtitle\s+indonesia/gi, "")
+    .replace(/sub\s+indo/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export async function animePosterFallback(title: string): Promise<string> {
@@ -65,7 +69,8 @@ export async function animePosterFallback(title: string): Promise<string> {
   const r = await fetch(`${JIKAN_API}/anime?q=${encodeURIComponent(key)}&limit=1`);
   if (!r.ok) return "";
   const j = await r.json();
-  const poster = j?.data?.[0]?.images?.webp?.large_image_url || j?.data?.[0]?.images?.jpg?.large_image_url || "";
+  const poster =
+    j?.data?.[0]?.images?.webp?.large_image_url || j?.data?.[0]?.images?.jpg?.large_image_url || "";
   if (poster) animePosterCache.set(key, poster);
   return poster;
 }
@@ -124,7 +129,9 @@ export async function tmdbPopular(kind: "movie" | "tv", page = 1): Promise<Media
 }
 
 export async function tmdbSearch(kind: "movie" | "tv", q: string): Promise<MediaItem[]> {
-  const r = await fetch(`${TMDB}/search/${kind}?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}`);
+  const r = await fetch(
+    `${TMDB}/search/${kind}?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}`,
+  );
   if (!r.ok) throw new Error("tmdb search failed");
   const j = await r.json();
   return (j.results ?? []).map((x: any) => mapTmdb(x, kind));
@@ -135,7 +142,9 @@ export type MultiSearchResult = { movies: MediaItem[]; tv: MediaItem[]; people: 
 
 export async function tmdbMultiSearch(q: string): Promise<MultiSearchResult> {
   if (!q.trim()) return { movies: [], tv: [], people: [] };
-  const r = await fetch(`${TMDB}/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}&include_adult=false`);
+  const r = await fetch(
+    `${TMDB}/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}&include_adult=false`,
+  );
   if (!r.ok) return { movies: [], tv: [], people: [] };
   const j = await r.json();
   const movies: MediaItem[] = [];
@@ -144,12 +153,17 @@ export async function tmdbMultiSearch(q: string): Promise<MultiSearchResult> {
   for (const x of (j.results ?? []) as any[]) {
     if (x.media_type === "movie") movies.push(mapTmdb(x, "movie"));
     else if (x.media_type === "tv") tv.push(mapTmdb(x, "tv"));
-    else if (x.media_type === "person") people.push({
-      id: x.id,
-      name: x.name,
-      profile: x.profile_path ? `${IMG}${x.profile_path}` : undefined,
-      knownFor: (x.known_for ?? []).map((k: any) => k.title || k.name).filter(Boolean).slice(0, 3).join(", "),
-    });
+    else if (x.media_type === "person")
+      people.push({
+        id: x.id,
+        name: x.name,
+        profile: x.profile_path ? `${IMG}${x.profile_path}` : undefined,
+        knownFor: (x.known_for ?? [])
+          .map((k: any) => k.title || k.name)
+          .filter(Boolean)
+          .slice(0, 3)
+          .join(", "),
+      });
   }
   return { movies, tv, people };
 }
@@ -162,8 +176,16 @@ export type DiscoverOpts = {
   personId?: number;
 };
 
-export async function tmdbDiscoverAdvanced(kind: "movie" | "tv", opts: DiscoverOpts, page = 1): Promise<MediaItem[]> {
-  const params = new URLSearchParams({ api_key: TMDB_KEY, page: String(page), sort_by: opts.sortBy || "popularity.desc" });
+export async function tmdbDiscoverAdvanced(
+  kind: "movie" | "tv",
+  opts: DiscoverOpts,
+  page = 1,
+): Promise<MediaItem[]> {
+  const params = new URLSearchParams({
+    api_key: TMDB_KEY,
+    page: String(page),
+    sort_by: opts.sortBy || "popularity.desc",
+  });
   if (opts.genres?.length) params.set("with_genres", opts.genres.join(","));
   if (opts.minRating) params.set("vote_average.gte", String(opts.minRating));
   if (opts.year) {
@@ -186,8 +208,14 @@ export async function tmdbGenres(kind: "movie" | "tv"): Promise<Genre[]> {
   return (j.genres ?? []) as Genre[];
 }
 
-export async function tmdbDiscover(kind: "movie" | "tv", genreId: number, page = 1): Promise<MediaItem[]> {
-  const r = await fetch(`${TMDB}/discover/${kind}?api_key=${TMDB_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=${page}`);
+export async function tmdbDiscover(
+  kind: "movie" | "tv",
+  genreId: number,
+  page = 1,
+): Promise<MediaItem[]> {
+  const r = await fetch(
+    `${TMDB}/discover/${kind}?api_key=${TMDB_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=${page}`,
+  );
   if (!r.ok) return [];
   const j = await r.json();
   return (j.results ?? []).map((x: any) => mapTmdb(x, kind));
@@ -220,33 +248,56 @@ export type TitleFullDetail = MediaItem & {
   homepage?: string;
 };
 
-export async function tmdbTitleFull(kind: "movie" | "tv", id: number): Promise<TitleFullDetail | null> {
-  const r = await fetch(`${TMDB}/${kind}/${id}?api_key=${TMDB_KEY}&append_to_response=credits,similar,recommendations`);
+export async function tmdbTitleFull(
+  kind: "movie" | "tv",
+  id: number,
+): Promise<TitleFullDetail | null> {
+  const r = await fetch(
+    `${TMDB}/${kind}/${id}?api_key=${TMDB_KEY}&append_to_response=credits,similar,recommendations`,
+  );
   if (!r.ok) return null;
   const j = await r.json();
   const base = mapTmdb(j, kind);
   const credits = j.credits || {};
-  const cast = (credits.cast || []).slice(0, 20).map((c: any): CastMember => ({
-    id: c.id, name: c.name, character: c.character || "",
-    profile: c.profile_path ? `${IMG}${c.profile_path}` : undefined,
-  }));
-  const crew = (credits.crew || []).map((c: any): CrewMember => ({
-    id: c.id, name: c.name, job: c.job, department: c.department,
-  }));
-  const directors: string[] = crew.filter((c: CrewMember) => c.job === "Director").map((c: CrewMember) => c.name);
-  const producers: string[] = crew.filter((c: CrewMember) => c.job === "Producer" || c.job === "Executive Producer").map((c: CrewMember) => c.name);
-  const writers: string[] = crew.filter((c: CrewMember) => c.department === "Writing" || c.job === "Writer" || c.job === "Screenplay").map((c: CrewMember) => c.name);
+  const cast = (credits.cast || []).slice(0, 20).map(
+    (c: any): CastMember => ({
+      id: c.id,
+      name: c.name,
+      character: c.character || "",
+      profile: c.profile_path ? `${IMG}${c.profile_path}` : undefined,
+    }),
+  );
+  const crew = (credits.crew || []).map(
+    (c: any): CrewMember => ({
+      id: c.id,
+      name: c.name,
+      job: c.job,
+      department: c.department,
+    }),
+  );
+  const directors: string[] = crew
+    .filter((c: CrewMember) => c.job === "Director")
+    .map((c: CrewMember) => c.name);
+  const producers: string[] = crew
+    .filter((c: CrewMember) => c.job === "Producer" || c.job === "Executive Producer")
+    .map((c: CrewMember) => c.name);
+  const writers: string[] = crew
+    .filter(
+      (c: CrewMember) => c.department === "Writing" || c.job === "Writer" || c.job === "Screenplay",
+    )
+    .map((c: CrewMember) => c.name);
   const similarRaw = (j.similar?.results || j.recommendations?.results || []).slice(0, 12);
   const similar = similarRaw.map((x: any) => mapTmdb(x, kind));
   return {
     ...base,
-    runtime: j.runtime ?? (j.episode_run_time?.[0]),
+    runtime: j.runtime ?? j.episode_run_time?.[0],
     genres: (j.genres || []).map((g: any) => g.name),
     tagline: j.tagline || undefined,
     status: j.status,
     releaseDate: j.release_date || j.first_air_date,
     voteCount: j.vote_count,
-    cast, crew,
+    cast,
+    crew,
     directors: Array.from(new Set(directors)).slice(0, 4),
     producers: Array.from(new Set(producers)).slice(0, 4),
     writers: Array.from(new Set(writers)).slice(0, 4),
@@ -269,7 +320,8 @@ export async function tmdbRandomMovie(): Promise<MediaItem | null> {
 
 function proxiedAnimePoster(src?: string) {
   if (!src) return undefined;
-  if (/^https?:\/\/[^/]*otakudesu\./i.test(src)) return `/api/public/anime-image?url=${encodeURIComponent(src)}`;
+  if (/^https?:\/\/[^/]*otakudesu\./i.test(src))
+    return `/api/public/anime-image?url=${encodeURIComponent(src)}`;
   return src;
 }
 
@@ -313,12 +365,14 @@ export async function animeDetail(id: string): Promise<AnimeDetail | null> {
     duration: d.duration,
     studios: d.studios,
     genres: (d.genreList ?? []).map((g: any) => g.title).filter(Boolean),
-    episodeList: (d.episodeList ?? []).map((episode: any) => ({
-      id: episode.episodeId,
-      title: episode.title || `Episode ${episode.eps ?? ""}`,
-      episode: episode.eps,
-      date: episode.date,
-    })).filter((episode: AnimeEpisode) => episode.id),
+    episodeList: (d.episodeList ?? [])
+      .map((episode: any) => ({
+        id: episode.episodeId,
+        title: episode.title || `Episode ${episode.eps ?? ""}`,
+        episode: episode.eps,
+        date: episode.date,
+      }))
+      .filter((episode: AnimeEpisode) => episode.id),
   };
 }
 
@@ -338,7 +392,13 @@ export async function animeEpisodeDetail(id: string): Promise<AnimeEpisodeDetail
   );
   const rankedSources = serverSources.sort((a, b) => {
     const score = (item: AnimeStreamSource) =>
-      (/vidhide|filedon|yourupload|yuplod|streamwish|mp4/i.test(item.label) ? 50 : /ondesu|desu/i.test(item.label) ? -30 : /mega/i.test(item.label) ? -50 : 0) +
+      (/vidhide|filedon|yourupload|yuplod|streamwish|mp4/i.test(item.label)
+        ? 50
+        : /ondesu|desu/i.test(item.label)
+          ? -30
+          : /mega/i.test(item.label)
+            ? -50
+            : 0) +
       (parseInt(item.quality, 10) || 0) / 100;
     return score(b) - score(a);
   });
@@ -346,7 +406,12 @@ export async function animeEpisodeDetail(id: string): Promise<AnimeEpisodeDetail
     title: d.title || "Anime episode",
     animeId: d.animeId,
     defaultStreamingUrl: d.defaultStreamingUrl,
-    sources: [...rankedSources, ...(d.defaultStreamingUrl ? [{ label: "Auto", quality: "Auto", url: d.defaultStreamingUrl }] : [])],
+    sources: [
+      ...rankedSources,
+      ...(d.defaultStreamingUrl
+        ? [{ label: "Auto", quality: "Auto", url: d.defaultStreamingUrl }]
+        : []),
+    ],
     prevEpisodeId: d.prevEpisode?.episodeId,
     nextEpisodeId: d.nextEpisode?.episodeId,
   };
@@ -380,7 +445,10 @@ export async function tmdbTvSeasons(tvId: number): Promise<MediaSeason[]> {
     }));
 }
 
-export async function tmdbSeasonEpisodes(tvId: number, seasonNumber: number): Promise<MediaEpisode[]> {
+export async function tmdbSeasonEpisodes(
+  tvId: number,
+  seasonNumber: number,
+): Promise<MediaEpisode[]> {
   const r = await fetch(`${TMDB}/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_KEY}`);
   if (!r.ok) throw new Error("tmdb season failed");
   const j = await r.json();
@@ -393,7 +461,19 @@ export async function tmdbSeasonEpisodes(tvId: number, seasonNumber: number): Pr
   }));
 }
 
-export type EmbedProvider = "videasy" | "vidsrcvip" | "vidsrcme" | "vidjoy" | "vidsrcxyz" | "vidsrcicu" | "vidlink" | "autoembed" | "111movies" | "vidfast" | "2embed" | "vidsrcto";
+export type EmbedProvider =
+  | "videasy"
+  | "vidsrcvip"
+  | "vidsrcme"
+  | "vidjoy"
+  | "vidsrcxyz"
+  | "vidsrcicu"
+  | "vidlink"
+  | "autoembed"
+  | "111movies"
+  | "vidfast"
+  | "2embed"
+  | "vidsrcto";
 
 export const EMBED_PROVIDERS: { id: EmbedProvider; label: string }[] = [
   { id: "videasy", label: "Auto 1" },
@@ -410,7 +490,13 @@ export const EMBED_PROVIDERS: { id: EmbedProvider; label: string }[] = [
   { id: "2embed", label: "Server 6" },
 ];
 
-export function embedUrl(p: EmbedProvider, kind: "movie" | "tv", id: number, season = 1, episode = 1) {
+export function embedUrl(
+  p: EmbedProvider,
+  kind: "movie" | "tv",
+  id: number,
+  season = 1,
+  episode = 1,
+) {
   switch (p) {
     case "videasy":
       return kind === "movie"
@@ -550,7 +636,9 @@ export const CURATED_TV_CHANNELS: Channel[] = [
     categories: ["comedy"],
     logo: "https://images.ctfassets.net/8cd2csgvqd3m/7mK6VwObqfN2cK2AlUbs9D/2fd0c437643537454b6c3968546a6f6e7/8_out_of_10_cats.png",
     url: "https://amg00627-amg00627c37-samsung-au-4294.playouts.now.amagi.tv/playlist/amg00627-banijayfast-8outof10cats-samsungau/playlist.m3u8",
-    streams: ["https://amg00627-amg00627c37-samsung-au-4294.playouts.now.amagi.tv/playlist/amg00627-banijayfast-8outof10cats-samsungau/playlist.m3u8"],
+    streams: [
+      "https://amg00627-amg00627c37-samsung-au-4294.playouts.now.amagi.tv/playlist/amg00627-banijayfast-8outof10cats-samsungau/playlist.m3u8",
+    ],
   },
   {
     id: "action-hollywood.au",
@@ -559,7 +647,9 @@ export const CURATED_TV_CHANNELS: Channel[] = [
     categories: ["movies"],
     logo: "https://images.ctfassets.net/8cd2csgvqd3m/5l27f3yJ3rcnG2YpQ8Qg4x/e9af3a2cf6e8de1c9ad65e4052a0fd40/action_hollywood_movies.png",
     url: "https://amg01076-lightningintern-actionhollywood-samsungau-rs69y.amagi.tv/playlist/amg01076-lightningintern-actionhollywood-samsungau/playlist.m3u8",
-    streams: ["https://amg01076-lightningintern-actionhollywood-samsungau-rs69y.amagi.tv/playlist/amg01076-lightningintern-actionhollywood-samsungau/playlist.m3u8"],
+    streams: [
+      "https://amg01076-lightningintern-actionhollywood-samsungau-rs69y.amagi.tv/playlist/amg01076-lightningintern-actionhollywood-samsungau/playlist.m3u8",
+    ],
   },
   {
     id: "milenniotv.ar",
@@ -577,10 +667,10 @@ function isPlayableStream(s: RawStream) {
   const url = s.url ?? "";
   return Boolean(
     s.channel &&
-      /^https?:\/\//.test(url) &&
-      (/\.m3u8(\?|$)|playlist|manifest|\.mpd(\?|$)/i.test(url)) &&
-      !s.user_agent &&
-      !s.referrer,
+    /^https?:\/\//.test(url) &&
+    /\.m3u8(\?|$)|playlist|manifest|\.mpd(\?|$)/i.test(url) &&
+    !s.user_agent &&
+    !s.referrer,
   );
 }
 
@@ -705,14 +795,21 @@ export type FootballStreamDetail = FootballStreamMatch & {
 const SPORTSRC = "https://api.sportsrc.org";
 
 export async function footballStreamMatches(sport = "football"): Promise<FootballStreamMatch[]> {
-  const res = await fetch(`/api/public/football-streams?mode=matches&sport=${encodeURIComponent(sport)}`);
+  const res = await fetch(
+    `/api/public/football-streams?mode=matches&sport=${encodeURIComponent(sport)}`,
+  );
   if (!res.ok) throw new Error("football streams failed");
   const json = await res.json();
   return json?.success ? (json.data ?? []) : [];
 }
 
-export async function footballStreamDetail(id: string, sport = "football"): Promise<FootballStreamDetail | null> {
-  const res = await fetch(`/api/public/football-streams?mode=detail&id=${encodeURIComponent(id)}&sport=${encodeURIComponent(sport)}`);
+export async function footballStreamDetail(
+  id: string,
+  sport = "football",
+): Promise<FootballStreamDetail | null> {
+  const res = await fetch(
+    `/api/public/football-streams?mode=detail&id=${encodeURIComponent(id)}&sport=${encodeURIComponent(sport)}`,
+  );
   if (!res.ok) throw new Error("football stream detail failed");
   const json = await res.json();
   if (!json?.success || !json.data?.sources?.length) return null;
@@ -745,7 +842,13 @@ function mapYT(items: any[]): YTItem[] {
 
 export async function ytSearch(
   q: string,
-  opts: { type?: "video"; eventType?: "live"; channelId?: string; videoCategoryId?: string; max?: number } = {},
+  opts: {
+    type?: "video";
+    eventType?: "live";
+    channelId?: string;
+    videoCategoryId?: string;
+    max?: number;
+  } = {},
 ) {
   const params = new URLSearchParams({
     part: "snippet",
@@ -776,7 +879,12 @@ export async function ytLiveSearch(q: string, max = 24) {
   const json = await res.json();
   const allowed = new Set(
     (json.items ?? [])
-      .filter((item: any) => item.status?.embeddable && item.status?.privacyStatus === "public" && item.liveStreamingDetails)
+      .filter(
+        (item: any) =>
+          item.status?.embeddable &&
+          item.status?.privacyStatus === "public" &&
+          item.liveStreamingDetails,
+      )
       .map((item: any) => item.id),
   );
 
@@ -795,10 +903,22 @@ export const FEATURED_CREATORS: { name: string; channelId: string; avatar?: stri
 export function downloadLinks(videoId: string) {
   const url = `https://www.youtube.com/watch?v=${videoId}`;
   return [
-    { label: "MP3 (audio)", href: `https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=mp3&color=ffb347` },
-    { label: "MP4 1080p", href: `https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=1080&color=ffb347` },
-    { label: "MP4 720p", href: `https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=720&color=ffb347` },
-    { label: "MP4 360p", href: `https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=360&color=ffb347` },
+    {
+      label: "MP3 (audio)",
+      href: `https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=mp3&color=ffb347`,
+    },
+    {
+      label: "MP4 1080p",
+      href: `https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=1080&color=ffb347`,
+    },
+    {
+      label: "MP4 720p",
+      href: `https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=720&color=ffb347`,
+    },
+    {
+      label: "MP4 360p",
+      href: `https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=360&color=ffb347`,
+    },
     { label: "Open on Y2mate", href: `https://www.y2mate.com/youtube/${videoId}` },
   ];
 }

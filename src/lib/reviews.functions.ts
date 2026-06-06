@@ -1,14 +1,28 @@
 import { createServerFn } from "@tanstack/react-start";
 
-const ADMIN_PASSWORD = "czek2991";
+function verifyAdminPassword(password: string): void {
+  const expected = process.env.ADMIN_PASSWORD;
+  if (!expected) throw new Error("ADMIN_PASSWORD environment variable is not set");
+  if (password !== expected) throw new Error("Invalid admin password");
+}
 
 export const submitReview = createServerFn({ method: "POST" })
-  .inputValidator((input: { session_key: string; user_name?: string | null; rating: number; message: string; user_agent?: string | null; country?: string | null }) => {
-    if (!input?.session_key || typeof input.rating !== "number" || !input.message) throw new Error("Invalid input");
-    if (input.rating < 1 || input.rating > 5) throw new Error("Rating must be 1-5");
-    if (input.message.trim().length < 10) throw new Error("Message too short");
-    return input;
-  })
+  .inputValidator(
+    (input: {
+      session_key: string;
+      user_name?: string | null;
+      rating: number;
+      message: string;
+      user_agent?: string | null;
+      country?: string | null;
+    }) => {
+      if (!input?.session_key || typeof input.rating !== "number" || !input.message)
+        throw new Error("Invalid input");
+      if (input.rating < 1 || input.rating > 5) throw new Error("Rating must be 1-5");
+      if (input.message.trim().length < 10) throw new Error("Message too short");
+      return input;
+    },
+  )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -22,7 +36,11 @@ export const submitReview = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     // mark any pending request as fulfilled
-    await supabaseAdmin.from("review_requests").update({ fulfilled: true }).eq("session_key", data.session_key).eq("fulfilled", false);
+    await supabaseAdmin
+      .from("review_requests")
+      .update({ fulfilled: true })
+      .eq("session_key", data.session_key)
+      .eq("fulfilled", false);
     return { ok: true };
   });
 
@@ -45,10 +63,11 @@ export const checkReviewRequest = createServerFn({ method: "POST" })
 
 export const adminListReviews = createServerFn({ method: "POST" })
   .inputValidator((input: { password: string }) => {
-    if (input?.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    if (typeof input?.password !== "string") throw new Error("Invalid input");
     return input;
   })
-  .handler(async () => {
+  .handler(async ({ data: input }) => {
+    verifyAdminPassword(input.password);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data, error } = await supabaseAdmin
@@ -62,14 +81,17 @@ export const adminListReviews = createServerFn({ method: "POST" })
 
 export const adminRequestReview = createServerFn({ method: "POST" })
   .inputValidator((input: { password: string; session_key: string }) => {
-    if (input?.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    if (typeof input?.password !== "string") throw new Error("Invalid input");
     if (!input.session_key) throw new Error("Invalid input");
     return input;
   })
   .handler(async ({ data }) => {
+    verifyAdminPassword(data.password);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { error } = await supabaseAdmin.from("review_requests").insert({ session_key: data.session_key, fulfilled: false });
+    const { error } = await supabaseAdmin
+      .from("review_requests")
+      .insert({ session_key: data.session_key, fulfilled: false });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
