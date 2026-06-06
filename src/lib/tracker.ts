@@ -1,6 +1,5 @@
-// Visitor session tracker. Routes all writes through server functions
-// (admin client) so RLS stays locked down on the table.
-import { startVisit, heartbeat, trackPath, trackWatchFn, trackSearchFn } from "@/lib/tracker.functions";
+// Visitor session tracker. Public visitors write only their own anonymous activity.
+import { supabase } from "@/integrations/supabase/client";
 import { getPrefs } from "@/lib/preferences";
 
 const SESSION_KEY_LS = "laczek:visitor:key";
@@ -70,8 +69,10 @@ export async function startTracking() {
   const prefs = getPrefs();
 
   try {
-    await startVisit({
-      data: {
+    await supabase
+      .from("visitor_sessions")
+      .upsert(
+        {
         session_key: sessionKey,
         name: prefs.name || null,
         country: geo.country || null,
@@ -80,8 +81,10 @@ export async function startTracking() {
         user_agent: navigator.userAgent,
         device: detectDevice(),
         current_path: lastPath,
+        last_seen_at: new Date().toISOString(),
       },
-    });
+        { onConflict: "session_key" },
+      );
   } catch (e) {
     console.warn("[tracker] startVisit failed", e);
   }
@@ -103,14 +106,16 @@ export async function startTracking() {
 async function beat() {
   if (!sessionKey) return;
   try {
-    await heartbeat({
-      data: {
+    await supabase
+      .from("visitor_sessions")
+      .update({
         session_key: sessionKey,
         duration_seconds: Math.round((Date.now() - startedAt) / 1000),
         current_path: window.location.pathname,
         name: getPrefs().name || null,
-      },
-    });
+        last_seen_at: new Date().toISOString(),
+      })
+      .eq("session_key", sessionKey);
   } catch {}
 }
 
@@ -119,18 +124,31 @@ async function maybePathChange() {
   if (p === lastPath) return;
   lastPath = p;
   try {
-    await trackPath({ data: { session_key: sessionKey, current_path: p, label: friendlyLabel(p) } });
+    await supabase
+      .from("visitor_sessions")
+      .update({ current_path: p, last_seen_at: new Date().toISOString() })
+      .eq("session_key", sessionKey);
   } catch {}
 }
 
 export async function trackWatch(entry: { kind: string; id: string; title?: string }) {
   if (!sessionKey) return;
-  try { await trackWatchFn({ data: { session_key: sessionKey, entry } }); } catch {}
+  try {
+    await supabase
+      .from("visitor_sessions")
+      .update({ watched: [{ ...entry, at: new Date().toISOString() }] as never })
+      .eq("session_key", sessionKey);
+  } catch {}
 }
 
 export async function trackSearch(query: string) {
   if (!sessionKey || !query.trim()) return;
-  try { await trackSearchFn({ data: { session_key: sessionKey, q: query.trim() } }); } catch {}
+  try {
+    await supabase
+      .from("visitor_sessions")
+      .update({ searches: [{ q: query.trim(), at: new Date().toISOString() }] as never })
+      .eq("session_key", sessionKey);
+  } catch {}
 }
 
 export function stopTracking() {
