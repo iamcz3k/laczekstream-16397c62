@@ -202,7 +202,22 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       .limit(2000);
 
     if (error) throw new Error(error.message);
-    const sessionRows = (sessions || []) as VisitorSessionRow[];
+    const sessionRows = ((sessions || []) as Array<Record<string, unknown>>).map((s) => ({
+      id: String(s.id || ""),
+      session_key: String(s.session_key || ""),
+      name: typeof s.name === "string" ? s.name : null,
+      country: typeof s.country === "string" ? s.country : null,
+      city: typeof s.city === "string" ? s.city : null,
+      device: typeof s.device === "string" ? s.device : null,
+      current_path: typeof s.current_path === "string" ? s.current_path : null,
+      started_at: String(s.started_at || new Date().toISOString()),
+      last_seen_at: String(s.last_seen_at || new Date().toISOString()),
+      duration_seconds: typeof s.duration_seconds === "number" ? s.duration_seconds : 0,
+      page_views: typeof s.page_views === "number" ? s.page_views : 0,
+      watched: (Array.isArray(s.watched) ? s.watched : []) as AdminJson,
+      searches: (Array.isArray(s.searches) ? s.searches : []) as AdminJson,
+      path_log: (Array.isArray(s.path_log) ? s.path_log : []) as AdminJson,
+    } satisfies VisitorSessionRow));
 
     const now = Date.now();
     const onlineWindowMs = 60_000; // active in last 60s
@@ -276,7 +291,7 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       ? Math.round(sessionRows.reduce((acc, s) => acc + (s.duration_seconds || 0), 0) / totalVisits)
       : 0;
 
-    return {
+    const result: AdminAnalytics = {
       sessions: sessionRows,
       onlineNow,
       totalVisits,
@@ -288,4 +303,5 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       dailyVisits,
       accounts: accountsList,
     };
+    return result;
   });
