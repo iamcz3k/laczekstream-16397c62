@@ -1,9 +1,12 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Adjust to match vercel.json's distDir
-const distDir = path.join(process.cwd(), 'dist', 'client');
-const fallbackSrc = path.join(process.cwd(), 'public', 'fallback-index.html');
+const distDir = path.join(__dirname, '..', 'dist', 'client');
+const fallbackSrc = path.join(__dirname, '..', 'public', 'fallback-index.html');
 const destIndex = path.join(distDir, 'index.html');
 
 try {
