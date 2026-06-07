@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User, Flag, Megaphone, Plus, Trash2, Star, Send } from "lucide-react";
+import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User, Flag, Megaphone, Plus, Trash2, Star, Send, Ban, ShieldCheck, ShieldOff, UserX } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { adminFetchAnalytics, adminListConfig, adminSetFeatureFlag, adminUpsertFeaturedEvent, adminDeleteFeaturedEvent, adminAddFeatureFlag, adminUploadEventPoster } from "@/lib/admin.functions";
 import type { AdminAnalytics, VisitorSessionRow } from "@/lib/admin.functions";
 import { adminListReviews, adminRequestReview } from "@/lib/reviews.functions";
+import { adminListUsers, adminSetBlocked, adminSetRole, adminDeleteUser } from "@/lib/users.functions";
+import type { AdminUserRow } from "@/lib/users.functions";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
+import { supabase } from "@/integrations/supabase/client";
 
 type Analytics = AdminAnalytics;
 type Session = VisitorSessionRow;
 
-type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "reviews";
+type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "users" | "daily" | "config" | "reviews";
 
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60);
@@ -62,6 +65,21 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
     return () => window.clearInterval(t);
   }, [authed]);
 
+  // Realtime: refresh analytics whenever visitor_sessions or site_reviews changes.
+  useEffect(() => {
+    if (!authed) return;
+    const channel = supabase
+      .channel("admin-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "visitor_sessions" }, () => {
+        load(pwRef.current);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "site_reviews" }, () => {
+        load(pwRef.current);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [authed]);
+
   if (!authed) {
     return (
       <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/90 p-4 backdrop-blur-xl" onClick={onClose}>
@@ -110,6 +128,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
           ["searches", "Top Searches"],
           ["visitors", "Visitor Log"],
           ["accounts", "Accounts"],
+          ["users", "User Accounts"],
           ["daily", "Daily"],
           ["config", "Flags & Events"],
           ["reviews", "Reviews"],
@@ -236,6 +255,10 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
 
         {tab === "reviews" && (
           <ReviewsPanel password={password} />
+        )}
+
+        {tab === "users" && (
+          <UsersPanel password={password} />
         )}
       </div>
     </div>
