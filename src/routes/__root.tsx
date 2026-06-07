@@ -5,6 +5,9 @@ import appCss from "../styles.css?url";
 import { ReviewPopup } from "@/components/ReviewPopup";
 import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 import { MaintenanceOverlay } from "@/components/MaintenanceOverlay";
+import { AuthPopup, useAuthGate } from "@/components/AuthPopup";
+import { BlockedScreen } from "@/components/BlockedScreen";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -81,6 +84,19 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const [alert, setAlert] = useState<{ title: string; url: string } | null>(null);
+  const { user, loaded } = useAuthGate();
+  const [blocked, setBlocked] = useState<{ blocked: boolean; reason: string | null }>({ blocked: false, reason: null });
+
+  useEffect(() => {
+    if (!user) { setBlocked({ blocked: false, reason: null }); return; }
+    let cancelled = false;
+    supabase.from("profiles").select("is_blocked, blocked_reason").eq("id", user.id).maybeSingle().then(({ data }) => {
+      if (cancelled) return;
+      setBlocked({ blocked: Boolean(data?.is_blocked), reason: data?.blocked_reason ?? null });
+    });
+    return () => { cancelled = true; };
+  }, [user]);
+
   // Apply persisted theme + register the SW for match notifications (no-op in preview).
   useEffect(() => {
     try {
@@ -127,6 +143,8 @@ function RootComponent() {
       <Outlet />
       <ReviewPopup />
       <PwaInstallPrompt />
+      {loaded && !user && <AuthPopup onAuthed={() => { /* useAuthGate picks up via listener */ }} />}
+      {loaded && user && blocked.blocked && <BlockedScreen reason={blocked.reason} />}
       {alert && (
         <div className="fixed bottom-4 left-1/2 z-[200] w-[92%] max-w-md -translate-x-1/2 rounded-2xl border border-primary/40 bg-primary text-primary-foreground shadow-2xl">
           <a href={alert.url} className="flex items-center justify-between gap-3 px-4 py-3">
