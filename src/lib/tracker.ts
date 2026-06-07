@@ -72,13 +72,31 @@ export async function startTracking() {
   const geo = await fetchGeo();
   const prefs = getPrefs();
 
+  // Attach the signed-in user (if any) to this visitor session.
+  let userId: string | null = null;
+  let displayName: string | null = prefs.name || null;
+  try {
+    const { data: sess } = await supabase.auth.getSession();
+    if (sess.session?.user) {
+      userId = sess.session.user.id;
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("full_name, username")
+        .eq("id", userId)
+        .maybeSingle();
+      if (prof?.full_name) displayName = prof.full_name;
+      else if (prof?.username) displayName = prof.username;
+    }
+  } catch {}
+
   try {
     await supabase
       .from("visitor_sessions")
       .upsert(
         {
           session_key: sessionKey,
-          name: prefs.name || null,
+          name: displayName,
+          user_id: userId,
           country: geo.country || null,
           city: geo.city || null,
           ip: geo.ip || null,

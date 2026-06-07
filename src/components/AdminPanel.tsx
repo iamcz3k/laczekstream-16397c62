@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User, Flag, Megaphone, Plus, Trash2, Star, Send } from "lucide-react";
+import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User, Flag, Megaphone, Plus, Trash2, Star, Send, Ban, ShieldCheck, ShieldOff, UserX } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { adminFetchAnalytics, adminListConfig, adminSetFeatureFlag, adminUpsertFeaturedEvent, adminDeleteFeaturedEvent, adminAddFeatureFlag, adminUploadEventPoster } from "@/lib/admin.functions";
 import type { AdminAnalytics, VisitorSessionRow } from "@/lib/admin.functions";
 import { adminListReviews, adminRequestReview } from "@/lib/reviews.functions";
+import { adminListUsers, adminSetBlocked, adminSetRole, adminDeleteUser } from "@/lib/users.functions";
+import type { AdminUserRow } from "@/lib/users.functions";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
+import { supabase } from "@/integrations/supabase/client";
 
 type Analytics = AdminAnalytics;
 type Session = VisitorSessionRow;
 
-type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "reviews";
+type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "users" | "daily" | "config" | "reviews";
 
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60);
@@ -17,6 +20,114 @@ function fmtDur(sec: number) {
   if (m < 60) return `${m}m ${s}s`;
   const h = Math.floor(m / 60);
   return `${h}h ${m % 60}m`;
+}
+
+function UsersPanel({ password }: { password: string }) {
+  const list = useServerFn(adminListUsers);
+  const setBlocked = useServerFn(adminSetBlocked);
+  const setRole = useServerFn(adminSetRole);
+  const del = useServerFn(adminDeleteUser);
+  const [users, setUsers] = useState<AdminUserRow[] | null>(null);
+  const [q, setQ] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function reload() {
+    try {
+      const r = await list({ data: { password } });
+      setUsers(r.users);
+      setError(null);
+    } catch (e) { setError((e as Error).message); }
+  }
+
+  useEffect(() => { reload(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [password]);
+
+  if (error) return <p className="rounded-xl bg-destructive/15 p-3 text-xs text-destructive">{error}</p>;
+  if (!users) return <p className="py-12 text-center text-sm text-muted-foreground">Loading…</p>;
+
+  const filtered = users.filter((u) => {
+    const s = q.trim().toLowerCase();
+    if (!s) return true;
+    return u.username.toLowerCase().includes(s) || u.email.toLowerCase().includes(s) || u.full_name.toLowerCase().includes(s);
+  });
+
+  async function toggleBlock(u: AdminUserRow) {
+    let reason: string | undefined;
+    if (!u.is_blocked) {
+      const r = window.prompt(`Block ${u.username}? Enter a reason (visible to the user):`, "Violation of terms");
+      if (r === null) return;
+      reason = r;
+    } else if (!window.confirm(`Unblock ${u.username}?`)) return;
+    setBusy(u.id);
+    try { await setBlocked({ data: { password, user_id: u.id, blocked: !u.is_blocked, reason } }); await reload(); }
+    catch (e) { setError((e as Error).message); }
+    finally { setBusy(null); }
+  }
+
+  async function toggleAdmin(u: AdminUserRow) {
+    if (!window.confirm(u.is_admin ? `Remove admin from ${u.username}?` : `Make ${u.username} an admin?`)) return;
+    setBusy(u.id);
+    try { await setRole({ data: { password, user_id: u.id, admin: !u.is_admin } }); await reload(); }
+    catch (e) { setError((e as Error).message); }
+    finally { setBusy(null); }
+  }
+
+  async function deleteUser(u: AdminUserRow) {
+    if (!window.confirm(`Permanently delete ${u.username}? This cannot be undone.`)) return;
+    setBusy(u.id);
+    try { await del({ data: { password, user_id: u.id } }); await reload(); }
+    catch (e) { setError((e as Error).message); }
+    finally { setBusy(null); }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Users className="h-4 w-4 text-primary" />
+          <span>{users.length} account{users.length !== 1 ? "s" : ""} · {users.filter((u) => u.is_blocked).length} blocked · {users.filter((u) => u.is_admin).length} admin</span>
+        </div>
+        <button onClick={reload} className="rounded-full bg-secondary px-3 py-1.5 text-xs">Refresh</button>
+      </div>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search username, name or email…" className="w-full rounded-2xl border border-border bg-secondary px-4 py-2 text-sm focus:border-primary focus:outline-none" />
+      <ul className="space-y-2">
+        {filtered.map((u) => (
+          <li key={u.id} className={`rounded-2xl border bg-secondary/40 p-3 text-xs ${u.is_blocked ? "border-destructive/50" : "border-border"}`}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary shrink-0" />
+                  <span className="font-bold text-foreground">@{u.username}</span>
+                  {u.is_admin && <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">Admin</span>}
+                  {u.is_blocked && <span className="rounded-full bg-destructive/20 px-2 py-0.5 text-[10px] font-bold uppercase text-destructive">Blocked</span>}
+                </div>
+                <p className="mt-1 truncate text-muted-foreground">{u.full_name} · {u.email}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  Joined {new Date(u.created_at).toLocaleDateString()} · {u.sessions} session{u.sessions !== 1 ? "s" : ""} · {fmtDur(u.total_seconds)}
+                  {u.last_seen ? ` · last seen ${new Date(u.last_seen).toLocaleString()}` : ""}
+                </p>
+                {u.is_blocked && u.blocked_reason && (
+                  <p className="mt-1 rounded-lg bg-destructive/10 px-2 py-1 text-[11px] text-destructive">Reason: {u.blocked_reason}</p>
+                )}
+              </div>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <button onClick={() => toggleBlock(u)} disabled={busy === u.id} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold transition disabled:opacity-50 ${u.is_blocked ? "bg-primary text-primary-foreground" : "bg-destructive text-destructive-foreground"}`}>
+                <Ban className="h-3 w-3" /> {u.is_blocked ? "Unblock" : "Block"}
+              </button>
+              <button onClick={() => toggleAdmin(u)} disabled={busy === u.id} className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-[11px] font-bold hover:bg-primary hover:text-primary-foreground disabled:opacity-50">
+                {u.is_admin ? <><ShieldOff className="h-3 w-3" /> Remove admin</> : <><ShieldCheck className="h-3 w-3" /> Make admin</>}
+              </button>
+              <button onClick={() => deleteUser(u)} disabled={busy === u.id} className="inline-flex items-center gap-1 rounded-full border border-destructive/50 px-3 py-1 text-[11px] font-bold text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50">
+                <UserX className="h-3 w-3" /> Delete
+              </button>
+            </div>
+          </li>
+        ))}
+        {filtered.length === 0 && <li><Empty /></li>}
+      </ul>
+    </div>
+  );
 }
 
 function streamLinkFromPath(path?: string | null): { href: string; label: string } | null {
@@ -60,6 +171,21 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
     if (!authed) return;
     const t = window.setInterval(() => load(pwRef.current), 5000);
     return () => window.clearInterval(t);
+  }, [authed]);
+
+  // Realtime: refresh analytics whenever visitor_sessions or site_reviews changes.
+  useEffect(() => {
+    if (!authed) return;
+    const channel = supabase
+      .channel("admin-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "visitor_sessions" }, () => {
+        load(pwRef.current);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "site_reviews" }, () => {
+        load(pwRef.current);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [authed]);
 
   if (!authed) {
@@ -110,6 +236,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
           ["searches", "Top Searches"],
           ["visitors", "Visitor Log"],
           ["accounts", "Accounts"],
+          ["users", "User Accounts"],
           ["daily", "Daily"],
           ["config", "Flags & Events"],
           ["reviews", "Reviews"],
@@ -236,6 +363,10 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
 
         {tab === "reviews" && (
           <ReviewsPanel password={password} />
+        )}
+
+        {tab === "users" && (
+          <UsersPanel password={password} />
         )}
       </div>
     </div>

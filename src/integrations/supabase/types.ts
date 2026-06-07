@@ -128,6 +128,42 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          blocked_at: string | null
+          blocked_reason: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_blocked: boolean
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          blocked_at?: string | null
+          blocked_reason?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id: string
+          is_blocked?: boolean
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          blocked_at?: string | null
+          blocked_reason?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          is_blocked?: boolean
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       review_requests: {
         Row: {
           created_at: string
@@ -182,6 +218,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       visitor_sessions: {
         Row: {
           city: string | null
@@ -199,6 +256,7 @@ export type Database = {
           session_key: string
           started_at: string
           user_agent: string | null
+          user_id: string | null
           watched: Json
         }
         Insert: {
@@ -217,6 +275,7 @@ export type Database = {
           session_key: string
           started_at?: string
           user_agent?: string | null
+          user_id?: string | null
           watched?: Json
         }
         Update: {
@@ -235,6 +294,7 @@ export type Database = {
           session_key?: string
           started_at?: string
           user_agent?: string | null
+          user_id?: string | null
           watched?: Json
         }
         Relationships: []
@@ -244,10 +304,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -374,6 +440,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

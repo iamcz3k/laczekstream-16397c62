@@ -1,36 +1,63 @@
+# Plan: Live Viewers Fix + User Accounts
 
-# Plan
+## Part 1 — Fix Live Viewers (Overview & Activity Log)
 
-Large multi-part request. Here's the scoped breakdown:
+**Root cause:** `visitor_sessions` heartbeat updates aren't pushing to admin panel because realtime isn't enabled on the table, and the admin panel polls instead of subscribing.
 
-## 1. Reviews System (new)
-- **DB**: `site_reviews` table (id, user_name, user_session_key, rating 1-5, message, created_at). Public INSERT allowed; SELECT denied for public, admin reads via service role.
-- **DB**: `review_requests` table (id, session_key, requested_at, fulfilled bool) — admin sends a request to a specific online visitor.
-- **Pop-up component**: Full-screen, non-dismissable modal with 5-star picker + textarea (min 20 chars). Blurs the page behind it (`backdrop-filter: blur`). Shows once per device (localStorage flag), only for accounts older than 20 minutes (check session `started_at`).
-- **Triggers**: Auto-show globally if `reviews_enabled` flag is ON and account age ≥ 20 min and no prior review. In manual mode, only show when a `review_requests` row exists for current `session_key`.
-- **Admin panel**: New "Reviews" sub-tab in developer options listing reviews (user name + text + rating + timestamp). New "Auto / Manual" toggle for the reviews feature. Small **Send Review Request** button next to each online visitor in the visitor log.
+**Changes:**
+- Migration: `ALTER PUBLICATION supabase_realtime ADD TABLE public.visitor_sessions;` and same for `site_reviews`.
+- In `AdminPanel.tsx`: add a `useEffect` channel subscription on `visitor_sessions` + `site_reviews` that invalidates the queries on any change, plus a 10s polling fallback.
+- Verify `tracker.ts` is actually calling the public client insert/update (not the failing server fn) so the heartbeat lands in DB.
 
-## 2. Featured Events Fixes
-- **Bug fix**: Banner stops publishing after a few hours — root cause is the `loadActiveEvents` query filters by `ends_at` but not by `starts_at`, AND the cache TTL is fine; investigate whether signed URLs are expiring or the active query is being blocked by RLS. Add explicit `.eq("active", true)` + remove date filter that may exclude valid events; verify with a direct query.
-- **Countdown timer**: Small countdown shown UNDER the banner image showing time until `starts_at` (admin sets the date/time in event form).
-- **Flag mode**: Admin can pick "Flag VS Flag" event type — choose two countries from a custom LACZEK country picker (all world countries with flag emojis), set custom background color. No image upload needed for this mode.
+## Part 2 — User Accounts (Email + Username + Full Name)
 
-## 3. Movie Download Button Fix
-- Investigate `watch.$kind.$id.tsx` — the `downloadToDevice` helper requires a valid `url`; verify the download mirror URLs are being constructed for movies (not just episodes). Wire button correctly.
+**Auth approach:** Use Supabase email/password auth with `auto_confirm_email: true` (no verification email). Username + full name stored in a `profiles` table.
 
-## 4. Vercel 404 Fix
-- Current `vercel.json` uses `routes` rewriting everything to `/index.html` — but TanStack Start builds an SSR bundle, not an SPA. The `dist/` output for TanStack Start contains a server worker, not a static SPA. Vercel "static" deploy won't work for SSR routes. Fix: add proper Vercel adapter OR document that Vercel needs SSR mode. Easiest fix: configure `vercel.json` with `outputDirectory: "dist/client"` and proper SPA fallback for the client-only routes, OR switch to using Vercel Functions for SSR. I'll attempt a static-export config that points to the client bundle with a SPA fallback.
+**Database (one migration):**
+- `profiles` table:
+  - `id uuid PK references auth.users on delete cascade`
+  - `email text not null`
+  - `username text unique not null` (validated 5+ chars)
+  - `full_name text not null` (validated as "First Last", 2+ words)
+  - `is_blocked boolean default false`
+  - `blocked_at timestamptz`, `blocked_reason text`
+  - `created_at`, `updated_at`
+- `app_role` enum (`admin`, `user`) + `user_roles` table + `has_role()` security definer function (per security rules — roles NEVER on profiles table).
+- Trigger `on_auth_user_created` → inserts row into `profiles` from `raw_user_meta_data` (username, full_name).
+- RLS: users read/update own profile; admins read/update all. Block check via `has_role`.
+- GRANTs to `authenticated` + `service_role`.
+- Link `visitor_sessions.user_id` (nullable) to associate sessions with logged-in users.
 
-## 5. PWA Install Prompt
-- Capture `beforeinstallprompt` event and show a small in-app install banner. Add a "Download" page section letting users choose **Install Web App (PWA)** or **Download APK** (links to APK build instructions/release).
+**Frontend:**
+- New `AuthPopup.tsx` — full-screen modal shown on first visit if not authenticated. Toggle Sign In / Sign Up. Sign-up fields: email, username (min 5, alphanumeric+underscore), full name (must contain space, two words). Uses `supabase.auth.signUp` with `data: { username, full_name }` in metadata, no email redirect.
+- Show in `__root.tsx` after onboarding completes, before main app, blocking interaction until signed in.
+- After login, if `profiles.is_blocked`, show "Your account is blocked" screen with reason and sign-out button.
+- Update `tracker.ts` to include `user_id` from current session.
 
-## Files
-- New: `supabase/migrations/...sql`, `src/components/ReviewPopup.tsx`, `src/components/admin/ReviewsPanel.tsx`, `src/components/CountryPicker.tsx`, `src/lib/reviews.functions.ts`, `src/lib/countries.ts`, `src/components/PwaInstallPrompt.tsx`
-- Edit: `src/components/AdminPanel.tsx`, `src/components/FeaturedBanner.tsx`, `src/lib/admin.functions.ts`, `src/lib/feature-flags.ts`, `src/routes/__root.tsx`, `src/routes/watch.$kind.$id.tsx`, `vercel.json`, `public/manifest.json`
+**Admin Panel additions (new "Users" tab in `AdminPanel.tsx`):**
+- List all profiles: username, full name, email, created, blocked status, last seen (joined from visitor_sessions).
+- Search by username/email.
+- Block/Unblock button per user (with reason input).
+- View user's activity: sessions, paths, searches, watched (filtered visitor_sessions by user_id).
+- Promote/demote admin role.
+- Server fns in `src/lib/users.functions.ts` using `requireSupabaseAuth` + admin check, with `supabaseAdmin` for the actual queries (imported inside handlers).
 
-## Notes / Constraints
-- Reviews popup being **non-dismissable** is enforced client-side only; a power user can bypass via devtools. Acceptable for the use case.
-- Vercel SSR with TanStack Start needs the `@tanstack/react-start` Vercel preset; the current build targets Cloudflare Workers (`wrangler.jsonc`). Truly making Vercel work may require build config changes I'll attempt but cannot fully verify without a Vercel deploy. If full SSR doesn't work on Vercel, the publishable approach is the Lovable hosting or Cloudflare.
-- This is a large change set; I'll ship in this single turn but it will create ~6 new files and edit ~8 existing files plus 1 migration.
+**Auth config:** Call `supabase--configure_auth` with `auto_confirm_email: true`, `disable_signup: false`.
 
-Proceed?
+**First admin:** After migration, instruct user to sign up, then I'll insert a `user_roles` admin row for their account via the insert tool.
+
+## Technical Notes
+
+- All server fns that touch service role import `client.server` inside the `.handler()` to avoid client bundle leak.
+- `attachSupabaseAuth` already wired in `start.ts` — verify.
+- Username uniqueness enforced by DB unique constraint; surfaced as a friendly error in the form.
+- No email verification means the email field is effectively unverified — acceptable per user's explicit request.
+- Realtime subscriptions cleaned up in effect return.
+
+## Files Touched (estimate)
+
+- New migration (profiles + roles + realtime publication)
+- New: `src/components/AuthPopup.tsx`, `src/components/BlockedScreen.tsx`, `src/lib/users.functions.ts`, `src/lib/auth.ts` (helper hook)
+- Edited: `src/routes/__root.tsx`, `src/components/AdminPanel.tsx`, `src/lib/tracker.ts`, `src/lib/admin.functions.ts`
+
+Shall I proceed?
