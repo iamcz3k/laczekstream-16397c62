@@ -39,6 +39,7 @@ export const Route = createRootRoute({
       { title: "LACZEK STREAM — Free Movies, TV, Football & Music" },
       { name: "description", content: "LACZEK STREAM: stream free movies, live TV, football and music — sleek, clean, no ads." },
       { name: "author", content: "LACZEK STREAM" },
+      { name: "google-site-verification", content: "8bQRjdwfpMUI1N-2zhugL0ian6OZQiHSzt49xjtjY6o" },
       { property: "og:title", content: "LACZEK STREAM — Free Movies, TV, Football & Music" },
       { property: "og:description", content: "LACZEK STREAM: stream free movies, live TV, football and music — sleek, clean, no ads." },
       { property: "og:type", content: "website" },
