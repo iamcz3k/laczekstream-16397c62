@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
-import { Loader2, Search, Play, Radio, Music2, Video, Users, Download } from "lucide-react";
+import { Play, Radio, Music2, Video, Users, Download } from "lucide-react";
+import { LoadingSpinner, EmptyState, SearchInput } from "@/components/shared";
 import { ytSearch, downloadLinks, FEATURED_CREATORS, type YTItem } from "@/lib/api";
 import { YouTubePlayer } from "./YouTubePlayer";
 
 type Mode = "audio" | "video" | "live" | "creators";
 
-const MODES: { id: Mode; label: string; icon: React.ComponentType<{ className?: string }>; placeholder: string }[] = [
+const MODES: {
+  id: Mode;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  placeholder: string;
+}[] = [
   { id: "audio", label: "Music Audio", icon: Music2, placeholder: "Search songs, artists…" },
   { id: "video", label: "Music Video", icon: Video, placeholder: "Search music videos…" },
   { id: "live", label: "Live Streams", icon: Radio, placeholder: "Search live streams…" },
@@ -17,7 +23,12 @@ export function MusicTab() {
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState("");
   const [mode, setMode] = useState<Mode>("audio");
-  const [playing, setPlaying] = useState<{ id: string; title: string; audioOnly: boolean; isLive: boolean } | null>(null);
+  const [playing, setPlaying] = useState<{
+    id: string;
+    title: string;
+    audioOnly: boolean;
+    isLive: boolean;
+  } | null>(null);
   const [creatorId, setCreatorId] = useState<string | null>(null);
 
   async function run(query: string, m: Mode, channelId?: string | null) {
@@ -26,7 +37,9 @@ export function MusicTab() {
       if (m === "audio") {
         setItems(await ytSearch(`${query} official audio`, { videoCategoryId: "10", max: 24 }));
       } else if (m === "video") {
-        setItems(await ytSearch(`${query} official music video`, { videoCategoryId: "10", max: 24 }));
+        setItems(
+          await ytSearch(`${query} official music video`, { videoCategoryId: "10", max: 24 }),
+        );
       } else if (m === "live") {
         // Use a popular live-streaming query when the user hasn't typed anything
         const liveQuery = query?.trim() ? query : "live now";
@@ -76,7 +89,9 @@ export function MusicTab() {
                 setCreatorId(null);
               }}
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition ${
-                mode === m.id ? "bg-primary text-primary-foreground" : "glass text-muted-foreground hover:text-foreground"
+                mode === m.id
+                  ? "bg-primary text-primary-foreground"
+                  : "glass text-muted-foreground hover:text-foreground"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -93,7 +108,9 @@ export function MusicTab() {
               key={c.channelId}
               onClick={() => setCreatorId(c.channelId)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                creatorId === c.channelId ? "bg-primary text-primary-foreground" : "glass-card text-foreground hover:border-primary"
+                creatorId === c.channelId
+                  ? "bg-primary text-primary-foreground"
+                  : "glass-card text-foreground hover:border-primary"
               }`}
             >
               {c.name}
@@ -101,27 +118,21 @@ export function MusicTab() {
           ))}
         </div>
       ) : (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (q.trim()) run(q, mode);
-          }}
-          className="relative max-w-xl"
-        >
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
+        <div className="max-w-xl">
+          <SearchInput
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={setQ}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (q.trim()) run(q, mode);
+            }}
             placeholder={currentMode.placeholder}
-            className="w-full pl-11 pr-4 py-3 rounded-full glass border-border focus:border-primary focus:outline-none"
           />
-        </form>
+        </div>
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        <LoadingSpinner />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map((it) => {
@@ -142,7 +153,14 @@ export function MusicTab() {
                   }
                   className="relative w-32 aspect-video rounded-lg overflow-hidden flex-shrink-0 bg-muted"
                 >
-                  {it.thumbnail && <img src={it.thumbnail} alt="" loading="lazy" className="w-full h-full object-cover" />}
+                  {it.thumbnail && (
+                    <img
+                      src={it.thumbnail}
+                      alt=""
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                   {isLive && (
                     <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
                       <span className="w-1 h-1 rounded-full bg-current animate-pulse" /> Live
@@ -174,9 +192,13 @@ export function MusicTab() {
             );
           })}
           {items.length === 0 && (
-            <p className="col-span-full text-center text-muted-foreground py-20">
-              {mode === "creators" && !creatorId ? "Pick a creator above to load their videos." : "Search to discover content."}
-            </p>
+            <EmptyState
+              message={
+                mode === "creators" && !creatorId
+                  ? "Pick a creator above to load their videos."
+                  : "Search to discover content."
+              }
+            />
           )}
         </div>
       )}
