@@ -40,7 +40,7 @@ export function RadioTab() {
           .sort((a, b) => a.localeCompare(b));
         setCountries(["", ...names]);
       })
-      .catch(() => {});
+      .catch((e) => console.warn("[radio] failed to load countries", e));
   }, []);
 
   useEffect(() => {
@@ -76,12 +76,12 @@ export function RadioTab() {
     audio.addEventListener("error", () => setPlaying(false));
     audioRef.current = audio;
     audio.play().catch(() => setPlaying(false));
-    fetch(`${API}/url/${s.stationuuid}`).catch(() => {});
+    fetch(`${API}/url/${s.stationuuid}`).catch((e) => console.warn("[radio] click count failed", e));
   }
 
   function toggle() {
     const a = audioRef.current; if (!a) return;
-    if (playing) a.pause(); else a.play().catch(() => {});
+    if (playing) a.pause(); else a.play().catch((e) => console.warn("[radio] playback failed", e));
   }
 
   return (

@@ -100,7 +100,7 @@ function PodcastsPage() {
   function togglePlay() {
     if (!audioRef.current) return;
     if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
-    else { audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {}); }
+    else { audioRef.current.play().then(() => setIsPlaying(true)).catch((e) => console.warn("[podcasts] playback failed", e)); }
   }
 
   return (

@@ -22,12 +22,13 @@ export function MatchChat({ matchId }: { matchId: string }) {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("match_chats")
         .select("*")
         .eq("match_id", matchId)
         .order("created_at", { ascending: true })
         .limit(200);
+      if (error) console.warn("[chat] failed to load messages", error.message);
       if (mounted && data) setMsgs(data as ChatMsg[]);
     })();
 

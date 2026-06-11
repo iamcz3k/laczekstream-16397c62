@@ -27,7 +27,11 @@ async function loadFlags(force = false): Promise<Record<string, boolean>> {
   flagsPromise = (async () => {
     const { data, error } = await supabase.from("feature_flags").select("key,enabled");
     const map: Record<string, boolean> = {};
-    if (!error && data) for (const f of data) map[f.key] = !!f.enabled;
+    if (error) {
+      console.warn("[feature-flags] failed to load flags", error.message);
+    } else if (data) {
+      for (const f of data) map[f.key] = !!f.enabled;
+    }
     flagsCache = { at: Date.now(), map };
     flagsPromise = null;
     return map;

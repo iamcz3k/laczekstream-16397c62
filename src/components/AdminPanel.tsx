@@ -685,12 +685,14 @@ function ReviewsPanel({ password }: { password: string }) {
   const list = useServerFn(adminListReviews);
   const [rows, setRows] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
-    list({ data: { password } }).then((r) => { if (!cancelled) { setRows(r.reviews as ReviewRow[]); setLoading(false); } }).catch(() => setLoading(false));
+    list({ data: { password } }).then((r) => { if (!cancelled) { setRows(r.reviews as ReviewRow[]); setLoading(false); } }).catch((e) => { console.warn("[admin] reviews load failed", e); if (!cancelled) { setError("Failed to load reviews"); setLoading(false); } });
     return () => { cancelled = true; };
   }, [list, password]);
   if (loading) return <p className="py-12 text-center text-sm text-muted-foreground">Loading…</p>;
+  if (error) return <p className="py-12 text-center text-sm text-destructive">{error}</p>;
   if (!rows.length) return <Empty />;
   const avg = rows.reduce((a, r) => a + r.rating, 0) / rows.length;
   return (

@@ -146,8 +146,9 @@ export const Route = createFileRoute("/api/public/football-streams")({
             { headers: { ...CORS_HEADERS, "cache-control": "public, max-age=30" } },
           );
         } catch (err) {
+          console.error("[football-streams] handler error", err);
           return Response.json(
-            { success: false, data: mode === "detail" ? null : [] },
+            { success: false, error: err instanceof Error ? err.message : "Internal error", data: mode === "detail" ? null : [] },
             { status: 500, headers: CORS_HEADERS },
           );
         }

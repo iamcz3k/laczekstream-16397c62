@@ -602,6 +602,11 @@ export async function iptvChannels(): Promise<Channel[]> {
     fetch("https://iptv-org.github.io/api/logos.json"),
   ]);
 
+  if (!chRes.ok || !stRes.ok || !lgRes.ok) {
+    console.warn("[api] IPTV data fetch failed", { channels: chRes.status, streams: stRes.status, logos: lgRes.status });
+    return CURATED_TV_CHANNELS;
+  }
+
   const channels = await chRes.json();
   const streams = await stRes.json();
   const logos = await lgRes.json();

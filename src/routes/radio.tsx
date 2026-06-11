@@ -64,7 +64,7 @@ function RadioPage() {
     setCurrent(s);
     setPlaying(true);
     // Click counter (best effort)
-    fetch(`${API}/url/${s.stationuuid}`).catch(() => {});
+    fetch(`${API}/url/${s.stationuuid}`).catch((e) => console.warn("[radio] click count failed", e));
     setTimeout(() => {
       if (audioRef.current) {
         audioRef.current.src = s.url_resolved;
@@ -76,7 +76,7 @@ function RadioPage() {
   function toggle() {
     if (!audioRef.current) return;
     if (playing) { audioRef.current.pause(); setPlaying(false); }
-    else { audioRef.current.play().then(() => setPlaying(true)).catch(() => {}); }
+    else { audioRef.current.play().then(() => setPlaying(true)).catch((e) => console.warn("[radio] playback failed", e)); }
   }
 
   return (

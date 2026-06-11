@@ -138,7 +138,7 @@ export function PodcastsTab() {
 
   function toggleCurrent() {
     const a = audioRef.current; if (!a) return;
-    if (a.paused) a.play().catch(() => {}); else a.pause();
+    if (a.paused) a.play().catch((e) => console.warn("[podcasts] playback failed", e)); else a.pause();
   }
 
   return (

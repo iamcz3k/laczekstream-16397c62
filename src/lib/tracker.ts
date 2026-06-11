@@ -143,7 +143,9 @@ async function beat() {
         last_seen_at: new Date().toISOString(),
       })
       .eq("session_key", sessionKey);
-  } catch {}
+  } catch (e) {
+    console.warn("[tracker] heartbeat failed", e);
+  }
 }
 
 async function maybePathChange() {
@@ -155,7 +157,9 @@ async function maybePathChange() {
       .from("visitor_sessions")
       .update({ current_path: p, last_seen_at: new Date().toISOString() })
       .eq("session_key", sessionKey);
-  } catch {}
+  } catch (e) {
+    console.warn("[tracker] path update failed", e);
+  }
 }
 
 export async function trackWatch(entry: { kind: string; id: string; title?: string }) {
@@ -173,7 +177,9 @@ export async function trackWatch(entry: { kind: string; id: string; title?: stri
       .from("visitor_sessions")
       .update({ watched: watched.slice(0, 50) as never })
       .eq("session_key", sessionKey);
-  } catch {}
+  } catch (e) {
+    console.warn("[tracker] trackWatch failed", e);
+  }
 }
 
 export async function trackSearch(query: string) {
@@ -191,7 +197,9 @@ export async function trackSearch(query: string) {
       .from("visitor_sessions")
       .update({ searches: searches.slice(0, 30) as never })
       .eq("session_key", sessionKey);
-  } catch {}
+  } catch (e) {
+    console.warn("[tracker] trackSearch failed", e);
+  }
 }
 
 export function stopTracking() {
