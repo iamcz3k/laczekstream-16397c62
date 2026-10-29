@@ -15,6 +15,13 @@
       "when": 1790331936551,
       "tag": "0001_create_social_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793261530570,
+      "tag": "0002_latest_app_cloud_schema",
+      "breakpoints": true
     }
   ]
 }
