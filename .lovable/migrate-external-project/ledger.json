@@ -1,0 +1,100 @@
+[
+  {
+    "capability": "code",
+    "source": "uploaded latest code archive",
+    "outcome": "inspect and preserve",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "schema",
+    "source": "uploaded latest code archive",
+    "outcome": "preserve existing Lovable Cloud",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "records",
+    "source": "uploaded latest code archive",
+    "outcome": "preserve existing Lovable Cloud",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "auth identities",
+    "source": "uploaded latest code archive",
+    "outcome": "preserve existing Lovable Cloud",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "authorization",
+    "source": "uploaded latest code archive",
+    "outcome": "inspect and preserve",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "uploaded file bytes",
+    "source": "uploaded latest code archive",
+    "outcome": "inspect and preserve",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "external providers",
+    "source": "uploaded latest code archive",
+    "outcome": "inspect and preserve",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "public endpoints",
+    "source": "uploaded latest code archive",
+    "outcome": "inspect and preserve",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "callbacks",
+    "source": "uploaded latest code archive",
+    "outcome": "inspect and preserve",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "webhooks",
+    "source": "uploaded latest code archive",
+    "outcome": "inspect and preserve",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "schedules",
+    "source": "uploaded latest code archive",
+    "outcome": "inspect and preserve",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "secrets",
+    "source": "uploaded latest code archive",
+    "outcome": "inspect and preserve",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "cutover",
+    "source": "uploaded latest code archive",
+    "outcome": "inspect and preserve",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  },
+  {
+    "capability": "verification",
+    "source": "uploaded latest code archive",
+    "outcome": "inspect and preserve",
+    "status": "pending",
+    "next_action": "Compare source with current app and Cloud"
+  }
+]

@@ -83,7 +83,7 @@ export function playStatic() {
   src.start();
 }
 
-/** YouTube-y cheerful ding (random short jingle). */
+/** Cheerful ding (random short jingle). */
 export function playJingle() {
   const a = ac(); if (!a) return;
   const notes = [523.25, 659.25, 783.99, 1046.5];
@@ -102,31 +102,11 @@ export function playJingle() {
   });
 }
 
-/** CCTV / surveillance beep loop. */
-export function playCctvBeep() {
-  const a = ac(); if (!a) return;
-  const t0 = a.currentTime;
-  for (let i = 0; i < 4; i++) {
-    const start = t0 + i * 0.45;
-    const osc = a.createOscillator();
-    osc.type = "sine";
-    osc.frequency.value = 1200;
-    const g = a.createGain();
-    g.gain.setValueAtTime(0.0001, start);
-    g.gain.exponentialRampToValueAtTime(0.25, start + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, start + 0.18);
-    osc.connect(g).connect(a.destination);
-    osc.start(start); osc.stop(start + 0.2);
-  }
-}
-
 export function playForTab(tab: string) {
   switch (tab) {
     case "movies": return playPopcorn();
     case "football": return playWhistle();
     case "tv": return playStatic();
-    case "youtube": return playJingle();
-    case "cctv": return playCctvBeep();
     default: return playJingle();
   }
 }

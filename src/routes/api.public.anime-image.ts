@@ -13,14 +13,14 @@ export const Route = createFileRoute("/api/public/anime-image")({
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS_HEADERS }),
       GET: async ({ request }) => {
         const url = new URL(request.url).searchParams.get("url") || "";
-        if (!/^https:\/\/[^/]*otakudesu\.[^/]+\//i.test(url)) {
+        if (!/^https:\/\/[^/]*(?:otakudesu\.|oploverz\.|wp\.com\/)/i.test(url)) {
           return new Response("Blocked", { status: 400, headers: CORS_HEADERS });
         }
 
         const upstream = await fetch(url, {
           headers: {
             "user-agent": "Mozilla/5.0",
-            referer: "https://otakudesu.blog/",
+            referer: "https://oploverz.am/",
             accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
           },
         });

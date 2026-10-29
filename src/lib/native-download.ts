@@ -12,6 +12,17 @@ type FilesystemModule = {
   Directory: { ExternalStorage: string };
 };
 
+export function startBrowserDownload(url: string, filename: string): void {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener noreferrer";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  window.setTimeout(() => a.remove(), 1000);
+}
+
 export async function downloadToDevice(url: string, filename: string): Promise<"native" | "web"> {
   const cap = (globalThis as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
   if (cap?.isNativePlatform?.()) {
@@ -36,6 +47,6 @@ export async function downloadToDevice(url: string, filename: string): Promise<"
       // fall through to web behavior
     }
   }
-  window.open(url, "_blank", "noopener,noreferrer");
+  startBrowserDownload(url, filename);
   return "web";
 }

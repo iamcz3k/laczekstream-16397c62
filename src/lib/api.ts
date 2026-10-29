@@ -17,8 +17,53 @@ export type MediaItem = {
   rating?: number;
 };
 
-const ANIME_API = "https://www.sankavollerei.com/anime";
+// Route all anime API calls through our own edge proxy first, and fall back
+// to public CORS proxies if the edge route is unreachable (e.g. stale
+// deployment) so the anime tab never shows "No anime found" because of infra.
+const ANIME_DIRECT = "https://wajik-anime-api.vercel.app/oploverz";
+const ANIME_API = "/api/public/anime-api?path=";
+function animeUrl(path: string) {
+  return `${ANIME_API}${encodeURIComponent(path)}`;
+}
+async function animeFetch(path: string): Promise<Response> {
+  // Try edge proxy first
+  try {
+    const r = await fetch(animeUrl(path));
+    if (r.ok) return r;
+  } catch {}
+  // Fallback: public CORS bouncers
+  const direct = `${ANIME_DIRECT}${path}`;
+  const fallbacks = [
+    `https://corsproxy.io/?${encodeURIComponent(direct)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(direct)}`,
+  ];
+  for (const u of fallbacks) {
+    try {
+      const r = await fetch(u);
+      if (r.ok) return r;
+    } catch {}
+  }
+  // Last resort — direct (will usually CORS-fail in the browser but throw cleanly)
+  return fetch(direct);
+}
 const JIKAN_API = "https://api.jikan.moe/v4";
+const KITSU_API = "https://kitsu.io/api/edge";
+
+function animeCatalogUrl(provider: "kitsu" | "jikan", path: string) {
+  if (typeof window === "undefined") {
+    const base = provider === "kitsu" ? KITSU_API : JIKAN_API;
+    return `${base}${path}`;
+  }
+  return `/api/public/anime-catalog?provider=${provider}&path=${encodeURIComponent(path)}`;
+}
+
+function kitsuFetch(path: string) {
+  return fetch(animeCatalogUrl("kitsu", path));
+}
+
+function jikanFetch(path: string) {
+  return fetch(animeCatalogUrl("jikan", path));
+}
 
 export type AnimeItem = {
   id: string;
@@ -61,8 +106,9 @@ function cleanAnimeTitle(title: string) {
 export async function animePosterFallback(title: string): Promise<string> {
   const key = cleanAnimeTitle(title).toLowerCase();
   if (!key) return "";
-  if (animePosterCache.has(key)) return animePosterCache.get(key)!;
-  const r = await fetch(`${JIKAN_API}/anime?q=${encodeURIComponent(key)}&limit=1`);
+  const cached = animePosterCache.get(key);
+  if (cached) return cached;
+  const r = await jikanFetch(`/anime?q=${encodeURIComponent(key)}&limit=1`);
   if (!r.ok) return "";
   const j = await r.json();
   const poster = j?.data?.[0]?.images?.webp?.large_image_url || j?.data?.[0]?.images?.jpg?.large_image_url || "";
@@ -160,6 +206,10 @@ export type DiscoverOpts = {
   sortBy?: "popularity.desc" | "vote_average.desc" | "release_date.desc" | "revenue.desc";
   minRating?: number;
   personId?: number;
+  /** ISO 639-1 code, e.g. "hi" (Hindi), "te" (Telugu), "en" (English). */
+  originalLanguage?: string;
+  /** ISO 3166-1 code, e.g. "IN", "US". Filters by production region. */
+  region?: string;
 };
 
 export async function tmdbDiscoverAdvanced(kind: "movie" | "tv", opts: DiscoverOpts, page = 1): Promise<MediaItem[]> {
@@ -171,6 +221,8 @@ export async function tmdbDiscoverAdvanced(kind: "movie" | "tv", opts: DiscoverO
     else params.set("first_air_date_year", String(opts.year));
   }
   if (opts.personId) params.set("with_people", String(opts.personId));
+  if (opts.originalLanguage) params.set("with_original_language", opts.originalLanguage);
+  if (opts.region) params.set("with_origin_country", opts.region);
   const r = await fetch(`${TMDB}/discover/${kind}?${params.toString()}`);
   if (!r.ok) return [];
   const j = await r.json();
@@ -269,64 +321,226 @@ export async function tmdbRandomMovie(): Promise<MediaItem | null> {
 
 function proxiedAnimePoster(src?: string) {
   if (!src) return undefined;
-  if (/^https?:\/\/[^/]*otakudesu\./i.test(src)) return `/api/public/anime-image?url=${encodeURIComponent(src)}`;
+  if (/^https?:\/\/[^/]*(?:otakudesu\.|oploverz\.|wp\.com\/)/i.test(src)) return `/api/public/anime-image?url=${encodeURIComponent(src.replace(/^http:\/\//i, "https://"))}`;
   return src;
 }
 
+function animeSlug(href?: string) {
+  if (!href) return "";
+  try {
+    const parts = new URL(href).pathname.split("/").filter(Boolean);
+    return parts.at(-1) || "";
+  } catch {
+    return "";
+  }
+}
+
+function seriesSlugFromEpisode(slug: string) {
+  return slug.replace(/-episode-[^-]+(-subtitle-indonesia)?$/i, "").replace(/-subtitle-indonesia$/i, "");
+}
+
 function mapAnime(item: any): AnimeItem {
+  const rawId = item.slug || item.animeId || item.id || animeSlug(item.href);
+  const id = !/\/anime\//.test(item.href || "") && /-episode-/i.test(rawId) ? seriesSlugFromEpisode(rawId) : rawId;
   return {
-    id: item.animeId || item.slug || item.id,
-    title: item.title || "Untitled anime",
+    id,
+    title: cleanAnimeTitle(item.seriesName?.split("\t")[0] || item.title || "") || "Untitled anime",
     poster: proxiedAnimePoster(item.poster),
-    status: item.status,
-    episodes: item.episodes,
-    score: item.score,
-    latestReleaseDate: item.latestReleaseDate,
+    status: item.status || item.type,
+    episodes: Number(String(item.episode || item.episodes || "").match(/\d+/)?.[0]) || undefined,
+    score: item.score || undefined,
+    latestReleaseDate: item.releaseTime || item.latestReleaseDate,
   };
 }
 
+function uniqueAnime(items: AnimeItem[]) {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (!item.id || seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
+function mapJikanAnime(item: any): AnimeItem {
+  return {
+    id: `jikan-${item.mal_id}`,
+    title: item.title_english || item.title || "Untitled anime",
+    poster: item.images?.webp?.large_image_url || item.images?.jpg?.large_image_url,
+    status: item.status || item.type,
+    episodes: item.episodes ?? undefined,
+    score: item.score ? String(item.score) : undefined,
+    latestReleaseDate: item.aired?.string || undefined,
+  };
+}
+
+async function jikanAnimeList(url: string): Promise<AnimeItem[]> {
+  const path = url.startsWith(JIKAN_API) ? url.slice(JIKAN_API.length) : url;
+  const response = await jikanFetch(path);
+  if (!response.ok) throw new Error("anime catalogue failed");
+  const json = await response.json();
+  return (json?.data ?? []).map(mapJikanAnime).filter((item: AnimeItem) => item.id);
+}
+
+function mapKitsuAnime(item: any): AnimeItem {
+  const attributes = item.attributes ?? {};
+  return {
+    id: `kitsu-${item.id}`,
+    title: attributes.titles?.en || attributes.titles?.en_jp || attributes.canonicalTitle || "Untitled anime",
+    poster: attributes.posterImage?.large || attributes.posterImage?.medium,
+    status: attributes.status === "current" ? "Currently Airing" : attributes.status,
+    episodes: attributes.episodeCount ?? undefined,
+    score: attributes.averageRating ? String(Number(attributes.averageRating) / 10) : undefined,
+    latestReleaseDate: attributes.startDate || undefined,
+  };
+}
+
+async function kitsuAnimeList(url: string): Promise<AnimeItem[]> {
+  const path = url.startsWith(KITSU_API) ? url.slice(KITSU_API.length) : url;
+  const response = await kitsuFetch(path);
+  if (!response.ok) throw new Error("anime catalogue failed");
+  const json = await response.json();
+  return (json?.data ?? []).map(mapKitsuAnime).filter((item: AnimeItem) => item.id);
+}
+
 export async function animeHome(): Promise<AnimeItem[]> {
-  const r = await fetch(`${ANIME_API}/home`);
-  if (!r.ok) throw new Error("anime home failed");
-  const j = await r.json();
-  const ongoing = j?.data?.ongoing?.animeList ?? [];
-  const complete = j?.data?.complete?.animeList ?? [];
-  return [...ongoing, ...complete].map(mapAnime).filter((item) => item.id);
+  try {
+    const response = await animeFetch("/home");
+    if (!response.ok) throw new Error("anime home failed");
+    const json = await response.json();
+    const popular = json?.data?.popularToday?.animeList ?? [];
+    const latest = json?.data?.latestRelease?.animeList ?? [];
+    const items = uniqueAnime([...popular, ...latest].map(mapAnime));
+    if (items.length) return items;
+    throw new Error("empty anime home");
+  } catch {
+    try {
+      return await kitsuAnimeList(`${KITSU_API}/anime?page%5Blimit%5D=20&sort=-averageRating`);
+    } catch {
+      return jikanAnimeList(`${JIKAN_API}/top/anime?filter=airing&limit=24`);
+    }
+  }
 }
 
 export async function animeSearch(q: string): Promise<AnimeItem[]> {
-  const r = await fetch(`${ANIME_API}/search/${encodeURIComponent(q)}`);
-  if (!r.ok) throw new Error("anime search failed");
-  const j = await r.json();
-  return (j?.data?.animeList ?? []).map(mapAnime).filter((item: AnimeItem) => item.id);
+  try {
+    const response = await animeFetch(`/search?q=${encodeURIComponent(q)}`);
+    if (!response.ok) throw new Error("anime search failed");
+    const json = await response.json();
+    const items = uniqueAnime((json?.data?.animeList ?? []).map(mapAnime));
+    if (items.length) return items;
+    throw new Error("empty anime search");
+  } catch {
+    try {
+      return await kitsuAnimeList(`${KITSU_API}/anime?filter%5Btext%5D=${encodeURIComponent(q)}&page%5Blimit%5D=20`);
+    } catch {
+      return jikanAnimeList(`${JIKAN_API}/anime?q=${encodeURIComponent(q)}&limit=24&sfw=true`);
+    }
+  }
+}
+
+// Resolve a Kitsu entry to its MyAnimeList id (the id every anime player keys on).
+async function kitsuMalId(kitsuId: string): Promise<string> {
+  try {
+    const response = await kitsuFetch(`/anime/${kitsuId}/mappings?page%5Blimit%5D=20`);
+    if (!response.ok) return "";
+    const json = await response.json();
+    const mapping = (json?.data ?? []).find((item: any) => item?.attributes?.externalSite === "myanimelist/anime");
+    return mapping?.attributes?.externalId ? String(mapping.attributes.externalId) : "";
+  } catch {
+    return "";
+  }
 }
 
 export async function animeDetail(id: string): Promise<AnimeDetail | null> {
-  const r = await fetch(`${ANIME_API}/anime/${encodeURIComponent(id)}`);
+  if (id.startsWith("kitsu-")) {
+    const kitsuId = id.slice(6);
+    if (!/^\d+$/.test(kitsuId)) return null;
+    const [response, malId] = await Promise.all([kitsuFetch(`/anime/${kitsuId}`), kitsuMalId(kitsuId)]);
+    if (!response.ok) throw new Error("anime detail failed");
+    const json = await response.json();
+    const item = json?.data;
+    if (!item) return null;
+    const attributes = item.attributes ?? {};
+    const episodeCount = Number(attributes.episodeCount || 0) || 12;
+    return {
+      ...mapKitsuAnime(item),
+      japanese: attributes.titles?.ja_jp,
+      duration: attributes.episodeLength ? `${attributes.episodeLength} min` : undefined,
+      studios: undefined,
+      genres: [],
+      episodeList: Array.from({ length: episodeCount }, (_, index) => ({
+        id: `ep-${malId || `kitsu${kitsuId}`}-${index + 1}`,
+        title: `Episode ${index + 1}`,
+        episode: index + 1,
+      })),
+    };
+  }
+  if (id.startsWith("jikan-")) {
+    const malId = id.slice(6);
+    if (!/^\d+$/.test(malId)) return null;
+    const detailResponse = await jikanFetch(`/anime/${malId}/full`);
+    if (!detailResponse.ok) throw new Error("anime detail failed");
+    const detailJson = await detailResponse.json();
+    const item = detailJson?.data;
+    if (!item) return null;
+    const fallbackCount = Number(item.episodes || 0) || 12;
+    const episodeList: AnimeEpisode[] = Array.from({ length: fallbackCount }, (_, index) => ({
+      id: `ep-${malId}-${index + 1}`,
+      title: `Episode ${index + 1}`,
+      episode: index + 1,
+    }));
+    return {
+      ...mapJikanAnime(item),
+      japanese: item.title_japanese,
+      duration: item.duration,
+      studios: (item.studios ?? []).map((studio: any) => studio.name).filter(Boolean).join(", "),
+      genres: [...(item.genres ?? []), ...(item.themes ?? [])].map((genre: any) => genre.name).filter(Boolean),
+      episodeList,
+    };
+  }
+  const r = await animeFetch(`/anime/${encodeURIComponent(id)}`);
   if (!r.ok) throw new Error("anime detail failed");
   const j = await r.json();
-  const d = j?.data;
+  const d = j?.data?.details ?? j?.data;
   if (!d) return null;
   return {
     ...mapAnime({ ...d, animeId: id }),
     japanese: d.japanese,
     duration: d.duration,
-    studios: d.studios,
-    genres: (d.genreList ?? []).map((g: any) => g.title).filter(Boolean),
+    studios: d.studio || d.studios,
+    genres: (d.genres ?? d.genreList ?? []).map((genre: any) => typeof genre === "string" ? genre : genre.title).filter(Boolean),
     episodeList: (d.episodeList ?? []).map((episode: any) => ({
-      id: episode.episodeId,
-      title: episode.title || `Episode ${episode.eps ?? ""}`,
-      episode: episode.eps,
+      id: episode.episodeId || animeSlug(episode.href),
+      title: cleanAnimeTitle(episode.title) || `Episode ${episode.episode ?? episode.eps ?? ""}`,
+      episode: Number(episode.episode ?? episode.eps) || undefined,
       date: episode.date,
     })).filter((episode: AnimeEpisode) => episode.id),
   };
 }
 
 export async function animeEpisodeDetail(id: string): Promise<AnimeEpisodeDetail | null> {
-  const r = await fetch(`${ANIME_API}/episode/${encodeURIComponent(id)}`);
+  const match = /^ep-(\d+)-(\d+)$/.exec(id);
+  if (match) {
+    const [, malId, episodeNumber] = match;
+    const sources: AnimeStreamSource[] = [
+      { label: "Server 1", quality: "Sub", url: `https://vidlink.pro/anime/${malId}/${episodeNumber}/sub` },
+      { label: "Server 1", quality: "Dub", url: `https://vidlink.pro/anime/${malId}/${episodeNumber}/dub` },
+      { label: "Server 2", quality: "Sub", url: `https://player.videasy.net/anime/${malId}/${episodeNumber}` },
+      { label: "Server 2", quality: "Dub", url: `https://player.videasy.net/anime/${malId}/${episodeNumber}?dub=true` },
+      { label: "Server 3", quality: "Sub", url: `https://vidsrc.cc/v2/embed/anime/ani${malId}/${episodeNumber}/sub` },
+      { label: "Server 3", quality: "Dub", url: `https://vidsrc.cc/v2/embed/anime/ani${malId}/${episodeNumber}/dub` },
+    ];
+    return {
+      title: `Episode ${episodeNumber}`,
+      defaultStreamingUrl: sources[0].url,
+      sources,
+    };
+  }
+  const r = await animeFetch(`/episode/${encodeURIComponent(id)}`);
   if (!r.ok) throw new Error("anime episode failed");
   const j = await r.json();
-  const d = j?.data;
+  const d = j?.data?.details ?? j?.data;
   if (!d) return null;
   const serverSources: AnimeStreamSource[] = (d.server?.qualities ?? []).flatMap((quality: any) =>
     (quality.serverList ?? []).map((server: any) => ({
@@ -343,17 +557,17 @@ export async function animeEpisodeDetail(id: string): Promise<AnimeEpisodeDetail
     return score(b) - score(a);
   });
   return {
-    title: d.title || "Anime episode",
-    animeId: d.animeId,
-    defaultStreamingUrl: d.defaultStreamingUrl,
-    sources: [...rankedSources, ...(d.defaultStreamingUrl ? [{ label: "Auto", quality: "Auto", url: d.defaultStreamingUrl }] : [])],
-    prevEpisodeId: d.prevEpisode?.episodeId,
-    nextEpisodeId: d.nextEpisode?.episodeId,
+    title: cleanAnimeTitle(d.title) || "Anime episode",
+    animeId: d.seriesSlug || d.animeId,
+    defaultStreamingUrl: d.streamingUrl || d.defaultStreamingUrl,
+    sources: [...(d.streamingUrl ? [{ label: "Main", quality: "Auto", url: d.streamingUrl }] : []), ...rankedSources, ...(d.defaultStreamingUrl ? [{ label: "Auto", quality: "Auto", url: d.defaultStreamingUrl }] : [])],
+    prevEpisodeId: d.prevEpisode?.episodeId || animeSlug(d.prevEpisode?.href) || undefined,
+    nextEpisodeId: d.nextEpisode?.episodeId || animeSlug(d.nextEpisode?.href) || undefined,
   };
 }
 
 export async function animeServerUrl(serverId: string): Promise<string> {
-  const r = await fetch(`${ANIME_API}/server/${encodeURIComponent(serverId)}`);
+  const r = await animeFetch(`/server/${encodeURIComponent(serverId)}`);
   if (!r.ok) throw new Error("anime server failed");
   const j = await r.json();
   return j?.data?.url || "";
@@ -392,6 +606,27 @@ export async function tmdbSeasonEpisodes(tvId: number, seasonNumber: number): Pr
     still: episode.still_path ? `https://image.tmdb.org/t/p/w500${episode.still_path}` : undefined,
   }));
 }
+
+/** IMDb id + first YouTube trailer key for a movie (used by Provider 1). */
+export async function tmdbMovieExtras(id: number, kind: "movie" | "tv" = "movie"): Promise<{ imdbId?: string; trailerKey?: string }> {
+  const r = await fetch(`${TMDB}/${kind}/${id}?api_key=${TMDB_KEY}&append_to_response=videos,external_ids`);
+  if (!r.ok) return {};
+  const j = await r.json();
+  const vids: any[] = j.videos?.results ?? [];
+  const t =
+    vids.find((v) => v.site === "YouTube" && v.type === "Trailer" && v.official) ||
+    vids.find((v) => v.site === "YouTube" && v.type === "Trailer") ||
+    vids.find((v) => v.site === "YouTube");
+  return { imdbId: (j.imdb_id || j.external_ids?.imdb_id) || undefined, trailerKey: t?.key };
+}
+
+/** Provider 1 (IMDbPlay) servers — all keyed by IMDb id. Work for movies and series. */
+export const PROVIDER1_SERVERS = [
+  { id: "imdbplay", label: "IMDbPlay Main", url: (imdb: string, tv?: { s: number; e: number }) => tv ? `https://proxy.garageband.rocks/embed/tv/${imdb}/${tv.s}/${tv.e}` : `https://proxy.garageband.rocks/embed/movie/${imdb}` },
+  { id: "imdbplay-vidsrc", label: "IMDbPlay 2", url: (imdb: string, tv?: { s: number; e: number }) => tv ? `https://vidsrc.xyz/embed/tv?imdb=${imdb}&season=${tv.s}&episode=${tv.e}` : `https://vidsrc.xyz/embed/movie?imdb=${imdb}` },
+  { id: "imdbplay-2embed", label: "IMDbPlay 3", url: (imdb: string, tv?: { s: number; e: number }) => tv ? `https://www.2embed.cc/embedtv/${imdb}&s=${tv.s}&e=${tv.e}` : `https://www.2embed.cc/embed/${imdb}` },
+  { id: "imdbplay-multi", label: "IMDbPlay 4", url: (imdb: string, tv?: { s: number; e: number }) => tv ? `https://multiembed.mov/?video_id=${imdb}&s=${tv.s}&e=${tv.e}` : `https://multiembed.mov/?video_id=${imdb}` },
+] as const;
 
 export type EmbedProvider = "videasy" | "vidsrcvip" | "vidsrcme" | "vidjoy" | "vidsrcxyz" | "vidsrcicu" | "vidlink" | "autoembed" | "111movies" | "vidfast" | "2embed" | "vidsrcto";
 
@@ -474,27 +709,6 @@ export type Channel = {
   url: string;
   streams?: string[];
 };
-
-export type CctvCamera = {
-  id: string;
-  name: string;
-  city?: string;
-  country?: string;
-  info?: string;
-  url: string;
-  thumbnail?: string;
-  isIframe?: boolean;
-  isStreaming?: boolean;
-  latitude?: number;
-  longitude?: number;
-};
-
-export async function cctvCameras(): Promise<CctvCamera[]> {
-  const res = await fetch("/api/public/cctv-cameras");
-  if (!res.ok) throw new Error("cctv cameras failed");
-  const json = await res.json();
-  return json?.cameras ?? [];
-}
 
 type RawStream = {
   channel?: string | null;
@@ -672,7 +886,12 @@ export async function footballMatches() {
   const res = await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard");
   if (!res.ok) throw new Error("football api failed");
   const json = await res.json();
-  return (json?.events ?? []) as any[];
+  const rank: Record<string, number> = { in: 0, pre: 1, post: 2 };
+  return ((json?.events ?? []) as any[]).sort((a, b) => {
+    const ra = rank[a?.status?.type?.state] ?? 3;
+    const rb = rank[b?.status?.type?.state] ?? 3;
+    return ra - rb || new Date(a?.date).getTime() - new Date(b?.date).getTime();
+  });
 }
 
 export type FootballStreamMatch = {
@@ -683,6 +902,8 @@ export type FootballStreamMatch = {
   poster?: string;
   date?: number;
   viewers?: number;
+  status?: "live" | "upcoming";
+  available?: boolean;
   teams?: {
     home?: { name?: string; badge?: string };
     away?: { name?: string; badge?: string };

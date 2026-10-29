@@ -7,10 +7,10 @@ import { FeaturedBanner } from "@/components/FeaturedBanner";
 import { AnimeTab } from "@/components/AnimeTab";
 import { TVTab } from "@/components/TVTab";
 import { LiveSportsTab } from "@/components/LiveSportsTab";
-import { MusicTab } from "@/components/MusicTab";
-import { CctvTab } from "@/components/CctvTab";
+import { LiveScoreTab } from "@/components/LiveScoreTab";
 import { RadioTab } from "@/components/RadioTab";
 import { PodcastsTab } from "@/components/PodcastsTab";
+import { GamesTab } from "@/components/GamesTab";
 import { GenresTab } from "@/components/GenresTab";
 import { LibraryTab } from "@/components/LibraryTab";
 import { MediaCard } from "@/components/MediaCard";
@@ -25,23 +25,34 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "LACZEK STREAM — Free Movies, TV, Football & YouTube" },
-      { name: "description", content: "Stream free movies, live TV channels, football, YouTube and public CCTV cameras — clean matte-black player." },
+      { title: "LACZEK STREAM — Free Movies, TV Shows & Live Football" },
+      { name: "description", content: "Watch free movies and series, live TV channels, live football, radio and podcasts in one clean matte-black player." },
+      { property: "og:title", content: "LACZEK STREAM — Free Movies, TV Shows & Live Football" },
+      { property: "og:description", content: "Watch free movies and series, live TV channels, live football, radio and podcasts in one clean matte-black player." },
+      { property: "og:url", content: "https://laczekstream.lovable.app/" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://laczekstream.lovable.app/" },
     ],
   }),
 });
 
 function Index() {
-  const [tab, setTab] = useState<TabKey>(() => {
-    if (typeof window === "undefined") return "movies";
-    return (getPrefs().defaultTab as TabKey | undefined) || "movies";
-  });
+  const [tab, setTab] = useState<TabKey>("movies");
   const [movieKind, setMovieKind] = useState<"movie" | "tv" | "anime">("movie");
   const [librarySection, setLibrarySection] = useState<"continue" | "watchlist" | "history">("continue");
   const [continueList, setContinueList] = useState<LibraryEntry[]>([]);
-  const [name, setName] = useState<string>(() => getPrefs().name || "");
+  const [name, setName] = useState<string>("");
   const [recommended, setRecommended] = useState<MediaItem[]>([]);
   const [logoAnim, setLogoAnim] = useState<LogoAnimKind | null>(null);
+
+  useEffect(() => {
+    const prefs = getPrefs();
+    setTab((prefs.defaultTab as TabKey | undefined) || "movies");
+    setName(prefs.name || "");
+  }, []);
 
   useEffect(() => {
     const refresh = () => setContinueList(getContinueWatching().slice(0, 12));
@@ -58,7 +69,7 @@ function Index() {
   // Listen for brand-logo clicks to play the per-tab celebration animation.
   useEffect(() => {
     function handler() {
-      const kind: LogoAnimKind = (["movies", "football", "tv", "youtube", "cctv"] as TabKey[]).includes(tab)
+      const kind: LogoAnimKind = (["movies", "football", "tv"] as TabKey[]).includes(tab)
         ? (tab as LogoAnimKind)
         : "default";
       setLogoAnim(kind);
@@ -88,7 +99,8 @@ function Index() {
       <Header active={tab} onChange={setTab} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6"><FeaturedBanner /></div>
+        <h1 className="sr-only">LACZEK STREAM — Free Movies, TV Shows, Football, Anime, Radio & Podcasts</h1>
+        <div className="feat-featured mb-6"><FeaturedBanner /></div>
         {tab === "movies" && (
           <section className="space-y-6">
             <div className="flex items-end justify-between flex-wrap gap-3">
@@ -115,7 +127,7 @@ function Index() {
         )}
 
         {tab === "movies" && movieKind === "movie" && recommended.length > 0 && (
-          <section className="mt-12 space-y-4">
+          <section className="feat-recommended mt-12 space-y-4">
             <div className="flex items-end justify-between gap-3">
               <div>
                 <h3 className="flex items-center gap-2 text-2xl font-black tracking-tight">
@@ -130,7 +142,7 @@ function Index() {
                   key={m.id}
                   to="/watch/$kind/$id"
                   params={{ kind: m.type, id: String(m.id) }}
-                  className="group w-40 shrink-0 sm:w-44 rounded-[20px] overflow-hidden glass-card hover:border-primary transition-all hover:-translate-y-1"
+                  className="group w-40 shrink-0 sm:w-44 rounded-[20px] overflow-hidden bg-secondary/50 border border-border hover:border-primary transition-all hover:-translate-y-1"
                 >
                   <div className="aspect-[2/3] bg-muted overflow-hidden">
                     {m.poster && <img src={m.poster} alt={m.title} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition" />}
@@ -165,25 +177,27 @@ function Index() {
           </section>
         )}
 
-        {tab === "youtube" && (
+        {tab === "livescore" && (
           <section className="space-y-6">
             <div>
-              <h2 className="text-3xl font-black tracking-tight">{name ? `${name} on YouTube` : "YouTube"}</h2>
-              <p className="text-sm text-muted-foreground mt-1">Stream songs, videos, creators and live streams</p>
+              <h2 className="text-3xl font-black tracking-tight">LiveScore</h2>
+              <p className="text-sm text-muted-foreground mt-1">Live scores, lineups, events & stats</p>
             </div>
-            <MusicTab />
+            <LiveScoreTab />
           </section>
         )}
 
-        {tab === "cctv" && (
+        {tab === "games" && (
           <section className="space-y-6">
             <div>
-              <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Live CCTV` : "Live CCTV"}</h2>
-              <p className="text-sm text-muted-foreground mt-1">Free public camera streams worldwide</p>
+              <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Games` : "Games"}</h2>
+              <p className="text-sm text-muted-foreground mt-1">Free-to-play games, updated weekly</p>
             </div>
-            <CctvTab />
+            <GamesTab />
           </section>
         )}
+
+
 
         {tab === "radio" && (
           <section className="space-y-6">
@@ -227,7 +241,7 @@ function Index() {
 
         {/* Continue Watching strip — only on the Movies tab so it's discoverable but doesn't repeat everywhere */}
         {tab === "movies" && continueList.length > 0 && (
-          <section className="mt-12 space-y-4">
+          <section className="feat-continue mt-12 space-y-4">
             <div className="flex items-end justify-between gap-3">
               <div>
                 <h3 className="flex items-center gap-2 text-2xl font-black tracking-tight"><Clock className="h-5 w-5 text-primary" /> Continue Watching</h3>
@@ -255,8 +269,13 @@ function Index() {
       </main>
 
       <footer className="border-t border-border mt-16">
-        <div className="max-w-7xl mx-auto px-4 py-6 text-center text-xs text-muted-foreground">
-          © LACZEK STREAM · Built for entertainment
+        <div className="max-w-7xl mx-auto px-4 py-6 text-center text-xs text-muted-foreground space-y-2">
+          <p>© 2026 LACZEK STREAM · Built for entertainment</p>
+          <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <Link to="/privacy" className="hover:text-foreground underline-offset-4 hover:underline">Privacy Policy</Link>
+            <span className="opacity-40">·</span>
+            <Link to="/terms" className="hover:text-foreground underline-offset-4 hover:underline">Terms of Use</Link>
+          </p>
         </div>
       </footer>
     </div>

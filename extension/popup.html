@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>LACZEK STREAM</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; width: 380px; height: 520px; display: flex; flex-direction: column;
+        background: #0a0a0a; color: #f5f5f5;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid #1e1e1e; }
+      .logo { font-weight: 900; letter-spacing: -0.4px; font-size: 14px; }
+      .logo span { color: #ff8a3d; }
+      .tabs { display: flex; gap: 6px; padding: 10px 12px 6px; }
+      .tab { flex: 1; padding: 7px 0; border: 0; border-radius: 999px; font-size: 11px; font-weight: 800;
+             background: #161616; color: #a3a3a3; cursor: pointer; }
+      .tab.active { background: #ff8a3d; color: #100a05; }
+      .pane { display: none; flex: 1; min-height: 0; flex-direction: column; padding: 8px 12px 12px; }
+      .pane.active { display: flex; }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+      .chip { border: 1px solid #ff8a3d55; background: #ff8a3d18; color: #ff8a3d; border-radius: 999px;
+              padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
+      form { display: flex; gap: 6px; margin-top: 8px; }
+      input[type=text] { flex: 1; background: #141414; border: 1px solid #262626; border-radius: 999px;
+                         padding: 9px 12px; color: #fff; font-size: 12px; outline: none; }
+      input[type=text]:focus { border-color: #ff8a3d; }
+      button.go { background: #ff8a3d; color: #100a05; border: 0; border-radius: 999px; padding: 0 14px; font-weight: 800; cursor: pointer; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; overflow-y: auto; }
+      .card { background: #141414; border: 1px solid #222; border-radius: 12px; padding: 12px 10px; text-align: left;
+              color: #eee; font-size: 12px; font-weight: 700; cursor: pointer; }
+      .card small { display: block; margin-top: 3px; font-weight: 500; color: #8b8b8b; font-size: 10px; }
+      .card:hover { border-color: #ff8a3d; }
+      .row { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+             background: #141414; border: 1px solid #222; border-radius: 12px; padding: 10px 12px; font-size: 12px; margin-bottom: 8px; }
+      .muted { color: #8b8b8b; font-size: 11px; }
+      switch, .sw { appearance: none; width: 36px; height: 20px; border-radius: 999px; background: #2a2a2a; position: relative; cursor: pointer; border: 0; }
+      .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #777; transition: .15s; }
+      .sw[aria-checked="true"] { background: #ff8a3d55; }
+      .sw[aria-checked="true"]::after { left: 19px; background: #ff8a3d; }
+      footer { padding: 8px 12px; border-top: 1px solid #1e1e1e; text-align: center; }
+      footer a { color: #ff8a3d; font-size: 11px; text-decoration: none; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">LA<span>CZEK</span> STREAM</div>
+      <div class="muted" style="margin-left:auto" id="status">Ready</div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-pane="quick">Quick</button>
+      <button class="tab" data-pane="live">Live</button>
+      <button class="tab" data-pane="set">Settings</button>
+    </div>
+
+    <section class="pane active" id="pane-quick">
+      <div class="grid">
+        <button class="card" data-open="/">Home<small>Movies, TV & more</small></button>
+        <button class="card" data-open="/?tab=football">Live Sports<small>Football streams</small></button>
+        <button class="card" data-open="/?tab=anime">Anime<small>Subbed & dubbed</small></button>
+        <button class="card" data-open="/radio">Radio<small>Live stations</small></button>
+        <button class="card" data-open="/podcasts">Podcasts<small>Listen now</small></button>
+        <button class="card" data-open="/downloads">Downloads<small>Offline titles</small></button>
+        <button class="card" data-open="/party">Watch Party<small>Watch together</small></button>
+        <button class="card" data-open="/adblocker">Ad blocker<small>Cleaner streams</small></button>
+      </div>
+      <form id="search">
+        <input type="text" id="s" placeholder="Search LACZEK STREAM…" autocomplete="off" />
+        <button class="go" type="submit">Go</button>
+      </form>
+    </section>
+
+    <section class="pane" id="pane-live">
+      <div id="matches" class="grid" style="grid-template-columns:1fr"></div>
+    </section>
+
+    <section class="pane" id="pane-set">
+      <div class="row"><div>Open links in new tab<div class="muted">Otherwise reuse current tab</div></div><button class="sw" id="opt-newtab" aria-checked="true"></button></div>
+      <div class="row"><div>Right-click search<div class="muted">Search selected text on the site</div></div><button class="sw" id="opt-ctx" aria-checked="true"></button></div>
+    </section>
+
+    <footer><a href="https://laczekstream.lovable.app" target="_blank" rel="noopener">Open LACZEK STREAM →</a></footer>
+    <script src="popup.js"></script>
+  </body>
+</html>

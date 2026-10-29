@@ -1,5 +1,7 @@
-// Visitor session tracker. Public visitors write only their own anonymous activity.
-import { supabase } from "@/integrations/supabase/client";
+// Visitor session tracker. Routes all writes through server functions
+// (admin client) so RLS stays locked down on the table.
+import { startVisit, heartbeat, trackPath, trackWatchFn, trackSearchFn, trackEventFn } from "@/lib/tracker.functions";
+import { getServerGeo } from "@/lib/geo.functions";
 import { getPrefs } from "@/lib/preferences";
 
 const SESSION_KEY_LS = "laczek:visitor:key";
@@ -31,11 +33,50 @@ async function fetchGeo(): Promise<GeoInfo> {
   try {
     const cached = sessionStorage.getItem("laczek:geo");
     if (cached) return JSON.parse(cached);
-    const r = await fetch("https://ipapi.co/json/");
-    if (!r.ok) return {};
-    const j = await r.json();
-    const geo: GeoInfo = { country: j.country_name || j.country, city: j.city, ip: j.ip };
-    sessionStorage.setItem("laczek:geo", JSON.stringify(geo));
+    let geo: GeoInfo = {};
+    // Primary: server-side request headers (CF/Vercel inject country/IP).
+    // Most accurate and covers every country including Uganda.
+    try {
+      const s = await getServerGeo();
+      if (s?.country) geo = { country: s.country, city: s.city || undefined, ip: s.ip || undefined };
+    } catch {}
+    // Fallback chain: ipapi.co → ipwho.is → ip-api.com
+    if (!geo.country) {
+    try {
+      const r = await fetch("https://ipapi.co/json/");
+      if (r.ok) {
+        const j = await r.json();
+        geo = { country: j.country_name || j.country, city: j.city, ip: j.ip };
+      }
+    } catch {}
+    // Fallback: ipwho.is — covers Uganda and other regions that ipapi sometimes misses.
+    if (!geo.country) {
+      try {
+        const r = await fetch("https://ipwho.is/");
+        if (r.ok) {
+          const j = await r.json();
+          if (j.success !== false) {
+            geo = { country: j.country || geo.country, city: j.city || geo.city, ip: j.ip || geo.ip };
+          }
+        }
+      } catch {}
+    }
+    // Final fallback: ip-api.com
+    if (!geo.country) {
+      try {
+        const r = await fetch("https://ip-api.com/json/?fields=status,country,city,query");
+        if (r.ok) {
+          const j = await r.json();
+          if (j.status === "success") {
+            geo = { country: j.country || geo.country, city: j.city || geo.city, ip: j.query || geo.ip };
+          }
+        }
+      } catch {}
+    }
+    } // end fallback chain
+    if (geo.country || geo.city || geo.ip) {
+      sessionStorage.setItem("laczek:geo", JSON.stringify(geo));
+    }
     return geo;
   } catch {
     return {};
@@ -59,63 +100,33 @@ function friendlyLabel(path: string): string {
 
 export async function startTracking() {
   if (typeof window === "undefined") return;
-  // FIX: removed the __laczekTracker guard that was preventing re-registration
-  // after a deploy reloads the JS bundle (module vars reset but guard stayed true
-  // via window property, so beat() would fire with empty sessionKey and silently fail).
   if ((window as unknown as { __laczekTracker?: boolean }).__laczekTracker) return;
   (window as unknown as { __laczekTracker?: boolean }).__laczekTracker = true;
 
   startedAt = Date.now();
-  // FIX: always read sessionKey from localStorage — never leave it as empty string.
   sessionKey = getSessionKey();
   lastPath = window.location.pathname;
   const geo = await fetchGeo();
   const prefs = getPrefs();
 
-  // Attach the signed-in user (if any) to this visitor session.
-  let userId: string | null = null;
-  let displayName: string | null = prefs.name || null;
   try {
-    const { data: sess } = await supabase.auth.getSession();
-    if (sess.session?.user) {
-      userId = sess.session.user.id;
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("full_name, username")
-        .eq("id", userId)
-        .maybeSingle();
-      if (prof?.full_name) displayName = prof.full_name;
-      else if (prof?.username) displayName = prof.username;
-    }
-  } catch {}
-
-  try {
-    await supabase
-      .from("visitor_sessions")
-      .upsert(
-        {
-          session_key: sessionKey,
-          name: displayName,
-          user_id: userId,
-          country: geo.country || null,
-          city: geo.city || null,
-          ip: geo.ip || null,
-          user_agent: navigator.userAgent,
-          device: detectDevice(),
-          current_path: lastPath,
-          last_seen_at: new Date().toISOString(),
-          // FIX: explicitly include these so the RLS WITH CHECK never sees NULLs
-          duration_seconds: 0,
-          page_views: 1,
-        },
-        { onConflict: "session_key" },
-      );
+    await startVisit({
+      data: {
+        session_key: sessionKey,
+        name: prefs.name || null,
+        country: geo.country || null,
+        city: geo.city || null,
+        ip: geo.ip || null,
+        user_agent: navigator.userAgent,
+        device: detectDevice(),
+        current_path: lastPath,
+      },
+    });
   } catch (e) {
     console.warn("[tracker] startVisit failed", e);
   }
 
   beat();
-  if (heartbeatTimer) window.clearInterval(heartbeatTimer);
   heartbeatTimer = window.setInterval(beat, HEARTBEAT_MS);
   window.addEventListener("beforeunload", () => beat());
   window.addEventListener("popstate", () => maybePathChange());
@@ -130,19 +141,16 @@ export async function startTracking() {
 }
 
 async function beat() {
-  // FIX: if sessionKey somehow empty, recover it from localStorage before giving up
-  if (!sessionKey) sessionKey = localStorage.getItem(SESSION_KEY_LS) || "";
   if (!sessionKey) return;
   try {
-    await supabase
-      .from("visitor_sessions")
-      .update({
+    await heartbeat({
+      data: {
+        session_key: sessionKey,
         duration_seconds: Math.round((Date.now() - startedAt) / 1000),
         current_path: window.location.pathname,
         name: getPrefs().name || null,
-        last_seen_at: new Date().toISOString(),
-      })
-      .eq("session_key", sessionKey);
+      },
+    });
   } catch {}
 }
 
@@ -151,47 +159,42 @@ async function maybePathChange() {
   if (p === lastPath) return;
   lastPath = p;
   try {
-    await supabase
-      .from("visitor_sessions")
-      .update({ current_path: p, last_seen_at: new Date().toISOString() })
-      .eq("session_key", sessionKey);
+    await trackPath({ data: { session_key: sessionKey, current_path: p, label: friendlyLabel(p) } });
   } catch {}
 }
 
 export async function trackWatch(entry: { kind: string; id: string; title?: string }) {
-  if (!sessionKey) sessionKey = localStorage.getItem(SESSION_KEY_LS) || "";
   if (!sessionKey) return;
-  try {
-    const { data: row } = await supabase
-      .from("visitor_sessions")
-      .select("watched")
-      .eq("session_key", sessionKey)
-      .maybeSingle();
-    const watched = Array.isArray(row?.watched) ? (row!.watched as unknown[]) : [];
-    watched.unshift({ ...entry, at: new Date().toISOString() });
-    await supabase
-      .from("visitor_sessions")
-      .update({ watched: watched.slice(0, 50) as never })
-      .eq("session_key", sessionKey);
-  } catch {}
+  try { await trackWatchFn({ data: { session_key: sessionKey, entry } }); } catch {}
 }
 
 export async function trackSearch(query: string) {
-  if (!sessionKey) sessionKey = localStorage.getItem(SESSION_KEY_LS) || "";
   if (!sessionKey || !query.trim()) return;
-  try {
-    const { data: row } = await supabase
-      .from("visitor_sessions")
-      .select("searches")
-      .eq("session_key", sessionKey)
-      .maybeSingle();
-    const searches = Array.isArray(row?.searches) ? (row!.searches as unknown[]) : [];
-    searches.unshift({ q: query.trim(), at: new Date().toISOString() });
-    await supabase
-      .from("visitor_sessions")
-      .update({ searches: searches.slice(0, 30) as never })
-      .eq("session_key", sessionKey);
-  } catch {}
+  try { await trackSearchFn({ data: { session_key: sessionKey, q: query.trim() } }); } catch {}
+  trackEvent(`Searched "${query.trim()}"`, "search", { query: query.trim() });
+}
+
+/** Generic action tracker — fire from any UI handler (server pick, button, fullscreen, etc.).
+ *  Throttled per (label) for 1.5s so a chatty handler can't spam the row. */
+const lastEventAt = new Map<string, number>();
+export async function trackEvent(
+  label: string,
+  category: "fullscreen" | "server" | "button" | "menu" | "search" | "match" | "navigation" | "action" = "action",
+  meta?: Record<string, string | number | boolean | null>,
+) {
+  if (typeof window === "undefined" || !sessionKey) return;
+  const key = `${category}:${label}`;
+  const now = Date.now();
+  if ((lastEventAt.get(key) ?? 0) > now - 1500) return;
+  lastEventAt.set(key, now);
+  try { await trackEventFn({ data: { session_key: sessionKey, label, category, meta } }); } catch {}
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("fullscreenchange", () => {
+    const on = !!document.fullscreenElement;
+    trackEvent(on ? "Enabled fullscreen" : "Exited fullscreen", "fullscreen", { on });
+  });
 }
 
 export function stopTracking() {

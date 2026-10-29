@@ -13,7 +13,7 @@ export function MediaCard({
 }) {
   const pct = entry.position && entry.duration ? Math.min(100, Math.round((entry.position / entry.duration) * 100)) : 0;
   return (
-    <div className="group relative">
+    <div className="feat-card group relative">
       <Link
         to="/watch/$kind/$id"
         params={{ kind: entry.kind, id: String(entry.id) }}

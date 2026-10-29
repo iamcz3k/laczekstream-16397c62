@@ -1,0 +1,18 @@
+# LACZEK STREAM
+
+> Free streaming for movies, TV shows, anime, football & live sports, radio and podcasts — clean, ad-free, no signup.
+
+LACZEK STREAM aggregates public streaming sources into a single sleek matte-black player. Built for entertainment with zero ads and no account required.
+
+## Pages
+
+- [Home](/): Browse trending movies, series, anime, live TV, live sports and games.
+- [Radio](/radio): Thousands of free radio stations worldwide, searchable by country and genre.
+- [Podcasts](/podcasts): Search, browse and stream podcasts globally.
+- [Downloads](/downloads): Offline downloads — pause, resume and watch without internet.
+- [Unblocked Movies](/unblocked-movies): Ad-free streaming guide for restricted networks (school, office).
+- [Speed Test](/speedtest): Quick internet download speed measurement.
+
+## Optional
+
+- [Watch Party](/party): Create or join a synchronized watch room with friends.

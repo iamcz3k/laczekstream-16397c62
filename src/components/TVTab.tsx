@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, Search, Radio, Globe, X, Check } from "lucide-react";
 import { iptvChannels, countryName, countryFlag, CURATED_TV_CHANNELS, type Channel } from "@/lib/api";
 import { HlsPlayer } from "./HlsPlayer";
+import { VoiceSearchButton } from "@/components/VoiceSearchButton";
 
 const ALL = "__all__";
 
@@ -75,8 +76,9 @@ export function TVTab() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search channels…"
-            className="w-full pl-11 pr-4 py-3 rounded-full glass border-border focus:border-primary focus:outline-none"
+            className="w-full pl-11 pr-14 py-3 rounded-full glass border-border focus:border-primary focus:outline-none"
           />
+          <VoiceSearchButton onInterim={setQ} onResult={setQ} className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9" />
         </div>
         <button
           onClick={() => { setPickerOpen(true); setPickerQ(""); }}

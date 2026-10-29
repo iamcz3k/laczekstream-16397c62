@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, Link2, Users } from "lucide-react";
+import { ArrowRight, Link2, Lock, Users } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
+import { openPaywall, usePerk } from "@/lib/subscription";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/party")({
   component: PartyLanding,
@@ -9,6 +11,10 @@ export const Route = createFileRoute("/party")({
     meta: [
       { title: "Watch Party — LACZEK STREAM" },
       { name: "description", content: "Create a synced room and watch movies, shows, or live sports with friends." },
+      { property: "og:title", content: "Watch Party — LACZEK STREAM" },
+      { property: "og:description", content: "Create a synced room and watch movies, shows, or live sports with friends." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
@@ -26,6 +32,21 @@ function PartyLanding() {
   const [title, setTitle] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const unlocked = usePerk("party");
+
+  if (!unlocked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 text-center text-foreground">
+        <div className="max-w-md">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15"><Lock className="h-6 w-6 text-primary" /></div>
+          <h1 className="mt-4 text-2xl font-black">Watch Party is locked</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Subscribe to All Access to create rooms, invite friends and use live chat.</p>
+          <Button onClick={() => openPaywall("party")} className="mt-5 rounded-full"><Lock /> View subscriptions</Button>
+          <a href="/" className="mt-4 block text-xs font-bold text-muted-foreground">← Back to LACZEK STREAM</a>
+        </div>
+      </div>
+    );
+  }
 
   function host() {
     const url = src.trim();

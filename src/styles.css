@@ -106,7 +106,7 @@
  * `.dark` and `.light` overrides are intentionally removed — any class set on
  * <html> is a no-op so the design can never auto-switch. */
 
-/* Best-effort: hide the injected "Edit with Lovable" badge on the published site
+/* Hide third-party editor badges injected by the host
  * for users who don't have Pro. The badge sits at the bottom-right corner. */
 a[href*="lovable.dev"][target="_blank"],
 iframe[src*="lovable.dev"][title*="Edit"],
@@ -117,6 +117,69 @@ iframe[src*="lovable.dev"][title*="Edit"],
   pointer-events: none !important;
   opacity: 0 !important;
 }
+
+/* ===== Local-only "General" personal toggles ===== */
+html.gs-hide-featured .feat-featured,
+html.gs-hide-continue .feat-continue,
+html.gs-hide-recommended .feat-recommended,
+html.gs-hide-fire .feat-fire,
+html.gs-hide-watchparty .feat-watchparty,
+html.gs-hide-downloads .feat-downloads,
+html.gs-hide-chat .feat-chat,
+html.gs-hide-surprise .feat-surprise {
+  display: none !important;
+}
+html.gs-reduce-motion *,
+html.gs-reduce-motion *::before,
+html.gs-reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+html.gs-compact .feat-card > * {
+  transform: scale(0.92);
+  transform-origin: top left;
+}
+html.gs-compact .feat-card { font-size: 0.92em; }
+html.gs-light {
+  color-scheme: light;
+}
+html.gs-light body {
+  background-color: #f5f5f7 !important;
+  color: #0a0a0a !important;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 20% 0%, oklch(0.85 0.12 55 / 0.25), transparent 60%),
+    radial-gradient(ellipse 70% 55% at 100% 100%, oklch(0.82 0.16 30 / 0.18), transparent 60%) !important;
+}
+html.gs-light {
+  /* Tailwind v4 with @theme inline compiles utilities to var(--background) etc.,
+   * so we must override the underlying tokens (not --color-*) for light mode
+   * to actually repaint cards, popovers, borders and inputs across the app. */
+  --background: oklch(0.97 0 0);
+  --foreground: oklch(0.15 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  --primary: oklch(0.70 0.19 45);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.93 0 0);
+  --secondary-foreground: oklch(0.15 0 0);
+  --muted: oklch(0.94 0 0);
+  --muted-foreground: oklch(0.42 0 0);
+  --accent: oklch(0.70 0.19 45);
+  --accent-foreground: oklch(0.99 0 0);
+  --border: oklch(0.15 0 0 / 0.12);
+  --input: oklch(0.15 0 0 / 0.12);
+  --ring: oklch(0.70 0.19 45);
+  --sidebar: oklch(0.98 0 0);
+  --sidebar-foreground: oklch(0.15 0 0);
+  --sidebar-border: oklch(0.15 0 0 / 0.10);
+  --gradient-hero: linear-gradient(135deg, #f5f5f7 0%, #ffe7d6 100%);
+  --gradient-card: linear-gradient(160deg, #ffffff, #f1f1f4);
+  --shadow-card: 0 8px 30px -12px rgba(0,0,0,0.12);
+}
+
 
 @layer base {
   * {
@@ -144,28 +207,49 @@ iframe[src*="lovable.dev"][title*="Edit"],
   }
 }
 
-/* ===== Liquid glass utilities ===== */
+/* ===== Liquid glass utilities (iPhone-style: deep frosted blur + shine) ===== */
 @utility glass {
-  background: color-mix(in oklab, var(--card) 55%, transparent);
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border: 1px solid color-mix(in oklab, white 9%, transparent);
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, white 7%, transparent) 0%,
+      color-mix(in oklab, white 2%, transparent) 40%,
+      color-mix(in oklab, var(--card) 60%, transparent) 100%);
+  backdrop-filter: blur(40px) saturate(220%) brightness(1.05);
+  border: 1px solid color-mix(in oklab, white 14%, transparent);
   box-shadow:
-    inset 0 1px 0 0 color-mix(in oklab, white 6%, transparent),
-    0 1px 0 0 color-mix(in oklab, black 40%, transparent);
+    inset 0 1px 0 0 color-mix(in oklab, white 22%, transparent),
+    inset 0 -1px 0 0 color-mix(in oklab, white 5%, transparent),
+    0 4px 24px -6px color-mix(in oklab, black 55%, transparent);
 }
 
 @utility glass-card {
+  position: relative;
   background:
+    radial-gradient(120% 60% at 50% 0%,
+      color-mix(in oklab, white 10%, transparent) 0%,
+      transparent 50%),
     linear-gradient(160deg,
-      color-mix(in oklab, white 4%, transparent),
-      color-mix(in oklab, var(--card) 70%, transparent));
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid color-mix(in oklab, white 8%, transparent);
+      color-mix(in oklab, white 6%, transparent),
+      color-mix(in oklab, var(--card) 72%, transparent));
+  backdrop-filter: blur(44px) saturate(220%) brightness(1.06);
+  border: 1px solid color-mix(in oklab, white 13%, transparent);
   box-shadow:
-    inset 0 1px 0 0 color-mix(in oklab, white 5%, transparent),
-    0 8px 30px -12px oklch(0 0 0 / 0.6);
+    inset 0 1px 0 0 color-mix(in oklab, white 24%, transparent),
+    inset 0 -1px 0 0 color-mix(in oklab, white 4%, transparent),
+    0 10px 32px -14px oklch(0 0 0 / 0.65),
+    0 2px 6px -2px oklch(0 0 0 / 0.35);
+}
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px 1px auto 1px;
+  height: 40%;
+  border-radius: inherit;
+  background: linear-gradient(180deg,
+    color-mix(in oklab, white 14%, transparent),
+    transparent 80%);
+  pointer-events: none;
+  mask-image: linear-gradient(180deg, black, transparent);
 }
 
 /* True fullscreen: kill any rounded corners, borders or padding so the iframe
@@ -192,3 +276,50 @@ iframe[src*="lovable.dev"][title*="Edit"],
 /* Hide Google Translate banner / branding */
 .goog-te-banner-frame, .skiptranslate { display: none !important; }
 body { top: 0 !important; }
+
+/* ===========================================================================
+   Smart TV / 10-foot UI mode
+   Activated when <html class="tv-mode"> (set in __root.tsx based on UA / size).
+   Goal: bigger type, larger hit targets, dramatic focus rings for D-pad nav,
+   reduced edge crop so important UI is inside TV-safe area.
+   =========================================================================== */
+html.tv-mode {
+  font-size: 20px;                 /* scale rem-based sizing across the app */
+  cursor: none;                    /* most TVs have no cursor */
+}
+html.tv-mode body {
+  padding: env(safe-area-inset-top) 2.5vw env(safe-area-inset-bottom);
+  letter-spacing: 0.01em;
+}
+/* Bigger headings & buttons */
+html.tv-mode h1 { font-size: 3.25rem; line-height: 1.05; }
+html.tv-mode h2 { font-size: 2.25rem; line-height: 1.1; }
+html.tv-mode h3 { font-size: 1.6rem; }
+html.tv-mode button,
+html.tv-mode a,
+html.tv-mode [role="button"] {
+  min-height: 56px;
+}
+/* Crisp focus ring for remote / D-pad navigation */
+html.tv-mode *:focus,
+html.tv-mode *:focus-visible {
+  outline: 4px solid var(--primary) !important;
+  outline-offset: 4px;
+  border-radius: 12px;
+  box-shadow: 0 0 0 8px color-mix(in oklab, var(--primary) 35%, transparent),
+              0 0 40px color-mix(in oklab, var(--primary) 55%, transparent) !important;
+  transform: scale(1.03);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  z-index: 5;
+  position: relative;
+}
+/* Larger media cards & rails on TV */
+html.tv-mode .media-card,
+html.tv-mode [data-tv-card] {
+  border-radius: 18px;
+}
+html.tv-mode img { image-rendering: auto; }
+/* Sticky header gets more breathing room */
+html.tv-mode header.sticky { padding-block: 0.75rem; }
+/* Hide install / share affordances that don't apply to a TV */
+html.tv-mode [data-hide-on-tv] { display: none !important; }
