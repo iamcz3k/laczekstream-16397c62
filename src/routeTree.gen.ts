@@ -9,140 +9,55 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UnblockedMoviesRouteImport } from './routes/unblocked-movies'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SportsSearchRouteImport } from './routes/sports-search'
-import { Route as SpeedtestRouteImport } from './routes/speedtest'
-import { Route as SocialtrackRouteImport } from './routes/socialtrack'
-import { Route as SocialbotRouteImport } from './routes/socialbot'
-import { Route as SocialRouteImport } from './routes/social'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as RadioRouteImport } from './routes/radio'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as PodcastsRouteImport } from './routes/podcasts'
-import { Route as PartyRouteImport } from './routes/party'
-import { Route as ExtensionRouteImport } from './routes/extension'
-import { Route as DownloadsRouteImport } from './routes/downloads'
-import { Route as Adminv2RouteImport } from './routes/adminv2'
-import { Route as Adminv1RouteImport } from './routes/adminv1'
-import { Route as AdminsubRouteImport } from './routes/adminsub'
-import { Route as AdminczekRouteImport } from './routes/adminczek'
-import { Route as AdblockerRouteImport } from './routes/adblocker'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TranslatedIdRouteImport } from './routes/translated.$id'
-import { Route as TeamTeamIdRouteImport } from './routes/team.$teamId'
-import { Route as SocialtrackCodeRouteImport } from './routes/socialtrack_.$code'
-import { Route as PartyRoomIdRouteImport } from './routes/party.$roomId'
-import { Route as MatchMatchIdRouteImport } from './routes/match.$matchId'
-import { Route as FootballStreamMatchIdRouteImport } from './routes/football-stream.$matchId'
+import { Route as AdblockerRouteImport } from './routes/adblocker'
+import { Route as AdminczekRouteImport } from './routes/adminczek'
+import { Route as AdminsubRouteImport } from './routes/adminsub'
+import { Route as Adminv1RouteImport } from './routes/adminv1'
+import { Route as Adminv2RouteImport } from './routes/adminv2'
+import { Route as DownloadsRouteImport } from './routes/downloads'
+import { Route as ExtensionRouteImport } from './routes/extension'
+import { Route as PartyRouteImport } from './routes/party'
+import { Route as PodcastsRouteImport } from './routes/podcasts'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RadioRouteImport } from './routes/radio'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SocialRouteImport } from './routes/social'
+import { Route as SocialbotRouteImport } from './routes/socialbot'
+import { Route as SocialtrackRouteImport } from './routes/socialtrack'
+import { Route as SpeedtestRouteImport } from './routes/speedtest'
+import { Route as SportsSearchRouteImport } from './routes/sports-search'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as UnblockedMoviesRouteImport } from './routes/unblocked-movies'
 import { Route as AnimeAnimeIdRouteImport } from './routes/anime.$animeId'
-import { Route as WatchKindIdRouteImport } from './routes/watch.$kind.$id'
-import { Route as SocialbotTrackJobIdRouteImport } from './routes/socialbot.track.$jobId'
-import { Route as ApiPublicTranslatedRouteImport } from './routes/api.public.translated'
-import { Route as ApiPublicPodcastFeedRouteImport } from './routes/api.public.podcast-feed'
-import { Route as ApiPublicGamesRouteImport } from './routes/api.public.games'
-import { Route as ApiPublicGameImageRouteImport } from './routes/api.public.game-image'
-import { Route as ApiPublicFotmobRouteImport } from './routes/api.public.fotmob'
-import { Route as ApiPublicFootballStreamsRouteImport } from './routes/api.public.football-streams'
-import { Route as ApiPublicChangelogImageRouteImport } from './routes/api.public.changelog-image'
-import { Route as ApiPublicAnimeVideoRouteImport } from './routes/api.public.anime-video'
-import { Route as ApiPublicAnimeProxyRouteImport } from './routes/api.public.anime-proxy'
-import { Route as ApiPublicAnimeImageRouteImport } from './routes/api.public.anime-image'
-import { Route as ApiPublicAnimeCatalogRouteImport } from './routes/api.public.anime-catalog'
-import { Route as ApiPublicAnimeApiRouteImport } from './routes/api.public.anime-api'
-import { Route as ApiPublicAiscoreChatRouteImport } from './routes/api.public.aiscore-chat'
-import { Route as ApiPublicAdminV2ConfigRouteImport } from './routes/api.public.admin-v2-config'
+import { Route as FootballStreamMatchIdRouteImport } from './routes/football-stream.$matchId'
+import { Route as MatchMatchIdRouteImport } from './routes/match.$matchId'
+import { Route as PartyRoomIdRouteImport } from './routes/party.$roomId'
+import { Route as SocialtrackCodeRouteImport } from './routes/socialtrack_.$code'
+import { Route as TeamTeamIdRouteImport } from './routes/team.$teamId'
+import { Route as TranslatedIdRouteImport } from './routes/translated.$id'
 import { Route as ApiPublicAdminStorageSignRouteImport } from './routes/api.public.admin-storage-sign'
+import { Route as ApiPublicAdminV2ConfigRouteImport } from './routes/api.public.admin-v2-config'
+import { Route as ApiPublicAiscoreChatRouteImport } from './routes/api.public.aiscore-chat'
+import { Route as ApiPublicAnimeApiRouteImport } from './routes/api.public.anime-api'
+import { Route as ApiPublicAnimeCatalogRouteImport } from './routes/api.public.anime-catalog'
+import { Route as ApiPublicAnimeImageRouteImport } from './routes/api.public.anime-image'
+import { Route as ApiPublicAnimeProxyRouteImport } from './routes/api.public.anime-proxy'
+import { Route as ApiPublicAnimeVideoRouteImport } from './routes/api.public.anime-video'
+import { Route as ApiPublicChangelogImageRouteImport } from './routes/api.public.changelog-image'
+import { Route as ApiPublicFootballStreamsRouteImport } from './routes/api.public.football-streams'
+import { Route as ApiPublicFotmobRouteImport } from './routes/api.public.fotmob'
+import { Route as ApiPublicGameImageRouteImport } from './routes/api.public.game-image'
+import { Route as ApiPublicGamesRouteImport } from './routes/api.public.games'
+import { Route as ApiPublicPodcastFeedRouteImport } from './routes/api.public.podcast-feed'
+import { Route as ApiPublicTranslatedRouteImport } from './routes/api.public.translated'
+import { Route as SocialbotTrackJobIdRouteImport } from './routes/socialbot.track.$jobId'
+import { Route as WatchKindIdRouteImport } from './routes/watch.$kind.$id'
 import { Route as ApiPublicV1SplatRouteImport } from './routes/api.public.v1.$'
 
-const UnblockedMoviesRoute = UnblockedMoviesRouteImport.update({
-  id: '/unblocked-movies',
-  path: '/unblocked-movies',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SportsSearchRoute = SportsSearchRouteImport.update({
-  id: '/sports-search',
-  path: '/sports-search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SpeedtestRoute = SpeedtestRouteImport.update({
-  id: '/speedtest',
-  path: '/speedtest',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SocialtrackRoute = SocialtrackRouteImport.update({
-  id: '/socialtrack',
-  path: '/socialtrack',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SocialbotRoute = SocialbotRouteImport.update({
-  id: '/socialbot',
-  path: '/socialbot',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SocialRoute = SocialRouteImport.update({
-  id: '/social',
-  path: '/social',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RadioRoute = RadioRouteImport.update({
-  id: '/radio',
-  path: '/radio',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PodcastsRoute = PodcastsRouteImport.update({
-  id: '/podcasts',
-  path: '/podcasts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PartyRoute = PartyRouteImport.update({
-  id: '/party',
-  path: '/party',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExtensionRoute = ExtensionRouteImport.update({
-  id: '/extension',
-  path: '/extension',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DownloadsRoute = DownloadsRouteImport.update({
-  id: '/downloads',
-  path: '/downloads',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Adminv2Route = Adminv2RouteImport.update({
-  id: '/adminv2',
-  path: '/adminv2',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Adminv1Route = Adminv1RouteImport.update({
-  id: '/adminv1',
-  path: '/adminv1',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminsubRoute = AdminsubRouteImport.update({
-  id: '/adminsub',
-  path: '/adminsub',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminczekRoute = AdminczekRouteImport.update({
-  id: '/adminczek',
-  path: '/adminczek',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdblockerRoute = AdblockerRouteImport.update({
@@ -150,39 +65,94 @@ const AdblockerRoute = AdblockerRouteImport.update({
   path: '/adblocker',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AdminczekRoute = AdminczekRouteImport.update({
+  id: '/adminczek',
+  path: '/adminczek',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TranslatedIdRoute = TranslatedIdRouteImport.update({
-  id: '/translated/$id',
-  path: '/translated/$id',
+const AdminsubRoute = AdminsubRouteImport.update({
+  id: '/adminsub',
+  path: '/adminsub',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TeamTeamIdRoute = TeamTeamIdRouteImport.update({
-  id: '/team/$teamId',
-  path: '/team/$teamId',
+const Adminv1Route = Adminv1RouteImport.update({
+  id: '/adminv1',
+  path: '/adminv1',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SocialtrackCodeRoute = SocialtrackCodeRouteImport.update({
-  id: '/socialtrack_/$code',
-  path: '/socialtrack/$code',
+const Adminv2Route = Adminv2RouteImport.update({
+  id: '/adminv2',
+  path: '/adminv2',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PartyRoomIdRoute = PartyRoomIdRouteImport.update({
-  id: '/$roomId',
-  path: '/$roomId',
-  getParentRoute: () => PartyRoute,
-} as any)
-const MatchMatchIdRoute = MatchMatchIdRouteImport.update({
-  id: '/match/$matchId',
-  path: '/match/$matchId',
+const DownloadsRoute = DownloadsRouteImport.update({
+  id: '/downloads',
+  path: '/downloads',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FootballStreamMatchIdRoute = FootballStreamMatchIdRouteImport.update({
-  id: '/football-stream/$matchId',
-  path: '/football-stream/$matchId',
+const ExtensionRoute = ExtensionRouteImport.update({
+  id: '/extension',
+  path: '/extension',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartyRoute = PartyRouteImport.update({
+  id: '/party',
+  path: '/party',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PodcastsRoute = PodcastsRouteImport.update({
+  id: '/podcasts',
+  path: '/podcasts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RadioRoute = RadioRouteImport.update({
+  id: '/radio',
+  path: '/radio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SocialRoute = SocialRouteImport.update({
+  id: '/social',
+  path: '/social',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SocialbotRoute = SocialbotRouteImport.update({
+  id: '/socialbot',
+  path: '/socialbot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SocialtrackRoute = SocialtrackRouteImport.update({
+  id: '/socialtrack',
+  path: '/socialtrack',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpeedtestRoute = SpeedtestRouteImport.update({
+  id: '/speedtest',
+  path: '/speedtest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SportsSearchRoute = SportsSearchRouteImport.update({
+  id: '/sports-search',
+  path: '/sports-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnblockedMoviesRoute = UnblockedMoviesRouteImport.update({
+  id: '/unblocked-movies',
+  path: '/unblocked-movies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnimeAnimeIdRoute = AnimeAnimeIdRouteImport.update({
@@ -190,85 +160,34 @@ const AnimeAnimeIdRoute = AnimeAnimeIdRouteImport.update({
   path: '/anime/$animeId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WatchKindIdRoute = WatchKindIdRouteImport.update({
-  id: '/watch/$kind/$id',
-  path: '/watch/$kind/$id',
+const FootballStreamMatchIdRoute = FootballStreamMatchIdRouteImport.update({
+  id: '/football-stream/$matchId',
+  path: '/football-stream/$matchId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SocialbotTrackJobIdRoute = SocialbotTrackJobIdRouteImport.update({
-  id: '/track/$jobId',
-  path: '/track/$jobId',
-  getParentRoute: () => SocialbotRoute,
-} as any)
-const ApiPublicTranslatedRoute = ApiPublicTranslatedRouteImport.update({
-  id: '/api/public/translated',
-  path: '/api/public/translated',
+const MatchMatchIdRoute = MatchMatchIdRouteImport.update({
+  id: '/match/$matchId',
+  path: '/match/$matchId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicPodcastFeedRoute = ApiPublicPodcastFeedRouteImport.update({
-  id: '/api/public/podcast-feed',
-  path: '/api/public/podcast-feed',
+const PartyRoomIdRoute = PartyRoomIdRouteImport.update({
+  id: '/$roomId',
+  path: '/$roomId',
+  getParentRoute: () => PartyRoute,
+} as any)
+const SocialtrackCodeRoute = SocialtrackCodeRouteImport.update({
+  id: '/socialtrack_/$code',
+  path: '/socialtrack/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicGamesRoute = ApiPublicGamesRouteImport.update({
-  id: '/api/public/games',
-  path: '/api/public/games',
+const TeamTeamIdRoute = TeamTeamIdRouteImport.update({
+  id: '/team/$teamId',
+  path: '/team/$teamId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicGameImageRoute = ApiPublicGameImageRouteImport.update({
-  id: '/api/public/game-image',
-  path: '/api/public/game-image',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicFotmobRoute = ApiPublicFotmobRouteImport.update({
-  id: '/api/public/fotmob',
-  path: '/api/public/fotmob',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicFootballStreamsRoute =
-  ApiPublicFootballStreamsRouteImport.update({
-    id: '/api/public/football-streams',
-    path: '/api/public/football-streams',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicChangelogImageRoute = ApiPublicChangelogImageRouteImport.update({
-  id: '/api/public/changelog-image',
-  path: '/api/public/changelog-image',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicAnimeVideoRoute = ApiPublicAnimeVideoRouteImport.update({
-  id: '/api/public/anime-video',
-  path: '/api/public/anime-video',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicAnimeProxyRoute = ApiPublicAnimeProxyRouteImport.update({
-  id: '/api/public/anime-proxy',
-  path: '/api/public/anime-proxy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicAnimeImageRoute = ApiPublicAnimeImageRouteImport.update({
-  id: '/api/public/anime-image',
-  path: '/api/public/anime-image',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicAnimeCatalogRoute = ApiPublicAnimeCatalogRouteImport.update({
-  id: '/api/public/anime-catalog',
-  path: '/api/public/anime-catalog',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicAnimeApiRoute = ApiPublicAnimeApiRouteImport.update({
-  id: '/api/public/anime-api',
-  path: '/api/public/anime-api',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicAiscoreChatRoute = ApiPublicAiscoreChatRouteImport.update({
-  id: '/api/public/aiscore-chat',
-  path: '/api/public/aiscore-chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicAdminV2ConfigRoute = ApiPublicAdminV2ConfigRouteImport.update({
-  id: '/api/public/admin-v2-config',
-  path: '/api/public/admin-v2-config',
+const TranslatedIdRoute = TranslatedIdRouteImport.update({
+  id: '/translated/$id',
+  path: '/translated/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicAdminStorageSignRoute =
@@ -277,6 +196,87 @@ const ApiPublicAdminStorageSignRoute =
     path: '/api/public/admin-storage-sign',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAdminV2ConfigRoute = ApiPublicAdminV2ConfigRouteImport.update({
+  id: '/api/public/admin-v2-config',
+  path: '/api/public/admin-v2-config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAiscoreChatRoute = ApiPublicAiscoreChatRouteImport.update({
+  id: '/api/public/aiscore-chat',
+  path: '/api/public/aiscore-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAnimeApiRoute = ApiPublicAnimeApiRouteImport.update({
+  id: '/api/public/anime-api',
+  path: '/api/public/anime-api',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAnimeCatalogRoute = ApiPublicAnimeCatalogRouteImport.update({
+  id: '/api/public/anime-catalog',
+  path: '/api/public/anime-catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAnimeImageRoute = ApiPublicAnimeImageRouteImport.update({
+  id: '/api/public/anime-image',
+  path: '/api/public/anime-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAnimeProxyRoute = ApiPublicAnimeProxyRouteImport.update({
+  id: '/api/public/anime-proxy',
+  path: '/api/public/anime-proxy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAnimeVideoRoute = ApiPublicAnimeVideoRouteImport.update({
+  id: '/api/public/anime-video',
+  path: '/api/public/anime-video',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicChangelogImageRoute = ApiPublicChangelogImageRouteImport.update({
+  id: '/api/public/changelog-image',
+  path: '/api/public/changelog-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFootballStreamsRoute =
+  ApiPublicFootballStreamsRouteImport.update({
+    id: '/api/public/football-streams',
+    path: '/api/public/football-streams',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicFotmobRoute = ApiPublicFotmobRouteImport.update({
+  id: '/api/public/fotmob',
+  path: '/api/public/fotmob',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicGameImageRoute = ApiPublicGameImageRouteImport.update({
+  id: '/api/public/game-image',
+  path: '/api/public/game-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicGamesRoute = ApiPublicGamesRouteImport.update({
+  id: '/api/public/games',
+  path: '/api/public/games',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPodcastFeedRoute = ApiPublicPodcastFeedRouteImport.update({
+  id: '/api/public/podcast-feed',
+  path: '/api/public/podcast-feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTranslatedRoute = ApiPublicTranslatedRouteImport.update({
+  id: '/api/public/translated',
+  path: '/api/public/translated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SocialbotTrackJobIdRoute = SocialbotTrackJobIdRouteImport.update({
+  id: '/track/$jobId',
+  path: '/track/$jobId',
+  getParentRoute: () => SocialbotRoute,
+} as any)
+const WatchKindIdRoute = WatchKindIdRouteImport.update({
+  id: '/watch/$kind/$id',
+  path: '/watch/$kind/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicV1SplatRoute = ApiPublicV1SplatRouteImport.update({
   id: '/api/public/v1/$',
   path: '/api/public/v1/$',
@@ -617,130 +617,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/unblocked-movies': {
-      id: '/unblocked-movies'
-      path: '/unblocked-movies'
-      fullPath: '/unblocked-movies'
-      preLoaderRoute: typeof UnblockedMoviesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sports-search': {
-      id: '/sports-search'
-      path: '/sports-search'
-      fullPath: '/sports-search'
-      preLoaderRoute: typeof SportsSearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/speedtest': {
-      id: '/speedtest'
-      path: '/speedtest'
-      fullPath: '/speedtest'
-      preLoaderRoute: typeof SpeedtestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/socialtrack': {
-      id: '/socialtrack'
-      path: '/socialtrack'
-      fullPath: '/socialtrack'
-      preLoaderRoute: typeof SocialtrackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/socialbot': {
-      id: '/socialbot'
-      path: '/socialbot'
-      fullPath: '/socialbot'
-      preLoaderRoute: typeof SocialbotRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/social': {
-      id: '/social'
-      path: '/social'
-      fullPath: '/social'
-      preLoaderRoute: typeof SocialRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/radio': {
-      id: '/radio'
-      path: '/radio'
-      fullPath: '/radio'
-      preLoaderRoute: typeof RadioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/podcasts': {
-      id: '/podcasts'
-      path: '/podcasts'
-      fullPath: '/podcasts'
-      preLoaderRoute: typeof PodcastsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/party': {
-      id: '/party'
-      path: '/party'
-      fullPath: '/party'
-      preLoaderRoute: typeof PartyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/extension': {
-      id: '/extension'
-      path: '/extension'
-      fullPath: '/extension'
-      preLoaderRoute: typeof ExtensionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/downloads': {
-      id: '/downloads'
-      path: '/downloads'
-      fullPath: '/downloads'
-      preLoaderRoute: typeof DownloadsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/adminv2': {
-      id: '/adminv2'
-      path: '/adminv2'
-      fullPath: '/adminv2'
-      preLoaderRoute: typeof Adminv2RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/adminv1': {
-      id: '/adminv1'
-      path: '/adminv1'
-      fullPath: '/adminv1'
-      preLoaderRoute: typeof Adminv1RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/adminsub': {
-      id: '/adminsub'
-      path: '/adminsub'
-      fullPath: '/adminsub'
-      preLoaderRoute: typeof AdminsubRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/adminczek': {
-      id: '/adminczek'
-      path: '/adminczek'
-      fullPath: '/adminczek'
-      preLoaderRoute: typeof AdminczekRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/adblocker': {
@@ -750,53 +631,130 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdblockerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/adminczek': {
+      id: '/adminczek'
+      path: '/adminczek'
+      fullPath: '/adminczek'
+      preLoaderRoute: typeof AdminczekRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/translated/$id': {
-      id: '/translated/$id'
-      path: '/translated/$id'
-      fullPath: '/translated/$id'
-      preLoaderRoute: typeof TranslatedIdRouteImport
+    '/adminsub': {
+      id: '/adminsub'
+      path: '/adminsub'
+      fullPath: '/adminsub'
+      preLoaderRoute: typeof AdminsubRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/team/$teamId': {
-      id: '/team/$teamId'
-      path: '/team/$teamId'
-      fullPath: '/team/$teamId'
-      preLoaderRoute: typeof TeamTeamIdRouteImport
+    '/adminv1': {
+      id: '/adminv1'
+      path: '/adminv1'
+      fullPath: '/adminv1'
+      preLoaderRoute: typeof Adminv1RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/socialtrack_/$code': {
-      id: '/socialtrack_/$code'
-      path: '/socialtrack/$code'
-      fullPath: '/socialtrack/$code'
-      preLoaderRoute: typeof SocialtrackCodeRouteImport
+    '/adminv2': {
+      id: '/adminv2'
+      path: '/adminv2'
+      fullPath: '/adminv2'
+      preLoaderRoute: typeof Adminv2RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/party/$roomId': {
-      id: '/party/$roomId'
-      path: '/$roomId'
-      fullPath: '/party/$roomId'
-      preLoaderRoute: typeof PartyRoomIdRouteImport
-      parentRoute: typeof PartyRoute
-    }
-    '/match/$matchId': {
-      id: '/match/$matchId'
-      path: '/match/$matchId'
-      fullPath: '/match/$matchId'
-      preLoaderRoute: typeof MatchMatchIdRouteImport
+    '/downloads': {
+      id: '/downloads'
+      path: '/downloads'
+      fullPath: '/downloads'
+      preLoaderRoute: typeof DownloadsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/football-stream/$matchId': {
-      id: '/football-stream/$matchId'
-      path: '/football-stream/$matchId'
-      fullPath: '/football-stream/$matchId'
-      preLoaderRoute: typeof FootballStreamMatchIdRouteImport
+    '/extension': {
+      id: '/extension'
+      path: '/extension'
+      fullPath: '/extension'
+      preLoaderRoute: typeof ExtensionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/party': {
+      id: '/party'
+      path: '/party'
+      fullPath: '/party'
+      preLoaderRoute: typeof PartyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/podcasts': {
+      id: '/podcasts'
+      path: '/podcasts'
+      fullPath: '/podcasts'
+      preLoaderRoute: typeof PodcastsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/radio': {
+      id: '/radio'
+      path: '/radio'
+      fullPath: '/radio'
+      preLoaderRoute: typeof RadioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/social': {
+      id: '/social'
+      path: '/social'
+      fullPath: '/social'
+      preLoaderRoute: typeof SocialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/socialbot': {
+      id: '/socialbot'
+      path: '/socialbot'
+      fullPath: '/socialbot'
+      preLoaderRoute: typeof SocialbotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/socialtrack': {
+      id: '/socialtrack'
+      path: '/socialtrack'
+      fullPath: '/socialtrack'
+      preLoaderRoute: typeof SocialtrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/speedtest': {
+      id: '/speedtest'
+      path: '/speedtest'
+      fullPath: '/speedtest'
+      preLoaderRoute: typeof SpeedtestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sports-search': {
+      id: '/sports-search'
+      path: '/sports-search'
+      fullPath: '/sports-search'
+      preLoaderRoute: typeof SportsSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unblocked-movies': {
+      id: '/unblocked-movies'
+      path: '/unblocked-movies'
+      fullPath: '/unblocked-movies'
+      preLoaderRoute: typeof UnblockedMoviesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/anime/$animeId': {
@@ -806,109 +764,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnimeAnimeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/watch/$kind/$id': {
-      id: '/watch/$kind/$id'
-      path: '/watch/$kind/$id'
-      fullPath: '/watch/$kind/$id'
-      preLoaderRoute: typeof WatchKindIdRouteImport
+    '/football-stream/$matchId': {
+      id: '/football-stream/$matchId'
+      path: '/football-stream/$matchId'
+      fullPath: '/football-stream/$matchId'
+      preLoaderRoute: typeof FootballStreamMatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/socialbot/track/$jobId': {
-      id: '/socialbot/track/$jobId'
-      path: '/track/$jobId'
-      fullPath: '/socialbot/track/$jobId'
-      preLoaderRoute: typeof SocialbotTrackJobIdRouteImport
-      parentRoute: typeof SocialbotRoute
-    }
-    '/api/public/translated': {
-      id: '/api/public/translated'
-      path: '/api/public/translated'
-      fullPath: '/api/public/translated'
-      preLoaderRoute: typeof ApiPublicTranslatedRouteImport
+    '/match/$matchId': {
+      id: '/match/$matchId'
+      path: '/match/$matchId'
+      fullPath: '/match/$matchId'
+      preLoaderRoute: typeof MatchMatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/podcast-feed': {
-      id: '/api/public/podcast-feed'
-      path: '/api/public/podcast-feed'
-      fullPath: '/api/public/podcast-feed'
-      preLoaderRoute: typeof ApiPublicPodcastFeedRouteImport
+    '/party/$roomId': {
+      id: '/party/$roomId'
+      path: '/$roomId'
+      fullPath: '/party/$roomId'
+      preLoaderRoute: typeof PartyRoomIdRouteImport
+      parentRoute: typeof PartyRoute
+    }
+    '/socialtrack_/$code': {
+      id: '/socialtrack_/$code'
+      path: '/socialtrack/$code'
+      fullPath: '/socialtrack/$code'
+      preLoaderRoute: typeof SocialtrackCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/games': {
-      id: '/api/public/games'
-      path: '/api/public/games'
-      fullPath: '/api/public/games'
-      preLoaderRoute: typeof ApiPublicGamesRouteImport
+    '/team/$teamId': {
+      id: '/team/$teamId'
+      path: '/team/$teamId'
+      fullPath: '/team/$teamId'
+      preLoaderRoute: typeof TeamTeamIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/game-image': {
-      id: '/api/public/game-image'
-      path: '/api/public/game-image'
-      fullPath: '/api/public/game-image'
-      preLoaderRoute: typeof ApiPublicGameImageRouteImport
+    '/translated/$id': {
+      id: '/translated/$id'
+      path: '/translated/$id'
+      fullPath: '/translated/$id'
+      preLoaderRoute: typeof TranslatedIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/fotmob': {
-      id: '/api/public/fotmob'
-      path: '/api/public/fotmob'
-      fullPath: '/api/public/fotmob'
-      preLoaderRoute: typeof ApiPublicFotmobRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/football-streams': {
-      id: '/api/public/football-streams'
-      path: '/api/public/football-streams'
-      fullPath: '/api/public/football-streams'
-      preLoaderRoute: typeof ApiPublicFootballStreamsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/changelog-image': {
-      id: '/api/public/changelog-image'
-      path: '/api/public/changelog-image'
-      fullPath: '/api/public/changelog-image'
-      preLoaderRoute: typeof ApiPublicChangelogImageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/anime-video': {
-      id: '/api/public/anime-video'
-      path: '/api/public/anime-video'
-      fullPath: '/api/public/anime-video'
-      preLoaderRoute: typeof ApiPublicAnimeVideoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/anime-proxy': {
-      id: '/api/public/anime-proxy'
-      path: '/api/public/anime-proxy'
-      fullPath: '/api/public/anime-proxy'
-      preLoaderRoute: typeof ApiPublicAnimeProxyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/anime-image': {
-      id: '/api/public/anime-image'
-      path: '/api/public/anime-image'
-      fullPath: '/api/public/anime-image'
-      preLoaderRoute: typeof ApiPublicAnimeImageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/anime-catalog': {
-      id: '/api/public/anime-catalog'
-      path: '/api/public/anime-catalog'
-      fullPath: '/api/public/anime-catalog'
-      preLoaderRoute: typeof ApiPublicAnimeCatalogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/anime-api': {
-      id: '/api/public/anime-api'
-      path: '/api/public/anime-api'
-      fullPath: '/api/public/anime-api'
-      preLoaderRoute: typeof ApiPublicAnimeApiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/aiscore-chat': {
-      id: '/api/public/aiscore-chat'
-      path: '/api/public/aiscore-chat'
-      fullPath: '/api/public/aiscore-chat'
-      preLoaderRoute: typeof ApiPublicAiscoreChatRouteImport
+    '/api/public/admin-storage-sign': {
+      id: '/api/public/admin-storage-sign'
+      path: '/api/public/admin-storage-sign'
+      fullPath: '/api/public/admin-storage-sign'
+      preLoaderRoute: typeof ApiPublicAdminStorageSignRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/admin-v2-config': {
@@ -918,11 +820,109 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminV2ConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/admin-storage-sign': {
-      id: '/api/public/admin-storage-sign'
-      path: '/api/public/admin-storage-sign'
-      fullPath: '/api/public/admin-storage-sign'
-      preLoaderRoute: typeof ApiPublicAdminStorageSignRouteImport
+    '/api/public/aiscore-chat': {
+      id: '/api/public/aiscore-chat'
+      path: '/api/public/aiscore-chat'
+      fullPath: '/api/public/aiscore-chat'
+      preLoaderRoute: typeof ApiPublicAiscoreChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/anime-api': {
+      id: '/api/public/anime-api'
+      path: '/api/public/anime-api'
+      fullPath: '/api/public/anime-api'
+      preLoaderRoute: typeof ApiPublicAnimeApiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/anime-catalog': {
+      id: '/api/public/anime-catalog'
+      path: '/api/public/anime-catalog'
+      fullPath: '/api/public/anime-catalog'
+      preLoaderRoute: typeof ApiPublicAnimeCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/anime-image': {
+      id: '/api/public/anime-image'
+      path: '/api/public/anime-image'
+      fullPath: '/api/public/anime-image'
+      preLoaderRoute: typeof ApiPublicAnimeImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/anime-proxy': {
+      id: '/api/public/anime-proxy'
+      path: '/api/public/anime-proxy'
+      fullPath: '/api/public/anime-proxy'
+      preLoaderRoute: typeof ApiPublicAnimeProxyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/anime-video': {
+      id: '/api/public/anime-video'
+      path: '/api/public/anime-video'
+      fullPath: '/api/public/anime-video'
+      preLoaderRoute: typeof ApiPublicAnimeVideoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/changelog-image': {
+      id: '/api/public/changelog-image'
+      path: '/api/public/changelog-image'
+      fullPath: '/api/public/changelog-image'
+      preLoaderRoute: typeof ApiPublicChangelogImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/football-streams': {
+      id: '/api/public/football-streams'
+      path: '/api/public/football-streams'
+      fullPath: '/api/public/football-streams'
+      preLoaderRoute: typeof ApiPublicFootballStreamsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fotmob': {
+      id: '/api/public/fotmob'
+      path: '/api/public/fotmob'
+      fullPath: '/api/public/fotmob'
+      preLoaderRoute: typeof ApiPublicFotmobRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/game-image': {
+      id: '/api/public/game-image'
+      path: '/api/public/game-image'
+      fullPath: '/api/public/game-image'
+      preLoaderRoute: typeof ApiPublicGameImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/games': {
+      id: '/api/public/games'
+      path: '/api/public/games'
+      fullPath: '/api/public/games'
+      preLoaderRoute: typeof ApiPublicGamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/podcast-feed': {
+      id: '/api/public/podcast-feed'
+      path: '/api/public/podcast-feed'
+      fullPath: '/api/public/podcast-feed'
+      preLoaderRoute: typeof ApiPublicPodcastFeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/translated': {
+      id: '/api/public/translated'
+      path: '/api/public/translated'
+      fullPath: '/api/public/translated'
+      preLoaderRoute: typeof ApiPublicTranslatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/socialbot/track/$jobId': {
+      id: '/socialbot/track/$jobId'
+      path: '/track/$jobId'
+      fullPath: '/socialbot/track/$jobId'
+      preLoaderRoute: typeof SocialbotTrackJobIdRouteImport
+      parentRoute: typeof SocialbotRoute
+    }
+    '/watch/$kind/$id': {
+      id: '/watch/$kind/$id'
+      path: '/watch/$kind/$id'
+      fullPath: '/watch/$kind/$id'
+      preLoaderRoute: typeof WatchKindIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/v1/$': {
