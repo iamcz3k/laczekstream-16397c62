@@ -40,16 +40,19 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [tab, setTab] = useState<TabKey>(() => {
-    if (typeof window === "undefined") return "movies";
-    return (getPrefs().defaultTab as TabKey | undefined) || "movies";
-  });
+  const [tab, setTab] = useState<TabKey>("movies");
   const [movieKind, setMovieKind] = useState<"movie" | "tv" | "anime">("movie");
   const [librarySection, setLibrarySection] = useState<"continue" | "watchlist" | "history">("continue");
   const [continueList, setContinueList] = useState<LibraryEntry[]>([]);
-  const [name, setName] = useState<string>(() => getPrefs().name || "");
+  const [name, setName] = useState<string>("");
   const [recommended, setRecommended] = useState<MediaItem[]>([]);
   const [logoAnim, setLogoAnim] = useState<LogoAnimKind | null>(null);
+
+  useEffect(() => {
+    const prefs = getPrefs();
+    setTab((prefs.defaultTab as TabKey | undefined) || "movies");
+    setName(prefs.name || "");
+  }, []);
 
   useEffect(() => {
     const refresh = () => setContinueList(getContinueWatching().slice(0, 12));

@@ -23,7 +23,6 @@ import { Route as PodcastsRouteImport } from './routes/podcasts'
 import { Route as PartyRouteImport } from './routes/party'
 import { Route as ExtensionRouteImport } from './routes/extension'
 import { Route as DownloadsRouteImport } from './routes/downloads'
-import { Route as Adminv3RouteImport } from './routes/adminv3'
 import { Route as Adminv2RouteImport } from './routes/adminv2'
 import { Route as Adminv1RouteImport } from './routes/adminv1'
 import { Route as AdminsubRouteImport } from './routes/adminsub'
@@ -46,7 +45,6 @@ import { Route as ApiPublicGameImageRouteImport } from './routes/api.public.game
 import { Route as ApiPublicFotmobRouteImport } from './routes/api.public.fotmob'
 import { Route as ApiPublicFootballStreamsRouteImport } from './routes/api.public.football-streams'
 import { Route as ApiPublicChangelogImageRouteImport } from './routes/api.public.changelog-image'
-import { Route as ApiPublicCctvCamerasRouteImport } from './routes/api.public.cctv-cameras'
 import { Route as ApiPublicAnimeVideoRouteImport } from './routes/api.public.anime-video'
 import { Route as ApiPublicAnimeProxyRouteImport } from './routes/api.public.anime-proxy'
 import { Route as ApiPublicAnimeImageRouteImport } from './routes/api.public.anime-image'
@@ -125,11 +123,6 @@ const ExtensionRoute = ExtensionRouteImport.update({
 const DownloadsRoute = DownloadsRouteImport.update({
   id: '/downloads',
   path: '/downloads',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Adminv3Route = Adminv3RouteImport.update({
-  id: '/adminv3',
-  path: '/adminv3',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Adminv2Route = Adminv2RouteImport.update({
@@ -243,11 +236,6 @@ const ApiPublicChangelogImageRoute = ApiPublicChangelogImageRouteImport.update({
   path: '/api/public/changelog-image',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicCctvCamerasRoute = ApiPublicCctvCamerasRouteImport.update({
-  id: '/api/public/cctv-cameras',
-  path: '/api/public/cctv-cameras',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicAnimeVideoRoute = ApiPublicAnimeVideoRouteImport.update({
   id: '/api/public/anime-video',
   path: '/api/public/anime-video',
@@ -302,7 +290,6 @@ export interface FileRoutesByFullPath {
   '/adminsub': typeof AdminsubRoute
   '/adminv1': typeof Adminv1Route
   '/adminv2': typeof Adminv2Route
-  '/adminv3': typeof Adminv3Route
   '/downloads': typeof DownloadsRoute
   '/extension': typeof ExtensionRoute
   '/party': typeof PartyRouteWithChildren
@@ -332,7 +319,6 @@ export interface FileRoutesByFullPath {
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
-  '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
   '/api/public/changelog-image': typeof ApiPublicChangelogImageRoute
   '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
   '/api/public/fotmob': typeof ApiPublicFotmobRoute
@@ -351,7 +337,6 @@ export interface FileRoutesByTo {
   '/adminsub': typeof AdminsubRoute
   '/adminv1': typeof Adminv1Route
   '/adminv2': typeof Adminv2Route
-  '/adminv3': typeof Adminv3Route
   '/downloads': typeof DownloadsRoute
   '/extension': typeof ExtensionRoute
   '/party': typeof PartyRouteWithChildren
@@ -381,7 +366,6 @@ export interface FileRoutesByTo {
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
-  '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
   '/api/public/changelog-image': typeof ApiPublicChangelogImageRoute
   '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
   '/api/public/fotmob': typeof ApiPublicFotmobRoute
@@ -401,7 +385,6 @@ export interface FileRoutesById {
   '/adminsub': typeof AdminsubRoute
   '/adminv1': typeof Adminv1Route
   '/adminv2': typeof Adminv2Route
-  '/adminv3': typeof Adminv3Route
   '/downloads': typeof DownloadsRoute
   '/extension': typeof ExtensionRoute
   '/party': typeof PartyRouteWithChildren
@@ -431,7 +414,6 @@ export interface FileRoutesById {
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
-  '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
   '/api/public/changelog-image': typeof ApiPublicChangelogImageRoute
   '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
   '/api/public/fotmob': typeof ApiPublicFotmobRoute
@@ -452,7 +434,6 @@ export interface FileRouteTypes {
     | '/adminsub'
     | '/adminv1'
     | '/adminv2'
-    | '/adminv3'
     | '/downloads'
     | '/extension'
     | '/party'
@@ -482,7 +463,6 @@ export interface FileRouteTypes {
     | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
-    | '/api/public/cctv-cameras'
     | '/api/public/changelog-image'
     | '/api/public/football-streams'
     | '/api/public/fotmob'
@@ -501,7 +481,6 @@ export interface FileRouteTypes {
     | '/adminsub'
     | '/adminv1'
     | '/adminv2'
-    | '/adminv3'
     | '/downloads'
     | '/extension'
     | '/party'
@@ -531,7 +510,6 @@ export interface FileRouteTypes {
     | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
-    | '/api/public/cctv-cameras'
     | '/api/public/changelog-image'
     | '/api/public/football-streams'
     | '/api/public/fotmob'
@@ -550,7 +528,6 @@ export interface FileRouteTypes {
     | '/adminsub'
     | '/adminv1'
     | '/adminv2'
-    | '/adminv3'
     | '/downloads'
     | '/extension'
     | '/party'
@@ -580,7 +557,6 @@ export interface FileRouteTypes {
     | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
-    | '/api/public/cctv-cameras'
     | '/api/public/changelog-image'
     | '/api/public/football-streams'
     | '/api/public/fotmob'
@@ -600,7 +576,6 @@ export interface RootRouteChildren {
   AdminsubRoute: typeof AdminsubRoute
   Adminv1Route: typeof Adminv1Route
   Adminv2Route: typeof Adminv2Route
-  Adminv3Route: typeof Adminv3Route
   DownloadsRoute: typeof DownloadsRoute
   ExtensionRoute: typeof ExtensionRoute
   PartyRoute: typeof PartyRouteWithChildren
@@ -629,7 +604,6 @@ export interface RootRouteChildren {
   ApiPublicAnimeImageRoute: typeof ApiPublicAnimeImageRoute
   ApiPublicAnimeProxyRoute: typeof ApiPublicAnimeProxyRoute
   ApiPublicAnimeVideoRoute: typeof ApiPublicAnimeVideoRoute
-  ApiPublicCctvCamerasRoute: typeof ApiPublicCctvCamerasRoute
   ApiPublicChangelogImageRoute: typeof ApiPublicChangelogImageRoute
   ApiPublicFootballStreamsRoute: typeof ApiPublicFootballStreamsRoute
   ApiPublicFotmobRoute: typeof ApiPublicFotmobRoute
@@ -739,13 +713,6 @@ declare module '@tanstack/react-router' {
       path: '/downloads'
       fullPath: '/downloads'
       preLoaderRoute: typeof DownloadsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/adminv3': {
-      id: '/adminv3'
-      path: '/adminv3'
-      fullPath: '/adminv3'
-      preLoaderRoute: typeof Adminv3RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/adminv2': {
@@ -902,13 +869,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicChangelogImageRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cctv-cameras': {
-      id: '/api/public/cctv-cameras'
-      path: '/api/public/cctv-cameras'
-      fullPath: '/api/public/cctv-cameras'
-      preLoaderRoute: typeof ApiPublicCctvCamerasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/anime-video': {
       id: '/api/public/anime-video'
       path: '/api/public/anime-video'
@@ -1004,7 +964,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminsubRoute: AdminsubRoute,
   Adminv1Route: Adminv1Route,
   Adminv2Route: Adminv2Route,
-  Adminv3Route: Adminv3Route,
   DownloadsRoute: DownloadsRoute,
   ExtensionRoute: ExtensionRoute,
   PartyRoute: PartyRouteWithChildren,
@@ -1033,7 +992,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAnimeImageRoute: ApiPublicAnimeImageRoute,
   ApiPublicAnimeProxyRoute: ApiPublicAnimeProxyRoute,
   ApiPublicAnimeVideoRoute: ApiPublicAnimeVideoRoute,
-  ApiPublicCctvCamerasRoute: ApiPublicCctvCamerasRoute,
   ApiPublicChangelogImageRoute: ApiPublicChangelogImageRoute,
   ApiPublicFootballStreamsRoute: ApiPublicFootballStreamsRoute,
   ApiPublicFotmobRoute: ApiPublicFotmobRoute,

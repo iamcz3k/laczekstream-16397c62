@@ -1,0 +1,3 @@
+- Preserve generated Lovable Cloud integrations and runtime configuration during source imports so existing identities and records remain connected.
+- Keep pages in TanStack file routes and privileged operations behind server-only handlers because the deployed app uses a Worker runtime.
+- Read persisted browser preferences after hydration to keep server and browser markup consistent.
