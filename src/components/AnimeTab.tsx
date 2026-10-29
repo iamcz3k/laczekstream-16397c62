@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Loader2, Play, Search, Star } from "lucide-react";
 import { animeHome, animePosterFallback, animeSearch, type AnimeItem } from "@/lib/api";
+import { VoiceSearchButton } from "@/components/VoiceSearchButton";
 
 function AnimePoster({ anime }: { anime: AnimeItem }) {
   const [src, setSrc] = useState(anime.poster || "");
@@ -55,7 +56,12 @@ export function AnimeTab() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search anime…"
-          className="w-full rounded-full border-border glass py-3 pl-11 pr-4 transition focus:border-primary focus:outline-none"
+          className="w-full rounded-full border-border glass py-3 pl-11 pr-14 transition focus:border-primary focus:outline-none"
+        />
+        <VoiceSearchButton
+          onInterim={setQ}
+          onResult={(t) => { setQ(t); setLoading(true); animeSearch(t).then(setItems).catch(() => setItems([])).finally(() => setLoading(false)); }}
+          className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9"
         />
       </form>
 

@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789741435715,
+      "tag": "0000_create_subscription_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790331936551,
+      "tag": "0001_create_social_orders",
+      "breakpoints": true
+    }
+  ]
+}

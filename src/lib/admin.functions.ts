@@ -1,50 +1,23 @@
+
 import { createServerFn } from "@tanstack/react-start";
+import { ADMIN_PASSWORD } from "@/lib/admin-shared";
 
-const ADMIN_PASSWORD = "czek2991";
-
-export type AdminJson = string | number | boolean | null | { [key: string]: AdminJson } | AdminJson[];
-
-export type VisitorSessionRow = {
-  id: string;
-  session_key: string;
-  name: string | null;
-  country: string | null;
-  city: string | null;
-  device: string | null;
-  current_path: string | null;
-  started_at: string;
-  last_seen_at: string;
-  duration_seconds: number | null;
-  page_views: number | null;
-  watched: AdminJson;
-  searches: AdminJson;
-  path_log: AdminJson;
-};
-
-export type AdminAnalytics = {
-  sessions: VisitorSessionRow[];
-  onlineNow: number;
-  totalVisits: number;
-  avgDuration: number;
-  topWatched: Array<{ title: string; kind: string; count: number }>;
-  topByKind: Record<string, Array<{ id: string; title: string; count: number }>>;
-  topSearches: Array<{ q: string; count: number }>;
-  topCountries: Array<{ country: string; count: number }>;
-  dailyVisits: Array<{ day: string; visits: number; minutes: number }>;
-  accounts: Array<{ name: string; sessions: number; lastSeen: string; totalSeconds: number }>;
-};
 
 // ===== Feature flags =====
 
 export const adminSetFeatureFlag = createServerFn({ method: "POST" })
   .inputValidator((input: { password: string; key: string; enabled: boolean }) => {
-    if (typeof input?.password !== "string" || typeof input?.key !== "string" || typeof input?.enabled !== "boolean") throw new Error("Invalid input");
+    if (
+      typeof input?.password !== "string" ||
+      typeof input?.key !== "string" ||
+      typeof input?.enabled !== "boolean"
+    )
+      throw new Error("Invalid input");
     return input;
   })
   .handler(async ({ data }) => {
-    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const { error } = await supabaseAdmin
       .from("feature_flags")
       .update({ enabled: data.enabled, updated_at: new Date().toISOString() })
@@ -59,12 +32,41 @@ export const adminAddFeatureFlag = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
-    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const { error } = await supabaseAdmin
       .from("feature_flags")
       .insert({ key: data.key, description: data.description ?? null, enabled: true });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ===== Default movie server =====
+
+export const adminSetDefaultServer = createServerFn({ method: "POST" })
+  .inputValidator((input: { password: string; provider: string; enabled: boolean }) => {
+    if (
+      typeof input?.password !== "string" ||
+      typeof input?.provider !== "string" ||
+      typeof input?.enabled !== "boolean"
+    )
+      throw new Error("Invalid input");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { error } = await supabaseAdmin
+      .from("feature_flags")
+      .upsert(
+        {
+          key: "default_movie_server",
+          enabled: data.enabled,
+          description: data.provider,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -83,17 +85,24 @@ export type FeaturedEventInput = {
   ends_at?: string | null;
   priority?: number;
   active?: boolean;
+  sport?: string | null;
+  home_team?: string | null;
+  away_team?: string | null;
+  home_flag?: string | null;
+  away_flag?: string | null;
+  timer_mode?: "none" | "countdown" | "countup" | null;
+  timer_target_at?: string | null;
 };
 
 export const adminUpsertFeaturedEvent = createServerFn({ method: "POST" })
   .inputValidator((input: FeaturedEventInput) => {
-    if (typeof input?.password !== "string" || !input?.title || !input?.link_url) throw new Error("Invalid input");
+    if (typeof input?.password !== "string" || !input?.title || !input?.link_url)
+      throw new Error("Invalid input");
     return input;
   })
   .handler(async ({ data }) => {
-    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const row = {
       title: data.title,
       subtitle: data.subtitle ?? null,
@@ -104,6 +113,13 @@ export const adminUpsertFeaturedEvent = createServerFn({ method: "POST" })
       ends_at: data.ends_at ?? null,
       priority: data.priority ?? 0,
       active: data.active ?? true,
+      sport: data.sport ?? null,
+      home_team: data.home_team ?? null,
+      away_team: data.away_team ?? null,
+      home_flag: data.home_flag ?? null,
+      away_flag: data.away_flag ?? null,
+      timer_mode: data.timer_mode ?? "none",
+      timer_target_at: data.timer_target_at ?? null,
       updated_at: new Date().toISOString(),
     };
     if (data.id) {
@@ -122,9 +138,8 @@ export const adminDeleteFeaturedEvent = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
-    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const { error } = await supabaseAdmin.from("featured_events").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -136,9 +151,8 @@ export const adminListConfig = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
-    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const [flagsRes, eventsRes] = await Promise.all([
       supabaseAdmin.from("feature_flags").select("*").order("key"),
       supabaseAdmin.from("featured_events").select("*").order("priority", { ascending: false }),
@@ -152,15 +166,18 @@ export const adminListConfig = createServerFn({ method: "POST" })
 
 export const adminUploadEventPoster = createServerFn({ method: "POST" })
   .inputValidator((input: { password: string; filename: string; dataUrl: string }) => {
-    if (typeof input?.password !== "string" || typeof input?.dataUrl !== "string" || !input.dataUrl.startsWith("data:")) {
+    if (
+      typeof input?.password !== "string" ||
+      typeof input?.dataUrl !== "string" ||
+      !input.dataUrl.startsWith("data:")
+    ) {
       throw new Error("Invalid input");
     }
     return input;
   })
   .handler(async ({ data }) => {
-    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(data.dataUrl);
     if (!match) throw new Error("Expected base64 image data URL");
     const mime = match[1];
@@ -174,9 +191,12 @@ export const adminUploadEventPoster = createServerFn({ method: "POST" })
       upsert: false,
     });
     if (error) throw new Error(error.message);
+    // Bucket is private (workspace blocks public buckets). Issue a long-lived
+    // signed URL so the public site can render the poster image.
     const TEN_YEARS = 60 * 60 * 24 * 365 * 10;
-    const { data: signed, error: signErr } = await supabaseAdmin
-      .storage.from("event-posters").createSignedUrl(path, TEN_YEARS);
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
+      .from("event-posters")
+      .createSignedUrl(path, TEN_YEARS);
     if (signErr || !signed?.signedUrl) throw new Error(signErr?.message || "Could not sign URL");
     return { url: signed.signedUrl };
   });
@@ -187,68 +207,65 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (data.password !== ADMIN_PASSWORD) {
       throw new Error("Invalid admin password");
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: sessions, error } = await supabaseAdmin
+    // Cap at 1000 sessions to limit DB IO.
+    const { data: page, error } = await supabaseAdmin
       .from("visitor_sessions")
       .select("*")
       .order("last_seen_at", { ascending: false })
-      .limit(2000);
-
+      .limit(1000);
     if (error) throw new Error(error.message);
-    const sessionRows = ((sessions || []) as Array<Record<string, unknown>>).map((s) => ({
-      id: String(s.id || ""),
-      session_key: String(s.session_key || ""),
-      name: typeof s.name === "string" ? s.name : null,
-      country: typeof s.country === "string" ? s.country : null,
-      city: typeof s.city === "string" ? s.city : null,
-      device: typeof s.device === "string" ? s.device : null,
-      current_path: typeof s.current_path === "string" ? s.current_path : null,
-      started_at: String(s.started_at || new Date().toISOString()),
-      last_seen_at: String(s.last_seen_at || new Date().toISOString()),
-      duration_seconds: typeof s.duration_seconds === "number" ? s.duration_seconds : 0,
-      page_views: typeof s.page_views === "number" ? s.page_views : 0,
-      watched: (Array.isArray(s.watched) ? s.watched : []) as AdminJson,
-      searches: (Array.isArray(s.searches) ? s.searches : []) as AdminJson,
-      path_log: (Array.isArray(s.path_log) ? s.path_log : []) as AdminJson,
-    } satisfies VisitorSessionRow));
+    const sessions: any[] = page || [];
+    const totalVisitsCount = sessions.length;
+
 
     const now = Date.now();
-    // FIX: widened from 60s to 5 minutes — heartbeat is every 10s but network
-    // delays, tab backgrounding and deploy reloads can cause gaps much longer than 60s.
-    const onlineWindowMs = 5 * 60_000;
-    const onlineNow = sessionRows.filter(
-      (s) => now - new Date(s.last_seen_at).getTime() < onlineWindowMs,
+    const onlineWindowMs = 60_000; // active in last 60s
+    const onlineNow = (sessions || []).filter(
+      (s: any) => now - new Date(s.last_seen_at).getTime() < onlineWindowMs,
     ).length;
 
     // Aggregate
     const watchCount = new Map<string, { title: string; kind: string; count: number }>();
     const watchByKind: Record<string, Map<string, { title: string; count: number }>> = {
-      movie: new Map(), tv: new Map(), anime: new Map(), football: new Map(),
+      movie: new Map(),
+      tv: new Map(),
+      anime: new Map(),
+      football: new Map(),
     };
     const searchCount = new Map<string, number>();
     const countryCount = new Map<string, number>();
-    const dayCount = new Map<string, number>();
+    const dayCount = new Map<string, number>(); // YYYY-MM-DD => visits
     const dayMinutes = new Map<string, number>();
-    const accounts = new Map<string, { name: string; sessions: number; lastSeen: string; totalSeconds: number }>();
+    const accounts = new Map<
+      string,
+      { name: string; sessions: number; lastSeen: string; totalSeconds: number }
+    >();
 
-    for (const s of sessionRows) {
+    for (const s of sessions || []) {
       if (s.country) countryCount.set(s.country, (countryCount.get(s.country) || 0) + 1);
       const day = new Date(s.started_at).toISOString().slice(0, 10);
       dayCount.set(day, (dayCount.get(day) || 0) + 1);
       dayMinutes.set(day, (dayMinutes.get(day) || 0) + Math.round((s.duration_seconds || 0) / 60));
       const accName = (s.name || "Anonymous").trim() || "Anonymous";
-      const a = accounts.get(accName) || { name: accName, sessions: 0, lastSeen: s.last_seen_at, totalSeconds: 0 };
+      const a = accounts.get(accName) || {
+        name: accName,
+        sessions: 0,
+        lastSeen: s.last_seen_at,
+        totalSeconds: 0,
+      };
       a.sessions += 1;
       a.totalSeconds += s.duration_seconds || 0;
       if (new Date(s.last_seen_at) > new Date(a.lastSeen)) a.lastSeen = s.last_seen_at;
       accounts.set(accName, a);
 
-      const watched = Array.isArray(s.watched) ? (s.watched as Array<{ id?: string; title?: string; kind?: string }>) : [];
+      const watched = Array.isArray(s.watched)
+        ? (s.watched as Array<{ id?: string; title?: string; kind?: string }>)
+        : [];
       for (const w of watched) {
         const k = `${w.kind || "?"}:${w.id || "?"}`;
         const cur = watchCount.get(k) || { title: w.title || k, kind: w.kind || "?", count: 0 };
@@ -268,7 +285,9 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       }
     }
 
-    const topWatched = Array.from(watchCount.values()).sort((a, b) => b.count - a.count).slice(0, 20);
+    const topWatched = Array.from(watchCount.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
     const topByKind = Object.fromEntries(
       Object.entries(watchByKind).map(([k, m]) => [
         k,
@@ -278,21 +297,31 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
           .slice(0, 10),
       ]),
     ) as Record<string, Array<{ id: string; title: string; count: number }>>;
-    const topSearches = Array.from(searchCount.entries()).map(([q, count]) => ({ q, count })).sort((a, b) => b.count - a.count).slice(0, 20);
-    const topCountries = Array.from(countryCount.entries()).map(([country, count]) => ({ country, count })).sort((a, b) => b.count - a.count).slice(0, 20);
+    const topSearches = Array.from(searchCount.entries())
+      .map(([q, count]) => ({ q, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
+    const topCountries = Array.from(countryCount.entries())
+      .map(([country, count]) => ({ country, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
     const dailyVisits = Array.from(dayCount.entries())
       .map(([day, visits]) => ({ day, visits, minutes: dayMinutes.get(day) || 0 }))
       .sort((a, b) => (a.day < b.day ? 1 : -1))
       .slice(0, 14);
     const accountsList = Array.from(accounts.values()).sort((a, b) => a.name.localeCompare(b.name));
 
-    const totalVisits = sessionRows.length;
-    const avgDuration = totalVisits > 0
-      ? Math.round(sessionRows.reduce((acc, s) => acc + (s.duration_seconds || 0), 0) / totalVisits)
-      : 0;
+    const totalVisits = totalVisitsCount ?? (sessions || []).length;
+    const avgDuration =
+      totalVisits > 0
+        ? Math.round(
+            (sessions || []).reduce((acc: number, s: any) => acc + (s.duration_seconds || 0), 0) /
+              totalVisits,
+          )
+        : 0;
 
-    const result: AdminAnalytics = {
-      sessions: sessionRows,
+    return {
+      sessions: sessions || [],
       onlineNow,
       totalVisits,
       avgDuration,
@@ -303,5 +332,215 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       dailyVisits,
       accounts: accountsList,
     };
-    return result;
+  });
+
+// ===== Default sport server (per match link) =====
+// Stored in feature_flags as:
+//   key:         "default_sport_server"
+//   enabled:     true/false (master on/off)
+//   description: JSON array of { matchLink, serverIndex } entries
+
+export const adminSetDefaultSportServer = createServerFn({ method: "POST" })
+  .inputValidator(
+    (input: { password: string; matchLink: string; serverIndex: number; enabled: boolean }) => {
+      if (
+        typeof input?.password !== "string" ||
+        typeof input?.matchLink !== "string" ||
+        typeof input?.serverIndex !== "number" ||
+        typeof input?.enabled !== "boolean"
+      )
+        throw new Error("Invalid input");
+      return input;
+    },
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+
+    // Load existing entries
+    const { data: existing } = await supabaseAdmin
+      .from("feature_flags")
+      .select("description")
+      .eq("key", "default_sport_server")
+      .maybeSingle();
+
+    let entries: Array<{ matchLink: string; serverIndex: number }> = [];
+    try {
+      if (existing?.description) entries = JSON.parse(existing.description);
+    } catch {}
+
+    // Upsert this match entry
+    const idx = entries.findIndex((e) => e.matchLink === data.matchLink);
+    if (idx >= 0) entries[idx] = { matchLink: data.matchLink, serverIndex: data.serverIndex };
+    else entries.push({ matchLink: data.matchLink, serverIndex: data.serverIndex });
+
+    const { error } = await supabaseAdmin
+      .from("feature_flags")
+      .upsert(
+        {
+          key: "default_sport_server",
+          enabled: data.enabled,
+          description: JSON.stringify(entries),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminRemoveSportServerEntry = createServerFn({ method: "POST" })
+  .inputValidator((input: { password: string; matchLink: string }) => {
+    if (typeof input?.password !== "string" || typeof input?.matchLink !== "string")
+      throw new Error("Invalid input");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { data: existing } = await supabaseAdmin
+      .from("feature_flags")
+      .select("description, enabled")
+      .eq("key", "default_sport_server")
+      .maybeSingle();
+    let entries: Array<{ matchLink: string; serverIndex: number }> = [];
+    try {
+      if (existing?.description) entries = JSON.parse(existing.description);
+    } catch {}
+    entries = entries.filter((e) => e.matchLink !== data.matchLink);
+    const { error } = await supabaseAdmin
+      .from("feature_flags")
+      .upsert(
+        {
+          key: "default_sport_server",
+          enabled: existing?.enabled ?? true,
+          description: JSON.stringify(entries),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ===== Recommended movie servers (🔥 badge) =====
+// Stored in feature_flags as:
+//   key:         "recommended_movie_servers"
+//   enabled:     true => show fire badges; false => hide all
+//   description: JSON array of provider IDs, e.g. ["videasy","vidsrcvip"]
+
+export const adminSetRecommendedMovieServers = createServerFn({ method: "POST" })
+  .inputValidator((input: { password: string; providers: string[]; enabled: boolean }) => {
+    if (
+      typeof input?.password !== "string" ||
+      !Array.isArray(input?.providers) ||
+      typeof input?.enabled !== "boolean"
+    )
+      throw new Error("Invalid input");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const providers = Array.from(new Set(data.providers.filter((p) => typeof p === "string" && p)));
+    const { error } = await supabaseAdmin
+      .from("feature_flags")
+      .upsert(
+        {
+          key: "recommended_movie_servers",
+          enabled: data.enabled,
+          description: JSON.stringify(providers),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ===== Recommended sport sources (🔥 badge, per match) =====
+// Stored in feature_flags as:
+//   key:         "recommended_sport_sources"
+//   enabled:     master on/off
+//   description: JSON array of { matchLink, indices: number[] } (1-based source numbers)
+
+export const adminSetRecommendedSportSources = createServerFn({ method: "POST" })
+  .inputValidator((input: { password: string; matchLink: string; indices: number[]; enabled: boolean }) => {
+    if (
+      typeof input?.password !== "string" ||
+      typeof input?.matchLink !== "string" ||
+      !Array.isArray(input?.indices) ||
+      typeof input?.enabled !== "boolean"
+    )
+      throw new Error("Invalid input");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { data: existing } = await supabaseAdmin
+      .from("feature_flags")
+      .select("description")
+      .eq("key", "recommended_sport_sources")
+      .maybeSingle();
+    let entries: Array<{ matchLink: string; indices: number[] }> = [];
+    try {
+      if (existing?.description) entries = JSON.parse(existing.description);
+    } catch {}
+    const cleanIndices = Array.from(new Set(data.indices.filter((n) => Number.isFinite(n) && n >= 1).map((n) => Math.floor(n))));
+    const idx = entries.findIndex((e) => e.matchLink === data.matchLink);
+    if (cleanIndices.length === 0) {
+      if (idx >= 0) entries.splice(idx, 1);
+    } else if (idx >= 0) {
+      entries[idx] = { matchLink: data.matchLink, indices: cleanIndices };
+    } else {
+      entries.push({ matchLink: data.matchLink, indices: cleanIndices });
+    }
+    const { error } = await supabaseAdmin
+      .from("feature_flags")
+      .upsert(
+        {
+          key: "recommended_sport_sources",
+          enabled: data.enabled,
+          description: JSON.stringify(entries),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminRemoveRecommendedSportEntry = createServerFn({ method: "POST" })
+  .inputValidator((input: { password: string; matchLink: string }) => {
+    if (typeof input?.password !== "string" || typeof input?.matchLink !== "string")
+      throw new Error("Invalid input");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { data: existing } = await supabaseAdmin
+      .from("feature_flags")
+      .select("description, enabled")
+      .eq("key", "recommended_sport_sources")
+      .maybeSingle();
+    let entries: Array<{ matchLink: string; indices: number[] }> = [];
+    try {
+      if (existing?.description) entries = JSON.parse(existing.description);
+    } catch {}
+    entries = entries.filter((e) => e.matchLink !== data.matchLink);
+    const { error } = await supabaseAdmin
+      .from("feature_flags")
+      .upsert(
+        {
+          key: "recommended_sport_sources",
+          enabled: existing?.enabled ?? true,
+          description: JSON.stringify(entries),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });

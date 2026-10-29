@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Globe, Loader2, Pause, Play, Radio as RadioIcon, Search, Volume2, X } from "lucide-react";
+import { VoiceSearchButton } from "@/components/VoiceSearchButton";
 
 type Station = {
   stationuuid: string;
@@ -93,8 +94,9 @@ export function RadioTab() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search station name…"
-            className="w-full rounded-full border border-border bg-secondary/50 py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
+            className="w-full rounded-full border border-border bg-secondary/50 py-3 pl-11 pr-14 text-sm outline-none focus:border-primary"
           />
+          <VoiceSearchButton onInterim={setQuery} onResult={setQuery} className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9" />
         </div>
         <button
           onClick={() => { setPickerOpen(true); setPickerQ(""); }}

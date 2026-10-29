@@ -6,14 +6,53 @@ import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/anime/$animeId")({
   component: AnimeWatchPage,
-  head: () => ({
-    meta: [
-      { title: "Anime Player — LACZEK STREAM" },
-      { name: "description", content: "Watch anime episodes with source and episode selection." },
-      { property: "og:title", content: "Anime Player — LACZEK STREAM" },
-      { property: "og:description", content: "Watch anime episodes with source and episode selection." },
-    ],
-  }),
+  loader: async ({ params }) => {
+    try {
+      const d = await animeDetail(params.animeId);
+      const firstEpisodeId = d?.episodeList?.[0]?.id || "";
+      const firstEpisode = firstEpisodeId ? await animeEpisodeDetail(firstEpisodeId).catch(() => null) : null;
+      return {
+        detail: d,
+        firstEpisode,
+        title: d?.title ?? null,
+        synopsis: (d as unknown as { synopsis?: string })?.synopsis ?? null,
+        image: (d as unknown as { poster?: string; image?: string })?.poster ?? (d as unknown as { image?: string })?.image ?? null,
+      };
+    } catch {
+      return { detail: null as AnimeDetail | null, firstEpisode: null as AnimeEpisodeDetail | null, title: null as string | null, synopsis: null as string | null, image: null as string | null };
+    }
+  },
+  head: ({ params, loaderData }) => {
+    const name = loaderData?.title || `Anime ${params.animeId}`;
+    const title = `Watch ${name} online free — LACZEK STREAM`.slice(0, 60);
+    const desc = (loaderData?.synopsis
+      ? `Watch ${name} online for free. ${loaderData.synopsis}`
+      : `Watch ${name} online for free on LACZEK STREAM — sub & dub episodes, no ads.`).slice(0, 158);
+    const url = `https://laczekstream.lovable.app/anime/${params.animeId}`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "video.tv_show" },
+        ...(loaderData?.image ? [{ property: "og:image", content: loaderData.image }] : []),
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [{
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "TVSeries",
+          name,
+          description: loaderData?.synopsis ?? desc,
+          image: loaderData?.image ?? undefined,
+          url,
+        }),
+      }],
+    };
+  },
 });
 
 async function enterLandscapeFullscreen(element: HTMLElement | null) {
@@ -26,33 +65,22 @@ async function enterLandscapeFullscreen(element: HTMLElement | null) {
 }
 
 function AnimeWatchPage() {
-  const { animeId } = Route.useParams();
+  const { detail: loadedDetail, firstEpisode } = Route.useLoaderData();
   const navigate = useNavigate();
   const playerRef = useRef<HTMLDivElement>(null);
-  const [detail, setDetail] = useState<AnimeDetail | null>(null);
-  const [episodeId, setEpisodeId] = useState("");
-  const [episode, setEpisode] = useState<AnimeEpisodeDetail | null>(null);
+  const detail = loadedDetail;
+  const [episodeId, setEpisodeId] = useState(loadedDetail?.episodeList?.[0]?.id || "");
+  const [episode, setEpisode] = useState<AnimeEpisodeDetail | null>(firstEpisode);
   const [sourceIndex, setSourceIndex] = useState(0);
   const [resolvedUrl, setResolvedUrl] = useState("");
   const [directVideoUrl, setDirectVideoUrl] = useState("");
-  const [loading, setLoading] = useState(true);
   const [episodeLoading, setEpisodeLoading] = useState(false);
   const [playerLoading, setPlayerLoading] = useState(false);
   const [playerError, setPlayerError] = useState("");
 
   useEffect(() => {
-    setLoading(true);
-    animeDetail(animeId)
-      .then((data) => {
-        setDetail(data);
-        setEpisodeId(data?.episodeList?.[data.episodeList.length - 1]?.id || data?.episodeList?.[0]?.id || "");
-      })
-      .catch(() => setDetail(null))
-      .finally(() => setLoading(false));
-  }, [animeId]);
-
-  useEffect(() => {
     if (!episodeId) return;
+    if (episodeId === loadedDetail?.episodeList?.[0]?.id && firstEpisode) return;
     setEpisodeLoading(true);
     animeEpisodeDetail(episodeId)
       .then((data) => {
@@ -61,7 +89,7 @@ function AnimeWatchPage() {
       })
       .catch(() => setEpisode(null))
       .finally(() => setEpisodeLoading(false));
-  }, [episodeId]);
+  }, [episodeId, firstEpisode, loadedDetail]);
 
   const source = episode?.sources?.[sourceIndex];
 
@@ -142,9 +170,7 @@ function AnimeWatchPage() {
           <BrandMark compact />
         </header>
 
-        {loading ? (
-          <div className="flex flex-1 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-        ) : !detail ? (
+        {!detail ? (
           <div className="flex flex-1 items-center justify-center text-center text-muted-foreground">No anime data available.</div>
         ) : (
           <div className="grid flex-1 gap-4 lg:grid-cols-[1fr_360px]">

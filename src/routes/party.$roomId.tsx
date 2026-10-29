@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Copy, Users } from "lucide-react";
+import { ArrowLeft, Copy, Lock, Users } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { MatchChat } from "@/components/MatchChat";
 import { supabase } from "@/integrations/supabase/client";
 import { getPrefs } from "@/lib/preferences";
+import { openPaywall, usePerk } from "@/lib/subscription";
+import { Button } from "@/components/ui/button";
 
 type PartySearch = { src?: string; title?: string };
 
@@ -18,6 +20,10 @@ export const Route = createFileRoute("/party/$roomId")({
     meta: [
       { title: "Watch Party Room — LACZEK STREAM" },
       { name: "description", content: "Synced viewing room with live chat." },
+      { property: "og:title", content: "Watch Party Room — LACZEK STREAM" },
+      { property: "og:description", content: "Synced viewing room with live chat." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
@@ -38,22 +44,37 @@ function PartyRoom() {
   const embed = buildEmbed(src || "");
   const chatId = `party_${roomId}`;
   const roomTitle = title || "Watch Party";
+  const unlocked = usePerk("party");
 
   useEffect(() => {
+    if (!unlocked) return;
     const name = getPrefs().name || `Guest-${Math.random().toString(36).slice(2, 6)}`;
     const ch = supabase.channel(`presence-party-${roomId}`, { config: { presence: { key: name } } });
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState();
       setPresence(Object.keys(state).length || 1);
-    }).subscribe(async (status) => {
+    }).subscribe(async (status: any) => {
       if (status === "SUBSCRIBED") await ch.track({ at: Date.now() });
     });
     return () => { supabase.removeChannel(ch); };
-  }, [roomId]);
+  }, [roomId, unlocked]);
 
   async function copyInvite() {
     const url = window.location.href;
     try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {}
+  }
+
+  if (!unlocked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-6 text-center text-foreground">
+        <div className="max-w-md">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15"><Lock className="h-6 w-6 text-primary" /></div>
+          <h1 className="mt-4 text-2xl font-black">Watch Party is locked</h1>
+          <p className="mt-2 text-sm text-muted-foreground">All Access is required to open or join a Watch Party room.</p>
+          <Button onClick={() => openPaywall("party")} className="mt-5 rounded-full"><Lock /> View subscriptions</Button>
+        </div>
+      </div>
+    );
   }
 
   if (!embed) {

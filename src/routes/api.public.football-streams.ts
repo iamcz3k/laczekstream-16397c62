@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { normalizeCdnEvents } from "@/lib/football-cdn";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -61,51 +62,55 @@ function normalizeMatch(m: any) {
   };
 }
 
-async function fetchMatches(category = "football") {
-  // Combine category + live so user sees live games too.
-  const [catRes, liveRes] = await Promise.all([
-    fetch(`${STREAMED}/api/matches/${category}`, FETCH_OPTS).then((r) => r.ok ? r.json() : []).catch(() => []),
-    fetch(`${STREAMED}/api/matches/live`, FETCH_OPTS).then((r) => r.ok ? r.json() : []).catch(() => []),
-  ]);
-  const seen = new Set<string>();
-  const all = [...liveRes.filter((m: any) => m.category === category), ...catRes.map((m: any) => ({ ...m, category }))];
-  return all
-    .filter((m: any) => {
-      if (!m?.id || seen.has(m.id)) return false;
-      seen.add(m.id);
-      return Array.isArray(m.sources) && m.sources.length > 0;
-    })
-    .map(normalizeMatch);
+const SPORTSRC = "https://api.sportsrc.org/";
+const CDN_EVENTS = "https://api.cdnlivetv.tv/api/v1/events/sports/?user=cdnlivetv&plan=free";
+let cdnCache: { data: unknown; expires: number } | undefined;
+let cdnPending: Promise<unknown> | undefined;
+
+async function cdnEvents() {
+  if (cdnCache && cdnCache.expires > Date.now()) return cdnCache.data;
+  if (cdnPending) return cdnPending;
+  cdnPending = (async () => {
+    const response = await fetch(CDN_EVENTS, { ...FETCH_OPTS, signal: AbortSignal.timeout(12000) });
+    if (!response.ok) throw new Error("Football feed unavailable");
+    const data: unknown = await response.json();
+    cdnCache = { data, expires: Date.now() + 20_000 };
+    return data;
+  })();
+  try { return await cdnPending; } finally { cdnPending = undefined; }
 }
 
-async function fetchDetail(id: string, category?: string) {
-  // Find match across supported sports + live to get its source list.
-  const categories = category ? [category] : Array.from(new Set(Object.values(CATEGORY_BY_SPORT)));
-  const [liveRes, ...categoryResults] = await Promise.all([
-    fetch(`${STREAMED}/api/matches/live`, FETCH_OPTS).then((r) => r.ok ? r.json() : []).catch(() => []),
-    ...categories.map((cat) => fetch(`${STREAMED}/api/matches/${cat}`, FETCH_OPTS).then((r) => r.ok ? r.json() : []).catch(() => []).then((items) => items.map((m: any) => ({ ...m, category: cat })))),
-  ]);
-  const all = [...liveRes, ...categoryResults.flat()];
-  const match = all.find((m: any) => m?.id === id);
-  if (!match) return null;
+async function srcJson(qs: string) {
+  try {
+    const r = await fetch(`${SPORTSRC}?${qs}`, FETCH_OPTS);
+    if (!r.ok) return null;
+    const j = await r.json();
+    return j?.success ? j.data : null;
+  } catch {
+    return null;
+  }
+}
 
-  const normalized = normalizeMatch(match);
-  const refs: { source: string; id: string }[] = match.sources || [];
+async function fetchMatches(category = "football") {
+  if (category === "football") {
+    return normalizeCdnEvents(await cdnEvents()).map(({ sources, ...match }) => match);
+  }
+  const data = await srcJson(`data=matches&category=${encodeURIComponent(category)}`);
+  const list = Array.isArray(data) ? data : [];
+  const seen = new Set<string>();
+  return list
+    .filter((m: any) => m?.id && !seen.has(m.id) && seen.add(m.id))
+    .map((m: any) => normalizeMatch({ ...m, category: m.category || category }));
+}
 
-  const streamLists = await Promise.all(
-    refs.map(async (ref) => {
-      try {
-        const r = await fetch(`${STREAMED}/api/stream/${ref.source}/${ref.id}`, FETCH_OPTS);
-        if (!r.ok) return [];
-        const data = await r.json();
-        return Array.isArray(data) ? data : [];
-      } catch {
-        return [];
-      }
-    }),
-  );
-
-  const sources = streamLists.flat().map((s: any) => ({
+async function fetchDetail(id: string, category = "football") {
+  if (category === "football") {
+    return normalizeCdnEvents(await cdnEvents(), Date.now(), true).find((match) => match.id === id) ?? null;
+  }
+  const d = await srcJson(`data=detail&category=${encodeURIComponent(category)}&id=${encodeURIComponent(id)}`);
+  if (!d) return null;
+  const normalized = normalizeMatch({ ...d, category: d.category || category });
+  const sources = (Array.isArray(d.sources) ? d.sources : []).map((s: any) => ({
     id: s.id,
     streamNo: s.streamNo,
     language: s.language,
@@ -113,8 +118,7 @@ async function fetchDetail(id: string, category?: string) {
     embedUrl: s.embedUrl,
     source: s.source,
     viewers: typeof s.viewers === "number" ? s.viewers : undefined,
-  })).filter((s) => /^https?:\/\//i.test(s.embedUrl));
-
+  })).filter((s: any) => /^https?:\/\//i.test(s.embedUrl || ""));
   return { ...normalized, sources };
 }
 
@@ -124,6 +128,25 @@ export const Route = createFileRoute("/api/public/football-streams")({
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS_HEADERS }),
       GET: async ({ request }) => {
         const params = new URL(request.url).searchParams;
+        if (params.get("mode") === "image") {
+          const image = params.get("url") || "";
+          if (!/^https:\/\/cdnlivetv\.tv\/api\/v1\/team\/images\/\d{1,12}$/.test(image)) {
+            return new Response("Invalid image", { status: 400, headers: CORS_HEADERS });
+          }
+          try {
+            let response = await fetch(image, { headers: { referer: "https://cdnlivetv.tv/" }, signal: AbortSignal.timeout(8000), redirect: "manual" });
+            if (response.status >= 300 && response.status < 400) {
+              const location = response.headers.get("location") || "";
+              if (!/^https:\/\/(?:r2\.)?thesportsdb\.com\/images\/media\/team\/badge\/[a-z0-9._-]+$/i.test(location)) {
+                return new Response(null, { status: 404, headers: CORS_HEADERS });
+              }
+              response = await fetch(location, { signal: AbortSignal.timeout(8000), redirect: "error" });
+            }
+            const type = response.headers.get("content-type") || "";
+            if (!response.ok || !type.startsWith("image/")) return new Response(null, { status: 404, headers: CORS_HEADERS });
+            return new Response(response.body, { headers: { ...CORS_HEADERS, "content-type": type, "cache-control": "public, max-age=86400", "x-content-type-options": "nosniff" } });
+          } catch { return new Response(null, { status: 502, headers: CORS_HEADERS }); }
+        }
         const mode = params.get("mode") === "detail" ? "detail" : "matches";
         const id = params.get("id") || "";
         const sport = (params.get("sport") || "football").toLowerCase();

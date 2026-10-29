@@ -1,7 +1,7 @@
 {
   "name": "LACZEK STREAM",
   "short_name": "LaCzek",
-  "description": "Free movies, TV, football, anime, radio, podcasts & live CCTV.",
+  "description": "Free movies, TV shows, football, anime, radio and podcasts.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

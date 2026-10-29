@@ -1,14 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Loader2, Pause, Play, Radio as RadioIcon, Search, Volume2 } from "lucide-react";
+import { VoiceSearchButton } from "@/components/VoiceSearchButton";
 
 export const Route = createFileRoute("/radio")({
   component: RadioPage,
   head: () => ({
     meta: [
       { title: "Radio — LACZEK STREAM" },
-      { name: "description", content: "Stream thousands of free radio stations from around the world." },
+      { name: "description", content: "Stream thousands of free radio stations from around the world — browse by country, genre and bitrate." },
+      { property: "og:title", content: "Radio — LACZEK STREAM" },
+      { property: "og:description", content: "Stream thousands of free radio stations worldwide." },
+      { property: "og:url", content: "https://laczekstream.lovable.app/radio" },
     ],
+    links: [{ rel: "canonical", href: "https://laczekstream.lovable.app/radio" }],
   }),
 });
 
@@ -83,7 +88,7 @@ function RadioPage() {
     <div className="min-h-screen bg-background text-foreground pb-32">
       <header className="sticky top-0 z-20 border-b border-border glass">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-4">
-          <Link to="/" className="rounded-full bg-secondary p-2"><ArrowLeft className="h-4 w-4" /></Link>
+          <Link to="/" aria-label="Back to home" className="rounded-full bg-secondary p-2"><ArrowLeft className="h-4 w-4" /></Link>
           <RadioIcon className="h-5 w-5 text-primary" />
           <h1 className="text-xl font-black">Radio</h1>
         </div>
@@ -97,8 +102,9 @@ function RadioPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search station name…"
-              className="w-full rounded-full border border-border bg-secondary/50 py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
+              className="w-full rounded-full border border-border bg-secondary/50 py-3 pl-11 pr-14 text-sm outline-none focus:border-primary"
             />
+            <VoiceSearchButton onInterim={setQuery} onResult={setQuery} className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9" />
           </div>
           <select
             value={country}

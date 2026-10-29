@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Camera, Film, Trophy, Tv, Youtube } from "lucide-react";
+import { Film, Gamepad2, Headphones, Radio as RadioIcon, Trophy, Tv } from "lucide-react";
 import { getPrefs, setPrefs } from "@/lib/preferences";
 import type { TabKey } from "@/components/Header";
 
@@ -7,8 +7,9 @@ const TAB_OPTIONS: { key: TabKey; label: string; icon: React.ComponentType<{ cla
   { key: "movies", label: "Movies", icon: Film, emoji: "🎬" },
   { key: "football", label: "Football", icon: Trophy, emoji: "⚽" },
   { key: "tv", label: "Live TV", icon: Tv, emoji: "📺" },
-  { key: "youtube", label: "Music & YouTube", icon: Youtube, emoji: "🎵" },
-  { key: "cctv", label: "Live CCTV", icon: Camera, emoji: "📹" },
+  { key: "games", label: "Games", icon: Gamepad2, emoji: "🎮" },
+  { key: "radio", label: "Radio", icon: RadioIcon, emoji: "📻" },
+  { key: "podcasts", label: "Podcasts", icon: Headphones, emoji: "🎙️" },
 ];
 
 export function OnboardingPopup({ onPickTab }: { onPickTab: (tab: TabKey) => void }) {

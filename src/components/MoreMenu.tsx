@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Bookmark,
   Clock,
   Code2,
+  Crown,
   Download,
   Gauge,
   HelpCircle,
@@ -10,6 +12,8 @@ import {
   Info,
   KeyboardIcon,
   Languages,
+  Lock as LockIcon,
+  Chrome,
   ListChecks,
   MoreVertical,
   RefreshCcw,
@@ -17,8 +21,10 @@ import {
   Send,
   Share2,
   Shuffle,
+  ShieldCheck,
   Smartphone,
   Sparkles,
+  Play,
   Trash2,
   Users,
   X,
@@ -32,6 +38,9 @@ import { QA_LIST } from "@/lib/qa";
 import { BugReport } from "@/components/BugReport";
 import { LANGUAGES } from "@/lib/languages";
 import { CHANGELOG, type ChangeKind } from "@/lib/changelog";
+import { GENERAL_SETTINGS, getGeneralSettings, setGeneralSetting, resetGeneralSettings, useGeneralSettings, type GeneralSettingKey } from "@/lib/general-settings";
+import { openPaywall, useEntitlement } from "@/lib/subscription";
+import { planName } from "@/lib/subscription-shared";
 
 export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -43,7 +52,10 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   const [showLang, setShowLang] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const [installDevice, setInstallDevice] = useState<"android" | "iphone" | null>(null);
+  const [showGeneral, setShowGeneral] = useState(false);
   const navigate = useNavigate();
+  const ent = useEntitlement();
   const [canInstall, setCanInstall] = useState(false);
   const installPromptRef = useRef<unknown>(null);
 
@@ -57,17 +69,20 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
     return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, []);
 
-  async function installApp() {
+  function installApp() {
+    setInstallDevice(null);
+    setShowInstallHelp(true);
+    setOpen(false);
+  }
+
+  async function installPwa() {
     const p = installPromptRef.current as { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> } | null;
     if (p) {
       await p.prompt();
       await p.userChoice.catch(() => {});
       installPromptRef.current = null;
       setCanInstall(false);
-    } else {
-      setShowInstallHelp(true);
     }
-    setOpen(false);
   }
 
   function openUpdates() {
@@ -76,7 +91,18 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
   }
 
   function goSpeedTest() { setOpen(false); navigate({ to: "/speedtest" }); }
-  function goParty() { setOpen(false); navigate({ to: "/party" }); }
+  function goParty() {
+    setOpen(false);
+    if (ent.plan !== "allaccess") openPaywall("party");
+    else navigate({ to: "/party" });
+  }
+  function goDownloads() {
+    setOpen(false);
+    if (ent.plan === "free") openPaywall("downloads");
+    else navigate({ to: "/downloads" });
+  }
+  function goAdblocker() { setOpen(false); navigate({ to: "/adblocker" }); }
+  function goExtension() { setOpen(false); navigate({ to: "/extension" }); }
 
   // Lock body scroll when drawer open
   useEffect(() => {
@@ -112,7 +138,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
 
   function shareSite() {
     setOpen(false);
-    const data = { title: "LACZEK STREAM", text: "Free movies, TV, football, anime & live CCTV.", url: window.location.origin };
+    const data = { title: "LACZEK STREAM", text: "Free movies, TV shows, football and anime.", url: window.location.origin };
     if (navigator.share) navigator.share(data).catch(() => {});
     else { navigator.clipboard?.writeText(data.url); alert("Link copied to clipboard"); }
   }
@@ -129,7 +155,8 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
 
   function clearAll() {
     setOpen(false);
-    if (confirm("Clear continue watching, watchlist and history?")) clearLibrary("all");
+    const settings = getGeneralSettings();
+    if (!settings.confirmDeletes || confirm("Clear continue watching, watchlist and history?")) clearLibrary("all");
   }
 
   function reload() {
@@ -139,27 +166,22 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
 
   const currentLang = LANGUAGES.find((l) => l.code === (getPrefs().language || "en")) || LANGUAGES[0];
 
-  return (
+  const portal = typeof document !== "undefined" ? document.body : null;
+  const overlays = (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        aria-label="Open menu"
-        className="flex h-10 w-10 items-center justify-center rounded-full glass transition hover:bg-primary hover:text-primary-foreground"
-      >
-        <MoreVertical className="h-4 w-4" />
-      </button>
-
       {/* Slide-in drawer */}
       <div
         className={`fixed inset-0 z-[80] transition-opacity duration-300 ${open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
         onClick={() => setOpen(false)}
+        style={{ height: "100dvh" }}
       >
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
         <aside
           onClick={(e) => e.stopPropagation()}
-          className={`absolute right-0 top-0 flex h-full w-[88%] max-w-[380px] flex-col border-l border-border bg-popover text-popover-foreground shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"}`}
+          style={{ height: "100dvh", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
+          className={`absolute right-0 top-0 flex w-[88%] max-w-[380px] flex-col border-l border-border bg-popover text-popover-foreground shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"}`}
         >
-          <header className="flex items-center justify-between border-b border-border px-5 py-4">
+          <header className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
             <div>
               <h2 className="text-base font-black tracking-tight">Menu</h2>
               <p className="text-[11px] text-muted-foreground">Quick actions & settings</p>
@@ -169,29 +191,38 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
             </button>
           </header>
 
-          <div className="flex-1 overflow-y-auto py-2">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-2" style={{ WebkitOverflowScrolling: "touch" }}>
             <Group label="Library">
               <Row icon={Clock} onClick={() => goTab("library", "continue")}>Continue watching</Row>
               <Row icon={Bookmark} onClick={() => goTab("library", "watchlist")}>Watchlist</Row>
               <Row icon={HistoryIcon} onClick={() => goTab("library", "history")}>History</Row>
               <Row icon={Sparkles} onClick={() => goTab("genres")}>Browse genres</Row>
-              <Row icon={Shuffle} onClick={surpriseMe} disabled={busy}>{busy ? "Picking…" : "Surprise me"}</Row>
+              <Row icon={Shuffle} onClick={surpriseMe} disabled={busy} className="feat-surprise">{busy ? "Picking…" : "Surprise me"}</Row>
+            </Group>
+
+            <Group label="General">
+              <Row icon={Sparkles} onClick={() => { setOpen(false); setShowGeneral(true); }}>Personal preferences</Row>
             </Group>
 
             <Group label="Settings">
+              <Row icon={Crown} onClick={() => { setOpen(false); openPaywall(); }} value={ent.plan === "free" ? "Free" : planName(ent.plan)}>Subscription & payments</Row>
               <Row icon={Languages} onClick={() => setShowLang(true)} value={`${currentLang.native}`}>Language</Row>
+              <Row icon={Chrome} onClick={goExtension}>Chrome extension</Row>
             </Group>
 
             <Group label="More">
               <Row icon={ListChecks} onClick={() => { setOpen(false); setShowChangelog(true); }}>What's new</Row>
+              <Row icon={Play} onClick={() => { setOpen(false); window.dispatchEvent(new CustomEvent("laczek:tour:start")); }}>Preview · Take a tour</Row>
               <Row icon={Send} onClick={openUpdates}>Updates · Telegram</Row>
               <Row icon={Smartphone} onClick={installApp}>{canInstall ? "Install app" : "Install app / APK"}</Row>
-              <Row icon={Users} onClick={goParty}>Watch Party</Row>
+              <Row icon={Users} onClick={goParty} className="feat-watchparty" locked={ent.plan !== "allaccess"}>Watch Party</Row>
               <Row icon={Gauge} onClick={goSpeedTest}>Speed test</Row>
+              <Row icon={Download} onClick={goDownloads} className="feat-downloads" locked={ent.plan === "free"}>Downloads</Row>
+              <Row icon={ShieldCheck} onClick={goAdblocker}>Ad blocker</Row>
               <Row icon={Share2} onClick={shareSite}>Share LACZEK STREAM</Row>
               <Row icon={Download} onClick={exportData}>Export my library</Row>
               <Row icon={HelpCircle} onClick={() => { setOpen(false); setShowQA(true); }}>Help & FAQ</Row>
-              <Row icon={Code2} onClick={() => { setOpen(false); setShowDev(true); }}>Developer</Row>
+              <Row icon={Code2} onClick={() => { setOpen(false); setShowDev(true); }}>Developer info</Row>
               <BugReport trigger="inline" />
               <Row icon={KeyboardIcon} onClick={() => { setOpen(false); setShowShortcuts(true); }}>Keyboard shortcuts</Row>
               <Row icon={RefreshCcw} onClick={reload}>Reload streams</Row>
@@ -203,7 +234,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
             </Group>
           </div>
 
-          <footer className="border-t border-border px-5 py-3 text-center text-[11px] text-muted-foreground">
+          <footer className="shrink-0 border-t border-border px-5 py-3 text-center text-[11px] text-muted-foreground">
             LACZEK STREAM · v3
           </footer>
         </aside>
@@ -236,7 +267,25 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
       )}
       {showLang && <LanguagePicker onClose={() => setShowLang(false)} />}
       {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
-      {showInstallHelp && (<Modal title="Install LACZEK STREAM" onClose={() => setShowInstallHelp(false)}><InstallBody /></Modal>)}
+      {showInstallHelp && (
+        <Modal title="Install LACZEK STREAM" onClose={() => { setShowInstallHelp(false); setInstallDevice(null); }}>
+          <InstallBody device={installDevice} onSelect={setInstallDevice} onInstall={installPwa} canInstall={canInstall} />
+        </Modal>
+      )}
+      {showGeneral && <GeneralModal onClose={() => setShowGeneral(false)} />}
+    </>
+  );
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="Open menu"
+        className="flex h-10 w-10 items-center justify-center rounded-full glass transition hover:bg-primary hover:text-primary-foreground"
+      >
+        <MoreVertical className="h-4 w-4" />
+      </button>
+      {portal ? createPortal(overlays, portal) : overlays}
     </>
   );
 }
@@ -250,24 +299,27 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Row({ icon: Icon, children, onClick, destructive, disabled, value }: {
+function Row({ icon: Icon, children, onClick, destructive, disabled, value, className, locked }: {
   icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
   onClick: () => void;
   destructive?: boolean;
   disabled?: boolean;
   value?: string;
+  className?: string;
+  locked?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex w-full items-center gap-3 px-5 py-3 text-left text-sm transition disabled:opacity-50 ${destructive ? "text-destructive hover:bg-destructive/10" : "hover:bg-secondary"}`}
+      className={`${className ?? ""} flex w-full items-center gap-3 px-5 py-3 text-left text-sm transition disabled:opacity-50 ${destructive ? "text-destructive hover:bg-destructive/10" : "hover:bg-secondary"}`}
     >
       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${destructive ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
         <Icon className="h-4 w-4" />
       </span>
       <span className="flex-1 font-medium">{children}</span>
+      {locked && <LockIcon className="h-3.5 w-3.5 text-primary" aria-label="Locked" />}
       {value && <span className="text-xs text-muted-foreground">{value}</span>}
     </button>
   );
@@ -406,10 +458,53 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
   );
 }
 
+function GeneralModal({ onClose }: { onClose: () => void }) {
+  const state = useGeneralSettings();
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/85 p-0 backdrop-blur-xl sm:items-center sm:p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="flex h-[85vh] w-full flex-col rounded-t-3xl border border-border bg-popover text-popover-foreground shadow-2xl sm:h-[80vh] sm:max-w-lg sm:rounded-3xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div>
+            <h3 className="text-base font-black">Personal preferences</h3>
+            <p className="text-[11px] text-muted-foreground">Stored only on this device · {GENERAL_SETTINGS.length} options</p>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="rounded-full bg-secondary p-2"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 py-2">
+          {GENERAL_SETTINGS.map((s) => {
+            const checked = !!state[s.key];
+            return (
+              <label key={s.key} className="flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-3 transition hover:bg-secondary">
+                <div className="flex-1">
+                  <p className="text-sm font-bold">{s.label}</p>
+                  <p className="text-[11px] text-muted-foreground">{s.description}</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={checked}
+                  onClick={() => setGeneralSetting(s.key as GeneralSettingKey, !checked)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition ${checked ? "bg-primary" : "bg-secondary border border-border"}`}
+                >
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${checked ? "left-[22px]" : "left-0.5"}`} />
+                </button>
+              </label>
+            );
+          })}
+        </div>
+        <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border px-5 py-3">
+          <button onClick={() => { if (confirm("Reset all personal preferences to defaults?")) resetGeneralSettings(); }} className="rounded-full bg-secondary px-4 py-2 text-xs font-bold">Reset to defaults</button>
+          <button onClick={onClose} className="rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground">Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AboutBody() {
   return (
     <div className="max-h-[55vh] space-y-3 overflow-y-auto pr-2 text-sm leading-relaxed text-muted-foreground">
-      <p>Welcome to <span className="font-bold text-foreground">LACZEK STREAMs</span> — your all-in-one digital entertainment hub. Movies, live football, free TV, music, anime and live CCTV — all in one place.</p>
+      <p>Welcome to <span className="font-bold text-foreground">LACZEK STREAMs</span> — your all-in-one digital entertainment hub. Movies, live football, free TV, anime, radio and podcasts — all in one place.</p>
       <p className="text-foreground font-bold">Our Mission</p>
       <p>Provide a seamless, free, and engaging entertainment experience for users worldwide.</p>
       <p className="text-center font-bold text-foreground">Start streaming. Stay connected. Enjoy more.</p>
@@ -417,19 +512,86 @@ function AboutBody() {
   );
 }
 
-function InstallBody() {
+function InstallBody({
+  device,
+  onSelect,
+  onInstall,
+  canInstall,
+}: {
+  device: "android" | "iphone" | null;
+  onSelect: (device: "android" | "iphone") => void;
+  onInstall: () => void;
+  canInstall: boolean;
+}) {
+  if (!device) {
+    return (
+      <div className="space-y-4 text-sm">
+        <p className="text-muted-foreground">Choose the device you are using to install the PWA.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => onSelect("android")}
+            className="rounded-2xl border border-border bg-secondary/50 p-4 text-center font-bold transition hover:bg-secondary"
+          >
+            <Smartphone className="mx-auto mb-2 h-6 w-6 text-primary" />
+            Android
+          </button>
+          <button
+            onClick={() => onSelect("iphone")}
+            className="rounded-2xl border border-border bg-secondary/50 p-4 text-center font-bold transition hover:bg-secondary"
+          >
+            <Smartphone className="mx-auto mb-2 h-6 w-6 text-primary" />
+            iPhone / iOS
+          </button>
+        </div>
+        <p className="text-xs text-muted-foreground">This option is for the PWA only. The existing APK download remains available below.</p>
+        <a
+          href="https://www.mediafire.com/file/q823khadatbqlol/LACZEK_STREAM.apk/file"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-3 font-bold text-primary-foreground"
+        >
+          Download APK mirror
+        </a>
+      </div>
+    );
+  }
+
+  if (device === "iphone") {
+    return (
+      <div className="space-y-3 text-sm leading-relaxed">
+        <p className="font-bold text-foreground">Install on iPhone</p>
+        <ol className="list-decimal space-y-2 pl-5 text-muted-foreground">
+          <li>Open LACZEK STREAM in <span className="font-bold text-foreground">Safari</span>.</li>
+          <li>Tap the <span className="font-bold text-foreground">Share</span> button.</li>
+          <li>Choose <span className="font-bold text-foreground">Add to Home Screen</span>.</li>
+          <li>Tap <span className="font-bold text-foreground">Add</span>.</li>
+        </ol>
+        <p className="text-xs text-muted-foreground">The iPhone PWA installs from Safari. Do not use the APK option on iPhone.</p>
+        <button onClick={() => onSelect("android")} className="rounded-full bg-secondary px-4 py-2 text-xs font-bold">Back</button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
-      <p>Use your browser install option if it appears. On Android, open the browser menu and choose <span className="font-bold text-foreground">Add to Home screen</span> or <span className="font-bold text-foreground">Install app</span>.</p>
-      <a
-        href="https://www.mediafire.com/file/q823khadatbqlol/LACZEK_STREAM.apk/file"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-3 font-bold text-primary-foreground"
-      >
-        Download APK mirror
-      </a>
-      <p className="text-xs">If the install prompt is not shown, the browser has not exposed install permission yet. The APK mirror still opens directly.</p>
+    <div className="space-y-3 text-sm leading-relaxed">
+      <p className="font-bold text-foreground">Install on Android</p>
+      {canInstall ? (
+        <button
+          onClick={onInstall}
+          className="inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-3 font-bold text-primary-foreground"
+        >
+          Install LACZEK STREAM PWA
+        </button>
+      ) : (
+        <ol className="list-decimal space-y-2 pl-5 text-muted-foreground">
+          <li>Open LACZEK STREAM in Chrome.</li>
+          <li>Open the browser menu.</li>
+          <li>Tap <span className="font-bold text-foreground">Install app</span> or <span className="font-bold text-foreground">Add to Home screen</span>.</li>
+          <li>Confirm the installation.</li>
+        </ol>
+      )}
+      <p className="text-xs text-muted-foreground">This installs the PWA, not the APK.</p>
+      <button onClick={() => onSelect("iphone")} className="rounded-full bg-secondary px-4 py-2 text-xs font-bold">iPhone instructions</button>
     </div>
   );
 }

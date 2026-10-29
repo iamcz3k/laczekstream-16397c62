@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Headphones, Loader2, Pause, Play, Search } from "lucide-react";
+import { VoiceSearchButton } from "@/components/VoiceSearchButton";
 
 type Podcast = {
   collectionId: number;
@@ -149,9 +150,11 @@ export function PodcastsTab() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search podcasts…"
-          className="w-full rounded-full border border-border bg-secondary/50 py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
+          className="w-full rounded-full border border-border bg-secondary/50 py-3 pl-11 pr-14 text-sm outline-none focus:border-primary"
         />
+        <VoiceSearchButton onInterim={setQ} onResult={setQ} className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9" />
       </div>
+
 
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>

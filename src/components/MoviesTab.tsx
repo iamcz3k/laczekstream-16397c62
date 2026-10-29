@@ -1,8 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Search, Play, Loader2, Star, SlidersHorizontal, X, User } from "lucide-react";
+import { Search, Play, Loader2, Star, SlidersHorizontal, X, User, Lock } from "lucide-react";
 import { tmdbTrending, tmdbSearch, tmdbPopular, tmdbMultiSearch, tmdbGenres, tmdbDiscoverAdvanced, type MediaItem, type Genre, type PersonHit } from "@/lib/api";
 import { trackSearch } from "@/lib/tracker";
+import { VoiceSearchButton } from "@/components/VoiceSearchButton";
+import { TranslatedTab } from "@/components/TranslatedTab";
+import { openPaywall, usePerk } from "@/lib/subscription";
+
+// Industry → TMDB `with_original_language` (ISO 639-1).
+// Inspired by https://github.com/vikhyatsingh123/Movies-Collection
+const INDUSTRIES = [
+  { key: "all", label: "All", lang: undefined as string | undefined },
+  { key: "hollywood", label: "Hollywood", lang: "en" },
+  { key: "bollywood", label: "Bollywood", lang: "hi" },
+  { key: "tollywood", label: "Tollywood", lang: "te" },
+] as const;
+type IndustryKey = typeof INDUSTRIES[number]["key"];
 
 export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
   const [items, setItems] = useState<MediaItem[]>([]);
@@ -18,12 +31,16 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
   const [minRating, setMinRating] = useState<number>(0);
   const [sortBy, setSortBy] = useState<"popularity.desc" | "vote_average.desc" | "release_date.desc" | "revenue.desc">("popularity.desc");
   const [personFilter, setPersonFilter] = useState<PersonHit | null>(null);
+  const [industry, setIndustry] = useState<IndustryKey>("all");
+  const [catalogue, setCatalogue] = useState<"global" | "translated">("global");
+  const translatedUnlocked = usePerk("translated");
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<number | null>(null);
 
   useEffect(() => { tmdbGenres(kind).then(setGenres).catch(() => setGenres([])); }, [kind]);
 
-  const filtersActive = pickedGenres.length > 0 || !!year || minRating > 0 || sortBy !== "popularity.desc" || !!personFilter;
+  const industryLang = INDUSTRIES.find((i) => i.key === industry)?.lang;
+  const filtersActive = pickedGenres.length > 0 || !!year || minRating > 0 || sortBy !== "popularity.desc" || !!personFilter || !!industryLang;
 
   useEffect(() => {
     if (filtersActive) return; // discover query effect handles it
@@ -45,11 +62,12 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
       sortBy,
       minRating: minRating || undefined,
       personId: personFilter?.id,
+      originalLanguage: industryLang,
     })
       .then(setItems)
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, [kind, pickedGenres, year, sortBy, minRating, personFilter, filtersActive]);
+  }, [kind, pickedGenres, year, sortBy, minRating, personFilter, industryLang, filtersActive]);
 
   // Debounced suggestions
   useEffect(() => {
@@ -70,14 +88,13 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  async function search(e: React.FormEvent) {
-    e.preventDefault();
-    if (!q.trim()) return;
+  async function runSearch(term: string) {
+    if (!term.trim()) return;
     setShowSugg(false);
     setLoading(true);
-    trackSearch(q);
+    trackSearch(term);
     try {
-      setItems(await tmdbSearch(kind, q));
+      setItems(await tmdbSearch(kind, term));
     } catch {
       setItems([]);
     } finally {
@@ -85,11 +102,16 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
     }
   }
 
+  async function search(e: React.FormEvent) {
+    e.preventDefault();
+    await runSearch(q);
+  }
+
   function toggleGenre(id: number) {
     setPickedGenres((g) => g.includes(id) ? g.filter((x) => x !== id) : [...g, id]);
   }
   function clearFilters() {
-    setPickedGenres([]); setYear(""); setMinRating(0); setSortBy("popularity.desc"); setPersonFilter(null);
+    setPickedGenres([]); setYear(""); setMinRating(0); setSortBy("popularity.desc"); setPersonFilter(null); setIndustry("all");
   }
 
   const years = useMemo(() => {
@@ -97,18 +119,59 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
     return Array.from({ length: now - 1949 }, (_, i) => now - i);
   }, []);
 
+  const subTabs = kind === "movie" ? (
+    <div className="inline-flex rounded-full border border-border bg-secondary/50 p-1">
+      {([
+        { k: "global", label: "Global" },
+        { k: "translated", label: "Translated (UG)" },
+      ] as const).map((t) => (
+        <button
+          key={t.k}
+          onClick={() => {
+            if (t.k === "translated" && !translatedUnlocked) {
+              openPaywall("translated");
+              return;
+            }
+            setCatalogue(t.k);
+          }}
+          className={`rounded-full px-5 py-2 text-sm font-bold transition ${
+            catalogue === t.k ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+          }`}
+        >
+          {t.k === "translated" && !translatedUnlocked && <Lock className="mr-1.5 inline h-3 w-3" />}
+          {t.label}
+        </button>
+      ))}
+    </div>
+  ) : null;
+
+  if (kind === "movie" && catalogue === "translated") {
+    return (
+      <div className="space-y-6">
+        {subTabs}
+        <TranslatedTab />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {subTabs}
       <div className="flex flex-col md:flex-row gap-3">
-        <div ref={searchRef} className="relative flex-1 max-w-xl">
-          <form onSubmit={search} className="relative">
+        <div ref={searchRef} className="relative flex flex-1 max-w-xl items-center gap-2">
+          <form onSubmit={search} className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               value={q}
               onFocus={() => setShowSugg(true)}
               onChange={(e) => { setQ(e.target.value); setShowSugg(true); }}
               placeholder={kind === "movie" ? "Search movies, actors, directors…" : "Search TV shows, actors…"}
-              className="w-full pl-11 pr-4 py-3 rounded-full glass border-border focus:border-primary focus:outline-none transition"
+              className="w-full pl-11 pr-14 py-3 rounded-full bg-secondary/50 border border-border focus:border-primary focus:outline-none transition"
+            />
+            <VoiceSearchButton
+              onInterim={(t) => { setQ(t); setShowSugg(true); }}
+              onResult={(t) => { setQ(t); setShowSugg(true); }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9"
             />
           </form>
           {showSugg && q.trim() && (suggestions.movies.length || suggestions.tv.length || suggestions.people.length) ? (
@@ -149,11 +212,11 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
         </div>
         <button
           onClick={() => setShowFilters((v) => !v)}
-          className={`inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium transition ${showFilters || filtersActive ? "bg-primary text-primary-foreground" : "glass"}`}
+          className={`inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium transition ${showFilters || filtersActive ? "bg-primary text-primary-foreground" : "bg-secondary/50 border border-border"}`}
         >
           <SlidersHorizontal className="h-4 w-4" /> Filters{filtersActive ? ` · ${pickedGenres.length + (year ? 1 : 0) + (minRating ? 1 : 0) + (personFilter ? 1 : 0) + (sortBy !== "popularity.desc" ? 1 : 0)}` : ""}
         </button>
-        <div className="inline-flex glass rounded-full p-1">
+        <div className="inline-flex bg-secondary/50 border border-border rounded-full p-1">
           {(["trending", "popular"] as const).map((s) => (
             <button
               key={s}
@@ -167,6 +230,22 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
           ))}
         </div>
       </div>
+
+      <div className="-mt-2 flex flex-wrap items-center gap-2 overflow-x-auto">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">Industry</span>
+        {INDUSTRIES.map((ind) => (
+          <button
+            key={ind.key}
+            onClick={() => setIndustry(ind.key)}
+            className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
+              industry === ind.key ? "bg-primary text-primary-foreground shadow" : "bg-secondary/50 border border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {ind.label}
+          </button>
+        ))}
+      </div>
+
 
       {(showFilters || filtersActive) && (
         <div className="rounded-3xl border border-border bg-secondary/30 p-4 space-y-4">
@@ -226,7 +305,7 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
               key={it.id}
               to="/watch/$kind/$id"
               params={{ kind: it.type, id: String(it.id) }}
-              className="group text-left rounded-[22px] overflow-hidden glass-card hover:border-primary transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-glow)] active:scale-[0.98]"
+              className="group text-left rounded-[22px] overflow-hidden bg-secondary/50 border border-border hover:border-primary transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-glow)] active:scale-[0.98]"
             >
               <div className="aspect-[2/3] bg-muted relative overflow-hidden">
                 {it.poster ? (
@@ -235,7 +314,7 @@ export function MoviesTab({ kind }: { kind: "movie" | "tv" }) {
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">No poster</div>
                 )}
                 {it.rating ? (
-                  <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full glass text-[10px] font-bold">
+                  <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/70 text-white text-[10px] font-bold">
                     <Star className="w-2.5 h-2.5 fill-primary text-primary" />
                     {it.rating.toFixed(1)}
                   </div>

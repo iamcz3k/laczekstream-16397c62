@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "LACZEK STREAM — Quick Watch",
+  "version": "1.0.0",
+  "description": "Instant movie and football search, quick links and watch shortcuts for LACZEK STREAM.",
+  "permissions": ["storage", "contextMenus", "tabs"],
+  "host_permissions": ["https://laczekstream.lovable.app/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LACZEK STREAM",
+    "default_icon": { "128": "icon.png" }
+  },
+  "background": { "service_worker": "background.js" },
+  "icons": { "48": "icon.png", "128": "icon.png" },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Alt+L" },
+      "description": "Open LACZEK STREAM popup"
+    }
+  }
+}

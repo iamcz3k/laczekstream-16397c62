@@ -1,21 +1,53 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Clock3, Expand, Loader2, Maximize2, Play, Shield } from "lucide-react";
+import { ArrowLeft, Clock3, Expand, Loader2, Maximize2, Play, Shield, Activity, MessageCircle, List } from "lucide-react";
 import { footballStreamDetail, type FootballStreamDetail } from "@/lib/api";
 import { BrandMark } from "@/components/BrandMark";
 import { MatchChat } from "@/components/MatchChat";
-import { trackWatch } from "@/lib/tracker";
+import { MatchTimeline } from "@/components/MatchTimeline";
+import { trackWatch, trackEvent } from "@/lib/tracker";
+import { useDefaultSportServer, useRecommendedSportSources } from "@/lib/feature-flags";
+import type { SportKey } from "@/lib/sports-api";
 
 export const Route = createFileRoute("/football-stream/$matchId")({
   component: FootballStreamPage,
-  head: () => ({
-    meta: [
-      { title: "Football Stream Player — LACZEK STREAM" },
-      { name: "description", content: "Watch football live streams with source selection in an isolated player." },
-      { property: "og:title", content: "Football Stream Player — LACZEK STREAM" },
-      { property: "og:description", content: "Watch football live streams with source selection in an isolated player." },
-    ],
-  }),
+  loader: async ({ params }) => {
+    try {
+      const d = await footballStreamDetail(params.matchId, "football");
+      return { title: d?.title ?? null };
+    } catch {
+      return { title: null as string | null };
+    }
+  },
+  head: ({ params, loaderData }) => {
+    const name = loaderData?.title || `Live match ${params.matchId}`;
+    const title = `${name} — Live stream · LACZEK STREAM`.slice(0, 60);
+    const desc = `Watch ${name} live for free on LACZEK STREAM — multiple HD sources, no ads, instant play.`.slice(0, 158);
+    const url = `https://laczekstream.lovable.app/football-stream/${params.matchId}`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "video.other" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [{
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BroadcastEvent",
+          name,
+          description: desc,
+          isLiveBroadcast: true,
+          url,
+        }),
+      }],
+    };
+  },
 });
 
 async function enterLandscapeFullscreen(element: HTMLElement | null) {
@@ -43,18 +75,32 @@ function FootballStreamPage() {
   const [countdown, setCountdown] = useState(30);
   const [fillMode, setFillMode] = useState(false);
   const [streamPlaying, setStreamPlaying] = useState(false);
+  const [sideTab, setSideTab] = useState<"sources" | "livescore" | "chat">("sources");
+
+  const defaultServerIdx = useDefaultSportServer(matchId);
+  const recommendedSources = useRecommendedSportSources(matchId);
+  const appliedDefaultRef = useRef(false);
 
   useEffect(() => {
     setLoading(true);
+    appliedDefaultRef.current = false;
     footballStreamDetail(matchId, sport)
       .then((data) => {
         setDetail(data);
-        setSourceIndex(Math.max((data?.sources?.length ?? 1) - 1, 0));
+        const total = data?.sources?.length ?? 0;
+        // If admin has set a default server for this match, apply it (1-based input → 0-based index).
+        if (defaultServerIdx != null && total > 0) {
+          const target = Math.min(Math.max(defaultServerIdx - 1, 0), total - 1);
+          setSourceIndex(target);
+          appliedDefaultRef.current = true;
+        } else {
+          setSourceIndex(data?.id.startsWith("cdn-") ? 0 : Math.max(total - 1, 0));
+        }
         if (data?.title) trackWatch({ kind: "football", id: matchId, title: data.title });
       })
       .catch(() => setDetail(null))
       .finally(() => setLoading(false));
-  }, [matchId, sport]);
+  }, [matchId, sport, defaultServerIdx]);
 
   const source = detail?.sources?.[sourceIndex];
   const playerSrc = useMemo(() => {
@@ -178,18 +224,45 @@ function FootballStreamPage() {
             </section>
 
             <aside className="space-y-3 overflow-auto pb-4 lg:max-h-[calc(100vh-6rem)]">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Sources</h2>
-              {detail.sources.map((item, index) => (
-                <button key={`${item.embedUrl}-${index}`} onClick={() => setSourceIndex(index)} className={`w-full rounded-[20px] border p-4 text-left transition-all duration-300 ${index === sourceIndex ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-bold">Source {item.streamNo ?? index + 1}</span>
-                    <span className="inline-flex items-center gap-1 text-xs"><Play className="h-3 w-3" fill="currentColor" /> {item.hd ? "HD" : item.quality || "SD"}</span>
-                  </div>
-                  <p className="mt-2 text-sm opacity-80">{item.language || item.source || "Football stream"}</p>
-                  {typeof item.viewers === "number" && <p className="mt-1 text-xs opacity-70">{item.viewers.toLocaleString()} viewers</p>}
-                </button>
-              ))}
-              <MatchChat matchId={matchId} />
+              <div className="sticky top-0 z-10 flex gap-1 rounded-full bg-secondary/80 p-1 backdrop-blur">
+                {([
+                  { k: "sources", label: "Sources", Icon: List },
+                  { k: "livescore", label: "LiveScore", Icon: Activity },
+                  { k: "chat", label: "Chat", Icon: MessageCircle },
+                ] as const).map(({ k, label, Icon }) => (
+                  <button key={k} onClick={() => { setSideTab(k); trackEvent(`Opened ${label} tab`, "menu", { matchId }); }} className={`${k === "chat" ? "feat-chat " : ""}flex flex-1 items-center justify-center gap-1.5 rounded-full px-2 py-1.5 text-[11px] font-black uppercase tracking-wider transition ${sideTab === k ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground"}`}>
+                    <Icon className="h-3.5 w-3.5" />{label}
+                  </button>
+                ))}
+              </div>
+              {sideTab === "sources" && (
+                <>
+                  {detail.sources.map((item, index) => {
+                    const sourceNo = item.streamNo ?? index + 1;
+                    const isRecommended = recommendedSources.has(sourceNo);
+                    return (
+                      <button key={`${item.embedUrl}-${index}`} onClick={() => { setSourceIndex(index); trackEvent(`Selected Source ${sourceNo}`, "server", { matchId, source: item.source || null, hd: !!item.hd }); }} className={`relative w-full rounded-[20px] border p-4 text-left transition-all duration-300 ${index === sourceIndex ? "border-primary bg-primary text-primary-foreground" : isRecommended ? "border-orange-500/60 bg-orange-500/10 hover:border-orange-400" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
+                        {isRecommended && (
+                          <span className="feat-fire absolute -top-2 -right-2 inline-flex items-center gap-1 rounded-full bg-gradient-to-br from-orange-500 to-red-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-lg">
+                            Recommended 🔥
+                          </span>
+                        )}
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-bold">Source {sourceNo}</span>
+                          <span className="inline-flex items-center gap-1 text-xs"><Play className="h-3 w-3" fill="currentColor" /> {item.hd ? "HD" : item.quality || "SD"}</span>
+                        </div>
+                        <p className="mt-2 text-sm opacity-80">{item.language || item.source || "Football stream"}</p>
+                        {typeof item.viewers === "number" && <p className="mt-1 text-xs opacity-70">{item.viewers.toLocaleString()} viewers</p>}
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+              {sideTab === "livescore" && <MatchTimeline eventId={matchId} sport={sport as SportKey} title={detail.title} />}
+              {sideTab === "chat" && (() => {
+                const parts = (detail.title || "").split(/\s+vs\.?\s+|\s+-\s+/i);
+                return <MatchChat matchId={matchId} home={parts[0]?.trim()} away={parts[1]?.trim()} />;
+              })()}
             </aside>
           </div>
         )}

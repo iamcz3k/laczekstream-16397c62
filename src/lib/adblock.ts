@@ -1,9 +1,14 @@
+// Pop-under / click-under blocker. Smart mode: allows real user-gesture
+// links/popups, blocks unsolicited window.open + known ad domains.
+// Gated by admin feature flag `block_popups` (off by default).
+import { supabase } from "@/integrations/supabase/client";
+
 const blockedHostPatterns = [
   /(^|\.)doubleclick\.net$/i,
   /(^|\.)googlesyndication\.com$/i,
-  /(^|\.)google-analytics\.com$/i,
   /(^|\.)adnxs\.com$/i,
   /(^|\.)popads\.net$/i,
+  /(^|\.)popcash\.net$/i,
   /(^|\.)propellerads\.com$/i,
   /(^|\.)onclickads\.net$/i,
   /(^|\.)exoclick\.com$/i,
@@ -16,7 +21,6 @@ const blockedHostPatterns = [
   /(^|\.)mgid\.com$/i,
   /(^|\.)revcontent\.com$/i,
   /(^|\.)zedo\.com$/i,
-  /(^|\.)media\.net$/i,
   /(^|\.)clickadu\.com$/i,
   /(^|\.)juicyads\.com$/i,
   /(^|\.)trafficstars\.com$/i,
@@ -24,30 +28,51 @@ const blockedHostPatterns = [
   /(^|\.)smartadserver\.com$/i,
   /(^|\.)yieldmo\.com$/i,
   /(^|\.)criteo\.com$/i,
+  /(^|\.)popmyads\.com$/i,
+  /(^|\.)adsnative\.com$/i,
+  /(^|\.)adskeeper\.com$/i,
+  /(^|\.)adsupply\.com$/i,
+  /(^|\.)tsyndicate\.com$/i,
+  /(^|\.)highperformanceformat\.com$/i,
+  /(^|\.)profitableratecpm\.com$/i,
+  /(^|\.)displaynetwork-pro\.com$/i,
 ];
 
 const blockedPathPatterns = [
-  /\/ads?[\/-]/i,
   /\/popunder/i,
   /\/popup/i,
-  /\/banner/i,
   /\/vast(\?|\/|$)/i,
-  /[?&](ad|ads|popup|popunder)=/i,
+  /[?&](popup|popunder|pu_id|popunder_id)=/i,
   /\/click\.php/i,
   /\/redirect\.php/i,
   /\/track\.php/i,
 ];
 
-export function isBlockedAdUrl(value: string) {
+function isBlockedAdUrl(value: string) {
   try {
-    const url = new URL(value, typeof window !== "undefined" ? window.location.href : "https://laczekstream.local");
+    const url = new URL(
+      value,
+      typeof window !== "undefined" ? window.location.href : "https://laczekstream.local",
+    );
     if (blockedHostPatterns.some((p) => p.test(url.hostname))) return true;
     if (blockedPathPatterns.some((p) => p.test(`${url.pathname}${url.search}`))) return true;
-    // Block anything that isn't our own origin in a new tab/window context
     return false;
   } catch {
     return false;
   }
+}
+
+// Track the last real user gesture; popups outside this window are unsolicited.
+let lastGestureAt = 0;
+const GESTURE_WINDOW_MS = 1000;
+
+function installGestureTracker() {
+  const mark = () => {
+    lastGestureAt = Date.now();
+  };
+  ["pointerdown", "mousedown", "touchstart", "keydown"].forEach((ev) =>
+    window.addEventListener(ev, mark, { capture: true, passive: true }),
+  );
 }
 
 export function installSilentAdBlock() {
@@ -56,58 +81,46 @@ export function installSilentAdBlock() {
   if (w.__laczekAdBlock) return;
   w.__laczekAdBlock = true;
 
-  const ownOrigin = window.location.origin;
-  const isSafeTarget = (href: string) => {
+  installGestureTracker();
+
+  // Check admin flag; off by default. Re-check every 30s so toggle propagates.
+  let enabled = false;
+  const refresh = async () => {
     try {
-      const u = new URL(href, ownOrigin);
-      return u.origin === ownOrigin;
+      const { data } = await supabase
+        .from("feature_flags")
+        .select("enabled")
+        .eq("key", "block_popups")
+        .maybeSingle();
+      enabled = !!data?.enabled;
     } catch {
-      return false;
+      // keep last value
     }
   };
+  refresh();
+  setInterval(refresh, 30_000);
 
   const originalOpen = window.open.bind(window);
-  // Silently block ALL window.open calls (popups/popunders/direct-link redirects)
-  window.open = ((_url?: string | URL, _target?: string, _features?: string) => null) as typeof window.open;
+  window.open = ((url?: string | URL, target?: string, features?: string) => {
+    if (!enabled) return originalOpen(url as string, target, features);
+    const href = typeof url === "string" ? url : url?.toString() ?? "";
+    const hasGesture = Date.now() - lastGestureAt < GESTURE_WINDOW_MS;
+    // Block if no user gesture (pop-under) OR known ad domain
+    if (!hasGesture || isBlockedAdUrl(href)) return null;
+    return originalOpen(url as string, target, features);
+  }) as typeof window.open;
 
   document.addEventListener(
     "click",
     (event) => {
-      const link = (event.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!enabled) return;
+      const link = (event.target as Element | null)?.closest?.(
+        "a[href]",
+      ) as HTMLAnchorElement | null;
       if (!link) return;
-      const href = link.href || "";
-      // Allow user-intentional external links that explicitly opt-in via rel="noopener noreferrer"
-      const isUserAllowed = link.rel.includes("noopener");
-      const isExternalNewTab = link.target === "_blank" && !isSafeTarget(href) && !isUserAllowed;
-      if (isExternalNewTab || isBlockedAdUrl(href)) {
+      if (isBlockedAdUrl(link.href || "")) {
         event.preventDefault();
         event.stopPropagation();
-      }
-    },
-    true,
-  );
-
-  // Block direct-link redirects via window.location assignments inside iframes that bubble up
-  // (Best-effort: cancels beforeunload caused by ad scripts trying to navigate away.)
-  window.addEventListener("beforeunload", (e) => {
-    const w2 = window as Window & { __laczekUserNavigating?: boolean };
-    if (!w2.__laczekUserNavigating) {
-      // user did not click a real internal link in the last tick → likely an ad redirect
-      // Note: modern browsers ignore preventDefault here unless user-initiated, so this is
-      // mostly defensive logging.
-    }
-  });
-
-  // Mark genuine user navigations
-  document.addEventListener(
-    "click",
-    (e) => {
-      const link = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
-      if (link && isSafeTarget(link.href)) {
-        (window as Window & { __laczekUserNavigating?: boolean }).__laczekUserNavigating = true;
-        setTimeout(() => {
-          (window as Window & { __laczekUserNavigating?: boolean }).__laczekUserNavigating = false;
-        }, 1500);
       }
     },
     true,

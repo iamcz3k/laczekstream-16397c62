@@ -1,21 +1,21 @@
 import { useState } from "react";
-import { Camera, Film, Headphones, Loader2, Radio as RadioIcon, Shuffle, Tv, Trophy, Youtube } from "lucide-react";
+import { Activity, Film, Gamepad2, Headphones, Loader2, Radio as RadioIcon, Shuffle, Trophy, Tv } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { BrandMark } from "@/components/BrandMark";
 import { MoreMenu } from "@/components/MoreMenu";
 import { tmdbRandomMovie } from "@/lib/api";
 import { useFeatureFlag } from "@/lib/feature-flags";
 
-export type TabKey = "movies" | "tv" | "football" | "youtube" | "cctv" | "radio" | "podcasts" | "genres" | "library";
+export type TabKey = "movies" | "tv" | "football" | "livescore" | "radio" | "podcasts" | "games" | "genres" | "library";
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "movies", label: "Movies", icon: Film },
   { key: "tv", label: "TV", icon: Tv },
   { key: "football", label: "Live Sports", icon: Trophy },
-  { key: "youtube", label: "YouTube", icon: Youtube },
-  { key: "cctv", label: "CCTV", icon: Camera },
+  { key: "livescore", label: "LiveScore", icon: Activity },
   { key: "radio", label: "Radio", icon: RadioIcon },
   { key: "podcasts", label: "Podcasts", icon: Headphones },
+  { key: "games", label: "Games", icon: Gamepad2 },
 ];
 
 export function Header({ active, onChange }: { active: TabKey; onChange: (k: TabKey) => void }) {
@@ -27,10 +27,10 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
     movies: useFeatureFlag("tab_movies", true),
     tv: useFeatureFlag("tab_tv", true),
     football: useFeatureFlag("live_sports", true),
-    youtube: useFeatureFlag("tab_youtube", true),
-    cctv: useFeatureFlag("tab_cctv", true),
+    livescore: useFeatureFlag("tab_livescore", true),
     radio: useFeatureFlag("radio", true),
     podcasts: useFeatureFlag("podcasts", true),
+    games: useFeatureFlag("tab_games", true),
     genres: useFeatureFlag("tab_genres", true),
     library: useFeatureFlag("tab_library", true),
   };
@@ -54,12 +54,13 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
             <button
               onClick={surprise}
               disabled={busy}
-              className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition active:scale-95 disabled:opacity-60"
+              data-tour="surprise-me"
+              className="feat-surprise hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition active:scale-95 disabled:opacity-60"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shuffle className="h-4 w-4" />}
               Surprise me
             </button>
-            <MoreMenu />
+            <span data-tour="more-menu"><MoreMenu /></span>
           </div>
         </div>
         <nav className="-mx-3 flex max-w-full items-center gap-1 overflow-x-auto px-3 pb-1 lg:order-2 lg:mx-0 lg:rounded-full lg:glass lg:p-1 lg:shadow-[inset_0_1px_0_color-mix(in_oklab,white_8%,transparent)]">
@@ -70,6 +71,7 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
               <button
                 key={t.key}
                 onClick={() => onChange(t.key)}
+                data-tour={`tab-${t.key}`}
                 className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all duration-300 active:scale-95 sm:gap-2 sm:px-4 sm:text-sm ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-[var(--shadow-glow)]"

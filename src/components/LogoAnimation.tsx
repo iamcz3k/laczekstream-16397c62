@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export type LogoAnimKind = "movies" | "football" | "tv" | "youtube" | "cctv" | "default";
+export type LogoAnimKind = "movies" | "football" | "tv" | "default";
 
 /** Full-screen 2-second celebration overlay tied to the active tab. */
 export function LogoAnimation({ kind, onDone }: { kind: LogoAnimKind; onDone: () => void }) {
@@ -17,9 +17,7 @@ export function LogoAnimation({ kind, onDone }: { kind: LogoAnimKind; onDone: ()
         {kind === "movies" && <PopcornBurst />}
         {kind === "football" && <BallSpin />}
         {kind === "tv" && <TvNoise />}
-        {kind === "youtube" && <YouTubePulse />}
-        {kind === "cctv" && <CctvScan />}
-        {kind === "default" && <YouTubePulse />}
+        {kind === "default" && <PlayPulse />}
       </div>
     </div>
   );
@@ -74,29 +72,13 @@ function TvNoise() {
   );
 }
 
-function YouTubePulse() {
+function PlayPulse() {
   return (
     <div className="absolute inset-0 flex items-center justify-center">
       <div className="flex h-48 w-72 items-center justify-center rounded-3xl bg-red-600 shadow-2xl" style={{ animation: "ytPulse 1.8s ease-out forwards" }}>
         <svg width="80" height="80" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z" /></svg>
       </div>
       <style>{`@keyframes ytPulse { 0%{transform:scale(0);opacity:0} 30%{transform:scale(1.2);opacity:1} 70%{transform:scale(1)} 100%{transform:scale(2);opacity:0} }`}</style>
-    </div>
-  );
-}
-
-function CctvScan() {
-  return (
-    <div className="absolute inset-0">
-      <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,0,0.06)_50%)] bg-[length:100%_4px]" />
-      <div className="absolute inset-x-0 top-0 h-1 bg-green-500" style={{ animation: "scanLine 1.8s linear forwards" }} />
-      <div className="absolute right-6 top-6 flex items-center gap-2 rounded-md bg-black/80 px-3 py-1 text-xs font-bold text-red-500">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" /> REC
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-[28vh]">📹</span>
-      </div>
-      <style>{`@keyframes scanLine { 0%{transform:translateY(0)} 100%{transform:translateY(100vh)} }`}</style>
     </div>
   );
 }

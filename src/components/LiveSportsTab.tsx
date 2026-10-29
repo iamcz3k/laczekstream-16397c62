@@ -1,14 +1,36 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Clock, Loader2, MapPin, Play, Radio, Users } from "lucide-react";
+import { Calendar, Clock, Loader2, MapPin, Play, Radio, Users, Activity, Search } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { FootballTab } from "@/components/FootballTab";
+import { LiveScoreTab } from "@/components/LiveScoreTab";
+import { useFeatureFlag } from "@/lib/feature-flags";
 import { footballStreamMatches, type FootballStreamMatch } from "@/lib/api";
 import { fetchSportScoreboard, SPORTS, type SportEvent, type SportKey } from "@/lib/sports-api";
 
+type View = SportKey | "livescore";
+
 export function LiveSportsTab() {
-  const [sport, setSport] = useState<SportKey>("soccer");
+  const livescoreEnabled = useFeatureFlag("livescore", true);
+  const [sport, setSport] = useState<View>("soccer");
   return (
     <div className="space-y-5">
       <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <Link to="/sports-search" className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-secondary/50 px-4 py-2 text-sm font-bold text-muted-foreground hover:text-foreground">
+          <Search className="h-4 w-4" /> Search
+        </Link>
+        {livescoreEnabled && (
+          <button
+            onClick={() => setSport("livescore")}
+            className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition active:scale-95 ${
+              sport === "livescore"
+                ? "border-primary bg-primary text-primary-foreground shadow-[var(--shadow-glow)]"
+                : "border-border bg-secondary/50 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Activity className="h-4 w-4" />
+            <span>LiveScore</span>
+          </button>
+        )}
         {SPORTS.map((s) => (
           <button
             key={s.key}
@@ -25,7 +47,9 @@ export function LiveSportsTab() {
         ))}
       </div>
 
-      {sport === "soccer" ? <FootballTab /> : <SportScoreboard sport={sport} />}
+      {sport === "livescore" ? <LiveScoreTab /> :
+       sport === "soccer" ? <FootballTab /> :
+       <SportScoreboard sport={sport} />}
     </div>
   );
 }
